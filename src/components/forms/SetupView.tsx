@@ -23,7 +23,7 @@ export const SetupView = ({ pages, onAdd, onDelete }: Props) => {
   return (
     <div className="max-w-5xl mx-auto animate-fade-in pb-10">
       <div className="border-b border-slate-100 pb-6 mb-10">
-        <h2 className="text-3xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Setup</h2>
+        <h2 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Setup</h2>
         <p className="text-slate-400 font-noto text-sm mt-1">เพิ่มหรือลบรายชื่อเพจที่จะติดตามสถิติในเครือของคุณ</p>
       </div>
 
@@ -34,11 +34,11 @@ export const SetupView = ({ pages, onAdd, onDelete }: Props) => {
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="ชื่อเพจที่ต้องการเพิ่ม..."
-            className="flex-1 bg-slate-50/50 border border-slate-200 rounded-2xl px-6 py-4 outline-none font-noto text-primary-navy placeholder:text-slate-300 focus:bg-white focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/10 transition-all"
+            className="flex-1 bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-3 outline-none font-noto text-primary-navy placeholder:text-slate-300 focus:bg-white focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/10 transition-all"
           />
           <button
             onClick={handleAdd}
-            className="bg-[#0f172a] hover:bg-[#1e293b] active:scale-[0.98] text-white px-10 py-4 rounded-2xl font-bold font-noto transition-all shadow-lg shadow-slate-200 hover:shadow-xl"
+            className="bg-[#0f172a] hover:bg-[#1e293b] active:scale-[0.98] text-white px-6 py-3 rounded-2xl font-bold font-noto transition-all shadow-lg shadow-slate-200 hover:shadow-xl"
           >
             ยืนยันเพิ่มเพจ
           </button>
@@ -51,9 +51,9 @@ export const SetupView = ({ pages, onAdd, onDelete }: Props) => {
         </div>
         <div className="divide-y divide-slate-50">
           {pages.map(page => (
-            <div key={page.id} className="flex items-center justify-between px-8 py-6 hover:bg-slate-50/30 group transition-all">
+            <div key={page.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/30 group transition-all">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-[1.25rem] bg-[#0f172a] text-white flex items-center justify-center font-bold text-xl font-outfit shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-[#0f172a] text-white flex items-center justify-center font-bold text-lg font-outfit shadow-sm">
                   {page.name.charAt(0)}
                 </div>
                 <div>

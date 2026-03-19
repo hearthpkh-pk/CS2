@@ -63,7 +63,7 @@ export const DashboardView = ({
     <div className="animate-fade-in max-w-6xl mx-auto pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-100 pb-6">
         <div>
-          <h2 className="text-3xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Dashboard</h2>
+          <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Dashboard</h2>
           <p className="text-slate-400 font-noto text-sm mt-1">ภาพรวมการเติบโตและสถิติสะสมของคุณ</p>
         </div>
 
@@ -93,7 +93,7 @@ export const DashboardView = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200">
+        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200">
           <div className="flex justify-between items-start mb-6">
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
               <Users className="text-primary-navy" size={26} />
@@ -126,7 +126,7 @@ export const DashboardView = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+      <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <h3 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-wider">Growth Performance</h3>

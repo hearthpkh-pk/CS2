@@ -47,14 +47,14 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in pb-10">
-      <div className="flex justify-between items-end border-b border-slate-200 pb-5 mb-8">
+    <div className="max-w-5xl mx-auto animate-fade-in pb-6">
+      <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg">
               <FilePlus className="text-primary-navy" size={22} />
             </div>
-            <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Transactions</h2>
+            <h2 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Transactions</h2>
           </div>
           <p className="text-slate-500 text-sm font-noto">กรอกข้อมูลทีละหลายเพจในรูปแบบตาราง</p>
         </div>
@@ -73,23 +73,23 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/40 border-b border-slate-100">
-                <th className="p-5 text-slate-400 font-semibold text-[11px] uppercase tracking-widest font-noto w-1/3">ชื่อเพจ / หมวดหมู่</th>
-                <th className="p-5 text-slate-400 font-semibold text-[11px] uppercase tracking-widest font-noto text-center">สถานะ</th>
-                <th className="p-5 text-slate-400 font-semibold text-[11px] uppercase tracking-widest font-noto text-center">ยอดผู้ติดตามล่าสุด</th>
-                <th className="p-5 text-slate-400 font-semibold text-[11px] uppercase tracking-widest font-noto text-center">ยอดวิวของวันนี้</th>
+                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto w-1/3">ชื่อเพจ / หมวดหมู่</th>
+                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto text-center">สถานะ</th>
+                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto text-center">ยอดผู้ติดตามล่าสุด</th>
+                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto text-center">ยอดวิวของวันนี้</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {pages.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/20 transition-colors">
-                  <td className="p-5">
+                  <td className="p-4">
                     <div className="font-bold text-primary-navy text-md font-noto mb-0.5">{p.name}</div>
                     <div className="text-[11px] text-slate-400 font-noto flex items-center gap-2">
                       <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                       {p.category}
                     </div>
                   </td>
-                  <td className="p-5 text-center">
+                  <td className="p-4 text-center">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-noto",
                       p.status === 'Active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
@@ -98,7 +98,7 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
                       {p.status}
                     </span>
                   </td>
-                  <td className="p-5">
+                  <td className="p-4">
                     <input
                       type="number"
                       placeholder="กรอกตัวเลข"
@@ -107,13 +107,13 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
                       className="w-full bg-[#fcfcfc] border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-inter outline-none focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 text-center transition-all"
                     />
                   </td>
-                  <td className="p-5">
+                  <td className="p-4">
                     <input
                       type="number"
                       placeholder="กรอกตัวเลข"
                       value={inputData[p.id]?.views || ''}
                       onChange={e => setInputData(prev => ({ ...prev, [p.id]: { ...prev[p.id], views: e.target.value } }))}
-                      className="w-full bg-[#fcfcfc] border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-inter outline-none focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 text-center transition-all"
+                      className="w-full bg-[#fcfcfc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-sm font-inter outline-none focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 text-center transition-all"
                     />
                   </td>
                 </tr>
@@ -121,10 +121,10 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
             </tbody>
           </table>
         </div>
-        <div className="p-8 bg-slate-50/30 flex justify-end border-t border-slate-50">
+        <div className="p-6 bg-slate-50/30 flex justify-end border-t border-slate-50">
           <button
             type="submit"
-            className="bg-[#facc15] hover:bg-[#eab308] active:scale-[0.98] text-primary-navy font-bold py-3.5 px-10 rounded-2xl flex items-center gap-3 transition-all shadow-[0_8px_20px_-6px_rgba(250,204,21,0.4)]"
+            className="bg-[#facc15] hover:bg-[#eab308] active:scale-[0.98] text-primary-navy font-bold py-2.5 px-6 rounded-2xl flex items-center gap-3 transition-all shadow-[0_8px_20px_-6px_rgba(250,204,21,0.4)]"
           >
             <div className="bg-[#0f172a] text-white p-1.5 rounded-lg">
               <Save size={18} />
