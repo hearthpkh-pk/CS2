@@ -97,7 +97,7 @@ export const TrashDrawer = ({
               {deletedPages.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 px-2">
-                    <div className="w-1 h-4 bg-[var(--primary-blue)] rounded-full" />
+                    <div className="w-1 h-4 bg-[var(--primary-theme)] rounded-full" />
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Pages ({deletedPages.length})</span>
                   </div>
                   <div className="space-y-2">
@@ -115,8 +115,8 @@ export const TrashDrawer = ({
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => onRestorePage(page.id)}
-                            className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
-                            title="Restore"
+                            className="p-2 text-[var(--primary-theme)] hover:bg-[var(--primary-theme-bg)] rounded-xl transition-all"
+                            title="Restore Page"
                           >
                             <RotateCcw size={16} />
                           </button>
@@ -147,7 +147,7 @@ export const TrashDrawer = ({
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             "w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm border",
-                            acc.status === 'Admin' ? "bg-blue-600 text-white border-blue-400" : "bg-white text-slate-400 border-slate-100"
+                            acc.status === 'Admin' ? "bg-[var(--primary-theme)] text-white border-[var(--primary-theme-border)]" : "bg-white text-slate-400 border-slate-100"
                           )}>
                             <Shield size={18} />
                           </div>
@@ -159,8 +159,8 @@ export const TrashDrawer = ({
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => onRestoreAccount(acc.id)}
-                            className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
-                            title="Restore"
+                            className="p-2 text-[var(--primary-theme)] hover:bg-[var(--primary-theme-bg)] rounded-xl transition-all"
+                            title="Restore Account"
                           >
                             <RotateCcw size={16} />
                           </button>

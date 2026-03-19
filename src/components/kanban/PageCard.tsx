@@ -28,7 +28,7 @@ export const PageCard = ({
       draggable
       onDragStart={(e) => onDragStart(e, page.id)}
       onClick={() => onEdit(page)}
-      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 cursor-grab active:cursor-grabbing hover:border-[var(--primary-blue)] hover:shadow-md transition-all group relative"
+      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 cursor-grab active:cursor-grabbing hover:border-[var(--primary-theme)] hover:shadow-md transition-all group relative"
     >
       <div className="flex justify-between items-start mb-2">
         <div className={cn(
@@ -57,7 +57,7 @@ export const PageCard = ({
               target="_blank" 
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-[9px] text-[var(--primary-blue)] flex items-center gap-1 hover:underline font-bold"
+              className="text-[9px] text-[var(--primary-theme)] flex items-center gap-1 hover:underline font-bold"
             >
               <ExternalLink size={10} /> Link
             </a>
@@ -65,9 +65,9 @@ export const PageCard = ({
         </div>
         
         {page.adminIds && page.adminIds.length > 0 && (
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-full border border-blue-100/50">
-             <Shield size={10} className="text-blue-600" />
-             <span className="text-[10px] font-bold text-blue-600 font-inter">{page.adminIds.length}</span>
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-[var(--primary-theme-bg)] rounded-full border border-[var(--primary-theme-border)]">
+             <Shield size={10} className="text-[var(--primary-theme)]" />
+             <span className="text-[10px] font-bold text-[var(--primary-theme)] font-inter">{page.adminIds.length}</span>
           </div>
         )}
       </div>

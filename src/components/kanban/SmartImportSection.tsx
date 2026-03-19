@@ -15,9 +15,9 @@ export const SmartImportSection = ({
   onParse
 }: SmartImportSectionProps) => {
   return (
-    <div className="space-y-3 p-5 bg-blue-50/50 rounded-[2rem] border border-blue-100 border-dashed">
+    <div className="space-y-3 p-5 bg-[var(--primary-theme-bg)]/50 rounded-[2rem] border border-[var(--primary-theme-border)] border-dashed">
       <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] font-bold text-[var(--primary-blue)] uppercase tracking-widest flex items-center gap-2">
+        <span className="text-[10px] font-bold text-[var(--primary-theme)] uppercase tracking-widest flex items-center gap-2">
             <Plus size={12} /> Smart Import / Paste
         </span>
         <div className="flex items-center gap-3">
@@ -28,7 +28,7 @@ export const SmartImportSection = ({
           >
             Clear
           </button>
-          <span className="text-[9px] font-bold text-blue-300">MULTI-DATA SUPPORT</span>
+          <span className="text-[9px] font-bold text-[var(--primary-theme)] opacity-40 uppercase tracking-widest">Multi-Data Support</span>
         </div>
       </div>
       <textarea 
@@ -38,7 +38,7 @@ export const SmartImportSection = ({
           onParse(e.target.value);
         }}
         placeholder="วางข้อมูลทั้งชุดที่นี่ (รองรับ UID|Pass|2FA|Mail1|Pass1|Mail2...)"
-        className="w-full bg-white border border-blue-100 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/10 focus:border-[var(--primary-blue)]/50 transition-all text-xs font-inter resize-none h-20 placeholder:text-blue-200"
+        className="w-full bg-white border border-[var(--primary-theme-border)] rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/10 focus:border-[var(--primary-theme)]/50 transition-all text-xs font-inter resize-none h-20 placeholder:text-slate-300"
       />
     </div>
   );

@@ -17,20 +17,20 @@ interface SectionProps {
 export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
   <div className="space-y-5">
     <div className="flex items-center gap-2 px-1">
-      <div className="w-1 h-4 bg-[var(--primary-blue)] rounded-full" />
+      <div className="w-1 h-4 bg-[var(--primary-theme)] rounded-full" />
       <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">ข้อมูลพื้นฐาน & โปรไฟล์</span>
     </div>
     
     <div className="space-y-4">
       <div className="space-y-1 relative pt-2">
-        <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-[var(--primary-blue)] uppercase tracking-widest z-10">ชื่อเรียกบัญชี</label>
+        <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-[var(--primary-theme)] uppercase tracking-widest z-10">ชื่อเรียกบัญชี</label>
         <input 
           type="text"
           required
           value={formData.name}
           onChange={e => setFormData({...formData, name: e.target.value})}
           placeholder="เช่น บัญชีหลัก 01"
-          className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-noto"
+          className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-noto"
         />
       </div>
       
@@ -41,7 +41,7 @@ export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
           value={formData.profileUrl}
           onChange={e => setFormData({...formData, profileUrl: e.target.value})}
           placeholder="https://www.facebook.com/profile.php?id=..."
-          className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter"
+          className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-inter"
         />
       </div>
 
@@ -56,7 +56,7 @@ export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
               if (newBoxId === 0) update.status = 'Admin';
               setFormData({...formData, ...update});
             }}
-            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-xs font-bold font-noto"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-xs font-bold font-noto"
           >
             <option value={0}>Admin Box (พิเศษ)</option>
             {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => (
@@ -85,7 +85,7 @@ export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
                         "text-white shadow-lg",
                         s === 'Live' ? "bg-emerald-500 shadow-emerald-100" :
                         s === 'Check' ? "bg-amber-500 shadow-amber-100" :
-                        s === 'Admin' ? "bg-blue-600 shadow-blue-100" :
+                        s === 'Admin' ? "bg-[var(--primary-theme)] shadow-slate-200/50" :
                         "bg-red-500 shadow-red-100"
                       )
                     : "text-slate-400 hover:text-slate-600"
@@ -128,7 +128,7 @@ export const LoginSection = ({ formData, setFormData }: SectionProps) => (
             type="text"
             value={formData.password}
             onChange={e => setFormData({...formData, password: e.target.value})}
-            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter"
+            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-inter"
           />
         </div>
         <div className="space-y-1 relative pt-2">
@@ -138,7 +138,7 @@ export const LoginSection = ({ formData, setFormData }: SectionProps) => (
             value={formData.twoFactor}
             onChange={e => setFormData({...formData, twoFactor: e.target.value})}
             placeholder="ABCD EFGH..."
-            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter uppercase"
+            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-inter uppercase"
           />
         </div>
       </div>
@@ -182,7 +182,7 @@ export const EmailSection = ({ formData, setFormData }: SectionProps) => (
         value={formData.email2}
         onChange={e => setFormData({...formData, email2: e.target.value})}
         placeholder="mail2@getmule.com"
-        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter"
+        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-inter"
       />
     </div>
   </div>
@@ -201,7 +201,7 @@ export const BrowserSection = ({ formData, setFormData }: SectionProps) => (
         onChange={e => setFormData({...formData, cookie: e.target.value})}
         placeholder="c_user=...; xs=...;"
         rows={3}
-        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-[10px] font-inter resize-none h-24"
+        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-[10px] font-inter resize-none h-24"
       />
     </div>
   </div>

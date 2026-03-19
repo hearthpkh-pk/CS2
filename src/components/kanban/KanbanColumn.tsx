@@ -43,14 +43,14 @@ export const KanbanColumn = ({
     <div className="flex flex-col h-full min-h-[300px]">
       <div className="flex items-center justify-between mb-3 px-2">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-[var(--primary-blue)] text-white rounded-lg flex items-center justify-center text-xs font-bold font-outfit shadow-sm shadow-blue-100">
+          <div className="w-7 h-7 bg-[var(--primary-theme)] text-white rounded-lg flex items-center justify-center text-xs font-bold font-outfit shadow-sm shadow-slate-200/50">
             {boxId}
           </div>
           <span className="font-bold text-slate-700 text-sm font-noto">
             กล่องที่ {boxId}
           </span>
         </div>
-        <span className="text-[10px] bg-blue-50 text-[var(--primary-blue)] font-bold px-2 py-0.5 rounded-full font-inter">
+        <span className="text-[10px] bg-[var(--primary-theme-bg)] text-[var(--primary-theme)] font-bold px-2 py-0.5 rounded-full font-inter">
           {viewMode === 'pages' ? pages.length : accounts.length} {viewMode === 'pages' ? 'PAGES' : 'ACC'}
         </span>
       </div>
@@ -91,7 +91,7 @@ export const KanbanColumn = ({
             ))}
             <button 
               onClick={() => handleOpenAccountAdd(boxId)}
-              className="w-full py-8 rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 hover:text-[var(--primary-blue)] hover:border-blue-200 transition-all flex flex-col items-center justify-center gap-2"
+              className="w-full py-8 rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 hover:text-[var(--primary-theme)] hover:border-[var(--primary-theme-border)] transition-all flex flex-col items-center justify-center gap-2"
             >
               <Shield size={20} />
               <span className="text-[10px] font-bold font-noto uppercase tracking-tight">Add Account</span>

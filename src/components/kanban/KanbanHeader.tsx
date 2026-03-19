@@ -32,7 +32,7 @@ export const KanbanHeader = ({
     <div className="sticky top-0 z-40 bg-slate-50 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 pb-6 mb-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Kanban Setup</h2>
+          <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Facebok Page Setup</h2>
         </div>
         <p className="text-slate-400 font-noto text-[11px] mt-1.5">
           {viewMode === 'pages' ? "One Active per box • 20 Units Max" : "Manage Facebook Credentials for each box"}
@@ -43,7 +43,7 @@ export const KanbanHeader = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenConfig}
-            className="p-3 bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-blue)] hover:border-[var(--primary-blue)] rounded-2xl transition-all shadow-sm hover:shadow-md"
+            className="p-3 bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-theme)] hover:border-[var(--primary-theme)] rounded-2xl transition-all shadow-sm hover:shadow-md"
             title="ตั้งค่ากล่อง"
           >
             <Settings size={18} />
@@ -64,16 +64,16 @@ export const KanbanHeader = ({
 
         <button
           onClick={() => viewMode === 'pages' ? onAddPage() : onAddAccount()}
-          className="bg-[var(--primary-blue)] hover:bg-[#0b5ed7] text-white px-5 py-2.5 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100 text-sm whitespace-nowrap"
+          className="bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-5 py-2.5 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100 text-sm whitespace-nowrap"
         >
           <Plus size={18} />
           <span>{viewMode === 'pages' ? "เพิ่มเพจใหม่" : "เพิ่มบัญชีใหม่"}</span>
         </button>
 
-        {/* Minimal Blue-White Mode Toggle - Now at Far Right (Height-Aligned) */}
-        <div className="relative flex bg-gradient-to-br from-[var(--primary-blue)] to-[#0b5ed7] p-1 rounded-2xl shadow-lg border border-white/10 overflow-hidden">
+        {/* Minimal Theme-Based Mode Toggle - Now at Far Right (Height-Aligned) */}
+        <div className="relative flex bg-gradient-to-br from-[var(--primary-theme)] to-[var(--primary-theme-hover)] p-1 rounded-2xl shadow-lg border border-white/10 overflow-hidden">
           {/* Animated White Pill */}
-          <div 
+          <div
             className={cn(
               "absolute top-1 bottom-1 w-[40px] bg-white rounded-xl shadow-md transition-all duration-300 ease-in-out",
               viewMode === 'pages' ? "left-1" : "left-[43px]"
@@ -83,7 +83,7 @@ export const KanbanHeader = ({
             onClick={() => setViewMode('pages')}
             className={cn(
               "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-all duration-300",
-              viewMode === 'pages' ? "text-[var(--primary-blue)]" : "text-white/70 hover:text-white"
+              viewMode === 'pages' ? "text-[var(--primary-theme)]" : "text-white/70 hover:text-white"
             )}
             title="Pages View"
           >
@@ -93,7 +93,7 @@ export const KanbanHeader = ({
             onClick={() => setViewMode('accounts')}
             className={cn(
               "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-all duration-300",
-              viewMode === 'accounts' ? "text-[var(--primary-blue)]" : "text-white/70 hover:text-white"
+              viewMode === 'accounts' ? "text-[var(--primary-theme)]" : "text-white/70 hover:text-white"
             )}
             title="Accounts View"
           >

@@ -8,9 +8,16 @@ import { SetupView } from '@/components/forms/SetupView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
 import { Page, DailyLog, FBAccount } from '@/types';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export default function CreatorApp() {
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState('setup');
+  const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [pages, setPages] = useState<Page[]>([]);
   const [accounts, setAccounts] = useState<FBAccount[]>([]);
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -136,7 +143,10 @@ export default function CreatorApp() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-prompt">
+    <div className={cn(
+      "flex min-h-screen bg-slate-50 font-prompt transition-colors duration-500",
+      viewMode === 'pages' ? "theme-pages" : "theme-accounts"
+    )}>
       {toast && <Toast message={toast} />}
 
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
@@ -168,6 +178,8 @@ export default function CreatorApp() {
 
           {currentTab === 'setup' && (
             <SetupView 
+              viewMode={viewMode}
+              setViewMode={setViewMode}
               pages={pages} 
               accounts={accounts}
               onAdd={handleAddPage} 

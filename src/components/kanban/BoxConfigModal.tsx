@@ -52,7 +52,7 @@ export const BoxConfigModal = ({
                   className={cn(
                     "h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all group",
                     activeBoxes.includes(boxId)
-                      ? "bg-[var(--primary-blue)] border-[var(--primary-blue)] text-white shadow-lg shadow-blue-200 scale-[1.02]"
+                      ? "bg-[var(--primary-theme)] border-[var(--primary-theme)] text-white shadow-lg shadow-slate-200/50 scale-[1.02]"
                       : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50"
                   )}
                 >
@@ -81,7 +81,7 @@ export const BoxConfigModal = ({
               </button>
               <button 
                 onClick={onClose}
-                className="flex-1 py-4 bg-[var(--primary-blue)] text-white rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-[#0b5ed7] transition-all font-noto"
+                className="flex-1 py-4 bg-[var(--primary-theme)] text-white rounded-2xl font-bold shadow-lg shadow-slate-200/50 hover:bg-[var(--primary-theme-hover)] transition-all font-noto"
               >
                 ตกลง
               </button>

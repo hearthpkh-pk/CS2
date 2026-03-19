@@ -18,17 +18,21 @@ interface AccountCardProps {
 
 export const AccountCard = ({
   account,
-  onEdit,
-  onDelete
+  onDelete,
+  onEdit
 }: AccountCardProps) => {
+  // Assuming account.isAdmin is a new property or derived from account.status === 'Admin'
+  // For now, let's derive it for safety based on the original logic
+  const isAdmin = account.status === 'Admin';
+
   return (
     <div 
       onClick={() => onEdit(account)}
       className={cn(
-        "p-4 rounded-2xl shadow-sm border cursor-pointer hover:shadow-md transition-all group relative",
-        account.status === 'Admin' 
-          ? "bg-blue-600 border-blue-400 text-white hover:bg-blue-700" 
-          : "bg-white border-slate-100 text-slate-800 hover:border-[var(--primary-blue)]"
+        "group relative transition-all duration-300 rounded-[1.5rem] p-4 shadow-sm hover:shadow-xl border cursor-pointer",
+        isAdmin 
+          ? "bg-white border-white/50 shadow-white/10 text-slate-800 scale-100 hover:scale-[1.03]" 
+          : "bg-white border-slate-100 hover:border-[var(--primary-theme)] text-slate-800"
       )}
     >
       <div className="flex justify-between items-start mb-2">
@@ -36,7 +40,7 @@ export const AccountCard = ({
           "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-inter flex items-center gap-1",
           account.status === 'Live' ? 'bg-emerald-100 text-emerald-700' : 
           account.status === 'Check' ? 'bg-amber-100 text-amber-700' : 
-          account.status === 'Admin' ? 'bg-white text-blue-600' : // White badge on Blue card
+          isAdmin ? 'bg-white text-[var(--primary-theme)]' : // White badge on themed card
           'bg-red-100 text-red-700'
         )}>
           <Shield size={10} /> {account.status}
@@ -45,7 +49,7 @@ export const AccountCard = ({
           onClick={(e) => { e.stopPropagation(); onDelete(account.id); }}
           className={cn(
             "opacity-0 group-hover:opacity-100 transition-opacity",
-            account.status === 'Admin' ? "text-blue-200 hover:text-white" : "text-slate-300 hover:text-red-500"
+            isAdmin ? "text-white/70 hover:text-white" : "text-slate-300 hover:text-red-500"
           )}
         >
           <Trash2 size={14} />
@@ -54,23 +58,23 @@ export const AccountCard = ({
       
       <h4 className={cn(
         "font-bold text-sm font-noto truncate mb-1",
-        account.status === 'Admin' ? "text-white" : "text-slate-800"
+        "text-slate-800"
       )}>{account.name}</h4>
       <p className={cn(
         "text-[10px] font-noto mb-3 truncate",
-        account.status === 'Admin' ? "text-blue-100" : "text-slate-400"
+        "text-slate-400"
       )}>UID: {account.uid}</p>
       
       <div className={cn(
         "flex flex-wrap items-center gap-2 pt-3 border-t",
-        account.status === 'Admin' ? "border-blue-500/50" : "border-slate-50"
+        isAdmin ? "border-white/20" : "border-slate-50"
       )}>
         {/* Helper to conditionally style action buttons */}
         {(() => {
           const btnClass = (base: string, active: string) => cn(
             "w-7 h-7 flex items-center justify-center rounded-lg transition-all shadow-sm border",
-            account.status === 'Admin' 
-              ? "bg-blue-500/40 text-white hover:bg-white hover:text-blue-600 border-blue-400/50"
+            isAdmin 
+              ? "bg-[var(--primary-theme-bg)] text-[var(--primary-theme)] hover:bg-[var(--primary-theme)] hover:text-white border-[var(--primary-theme-border)]"
               : cn(base, active)
           );
           
@@ -94,7 +98,7 @@ export const AccountCard = ({
                     e.stopPropagation(); 
                     navigator.clipboard.writeText(account.password!);
                   }}
-                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-blue)] hover:bg-white")}
+                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-theme)] hover:bg-white")}
                   title="Copy Pass"
                 >
                   <Key size={12} />
@@ -106,7 +110,7 @@ export const AccountCard = ({
                     e.stopPropagation(); 
                     navigator.clipboard.writeText(account.twoFactor!);
                   }}
-                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-blue)] hover:bg-white")}
+                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-theme)] hover:bg-white")}
                   title="Copy 2FA"
                 >
                   <Database size={12} />
@@ -154,7 +158,7 @@ export const AccountCard = ({
                     e.stopPropagation(); 
                     navigator.clipboard.writeText(account.cookie!);
                   }}
-                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-blue)] hover:bg-white")}
+                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-theme)] hover:bg-white")}
                   title="Copy Cookie"
                 >
                   <Copy size={12} />

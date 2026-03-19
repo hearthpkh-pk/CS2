@@ -22,7 +22,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-40 text-white shadow-2xl transition-all duration-300 ease-in-out">
+    <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-40 text-white shadow-2xl transition-all duration-500 ease-in-out">
       <div className="p-6 mb-10 overflow-hidden">
         <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
           <div className="p-2.5 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-transform flex-shrink-0">

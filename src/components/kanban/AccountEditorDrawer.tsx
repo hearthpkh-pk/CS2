@@ -192,7 +192,7 @@ export const AccountEditorDrawer = ({
             <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">
               <button
                 onClick={onSubmit}
-                className="w-full bg-[var(--primary-blue)] hover:bg-[#0b5ed7] text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-[0.98] font-noto"
+                className="w-full bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200/50 transition-all active:scale-[0.98] font-noto"
               >
                 {editingAccount ? 'บันทึกการแก้ไขบัญชี' : 'ยืนยันเพิ่มบัญชี'}
               </button>

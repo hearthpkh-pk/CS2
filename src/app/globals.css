@@ -3,14 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --sidebar-bg: #0f51b4;
-  /* Vibrant Blue from "Golden Rule" */
-  --sidebar-active: #0f51b4;
-  --text-primary: #0f172a;
-  --accent-yellow: #facc15;
-  --accent-yellow-hover: #eab308;
-
   --primary-blue: #2871df;
+  --primary-emerald: #10b981;
+  
+  /* Dynamic Theme Variables */
+  --sidebar-bg: #0f51b4;
+  --primary-theme: var(--primary-blue);
+  --primary-theme-hover: #1e40af;
+  --primary-theme-bg: #eff6ff;
+  --primary-theme-border: #dbeafe;
+  --primary-theme-text: #1e40af;
+
   --secondary-blue: #eff6ff;
   --success-green: #4ade80;
   --danger-red: #f87171;
@@ -21,6 +24,26 @@
   --font-mono: var(--font-inter), monospace;
   --font-noto: var(--font-noto-thai), sans-serif;
   --font-prompt: var(--font-noto-thai), sans-serif;
+}
+
+.theme-pages {
+  --sidebar-bg: #0f51b4;
+  --sidebar-active: #0f51b4;
+  --primary-theme: #2871df;
+  --primary-theme-hover: #1e40af; /* Deeper blue for gradient */
+  --primary-theme-bg: #eff6ff;
+  --primary-theme-border: #dbeafe;
+  --primary-theme-text: #1e40af;
+}
+
+.theme-accounts {
+  --sidebar-bg: #065f46; /* Emerald 800 */
+  --sidebar-active: #065f46;
+  --primary-theme: #10b981;
+  --primary-theme-hover: #047857; /* Emerald 700 */
+  --primary-theme-bg: #ecfdf5;
+  --primary-theme-border: #d1fae5;
+  --primary-theme-text: #064e3b;
 }
 
 body {

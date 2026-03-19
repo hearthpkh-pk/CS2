@@ -29,6 +29,8 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface Props {
+  viewMode: 'pages' | 'accounts';
+  setViewMode: (mode: 'pages' | 'accounts') => void;
   pages: Page[];
   accounts: FBAccount[];
   onAdd: (page: Omit<Page, 'id'>) => void;
@@ -47,13 +49,14 @@ interface Props {
 const BOXES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 export const SetupView = ({
+  viewMode,
+  setViewMode,
   pages, accounts, onAdd, onUpdate, onDelete,
   onRestorePage, onPermanentDeletePage,
   onAddAccount, onUpdateAccount, onDeleteAccount,
   onRestoreAccount, onPermanentDeleteAccount,
   onClearTrash
 }: Props) => {
-  const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isAccountEditorOpen, setIsAccountEditorOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -327,7 +330,10 @@ export const SetupView = ({
   };
 
   return (
-    <div className="animate-fade-in pb-20 relative bg-slate-50 min-h-screen -m-6 p-6">
+    <div className={cn(
+      "animate-fade-in pb-20 relative bg-slate-50 min-h-screen -m-6 p-6 transition-colors duration-500",
+      viewMode === 'pages' ? "theme-pages" : "theme-accounts"
+    )}>
       <KanbanHeader
         viewMode={viewMode}
         setViewMode={setViewMode}
