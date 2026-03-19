@@ -65,9 +65,9 @@ export const PageCard = ({
         </div>
         
         {page.adminIds && page.adminIds.length > 0 && (
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50 rounded-full border border-indigo-100/50">
-             <Shield size={10} className="text-indigo-600" />
-             <span className="text-[10px] font-bold text-indigo-600 font-inter">{page.adminIds.length}</span>
+          <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-full border border-blue-100/50">
+             <Shield size={10} className="text-blue-600" />
+             <span className="text-[10px] font-bold text-blue-600 font-inter">{page.adminIds.length}</span>
           </div>
         )}
       </div>

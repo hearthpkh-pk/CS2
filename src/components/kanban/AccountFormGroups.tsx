@@ -85,7 +85,7 @@ export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
                         "text-white shadow-lg",
                         s === 'Live' ? "bg-emerald-500 shadow-emerald-100" :
                         s === 'Check' ? "bg-amber-500 shadow-amber-100" :
-                        s === 'Admin' ? "bg-indigo-600 shadow-indigo-100" :
+                        s === 'Admin' ? "bg-blue-600 shadow-blue-100" :
                         "bg-red-500 shadow-red-100"
                       )
                     : "text-slate-400 hover:text-slate-600"

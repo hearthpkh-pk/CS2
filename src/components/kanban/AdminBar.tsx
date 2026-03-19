@@ -25,31 +25,40 @@ export const AdminBar = ({
   const adminAccounts = accountsByBox[0] || [];
 
   return (
-    <div className="px-4 py-6 bg-indigo-50/30 rounded-[2.5rem] border border-indigo-100/50 mx-2">
-      <div className="flex items-center justify-between mb-4 px-4">
+    <div className="px-4 py-6 bg-gradient-to-r from-blue-50/50 via-white to-blue-50/50 rounded-[2.5rem] border border-blue-200/60 mx-2 shadow-sm relative overflow-hidden group">
+      {/* Decorative accent */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
+      
+      <div className="flex items-center justify-between mb-4 px-4 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-            <Shield size={20} />
+          <div className="w-12 h-12 bg-blue-600 rounded-[1.25rem] flex items-center justify-center text-white shadow-xl shadow-blue-100 group-hover:scale-105 transition-transform">
+            <Shield size={24} fill="white" fillOpacity={0.2} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-indigo-900 uppercase tracking-tight">ACCOUNT ADMIN MASTER</h3>
-            <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Global Controller & Multi-Page Holder</p>
+            <h3 className="text-base font-bold text-blue-900 uppercase tracking-tight font-outfit">ACCOUNT ADMIN MASTER</h3>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest font-inter">Global Controller & Multi-Page Holder</p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] bg-white text-indigo-600 font-bold px-3 py-1 rounded-full border border-indigo-100 shadow-sm">
-            {adminAccounts.length} ADMINS
-          </span>
+          <div className="flex flex-col items-end mr-2">
+            <span className="text-[9px] font-bold text-blue-300 uppercase tracking-tighter">Current Capacity</span>
+            <span className="text-xs font-black text-blue-600 font-inter tracking-tighter">
+              {adminAccounts.length} / 20
+            </span>
+          </div>
           <button 
             onClick={() => handleOpenAccountAdd(0)}
-            className="w-10 h-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+            className="w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95"
           >
             <Plus size={20} />
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 overflow-x-auto pb-4 px-4 custom-scrollbar">
+      <div className="flex items-center gap-4 overflow-x-auto pb-4 px-4 custom-scrollbar relative z-10">
         {adminAccounts.length > 0 ? (
           adminAccounts.map(acc => (
             <div key={acc.id} className="w-72 flex-shrink-0">
@@ -61,9 +70,9 @@ export const AdminBar = ({
             </div>
           ))
         ) : (
-          <div className="w-full h-24 border-2 border-dashed border-indigo-100 rounded-3xl flex items-center justify-center text-indigo-300 gap-3">
+          <div className="w-full h-24 border-2 border-dashed border-blue-100 rounded-[2rem] flex items-center justify-center text-blue-300 gap-3 bg-white/50">
             <Shield size={20} className="opacity-30" />
-            <p className="text-xs font-bold uppercase tracking-widest">No Admin Accounts Yet</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest">No Admin accounts in this fleet</p>
           </div>
         )}
       </div>

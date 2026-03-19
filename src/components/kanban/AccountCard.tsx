@@ -31,7 +31,7 @@ export const AccountCard = ({
           "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-inter flex items-center gap-1",
           account.status === 'Live' ? 'bg-emerald-100 text-emerald-700' : 
           account.status === 'Check' ? 'bg-amber-100 text-amber-700' : 
-          account.status === 'Admin' ? 'bg-indigo-100 text-indigo-700' :
+          account.status === 'Admin' ? 'bg-blue-100 text-blue-700' :
           'bg-red-100 text-red-700'
         )}>
           <Shield size={10} /> {account.status}
