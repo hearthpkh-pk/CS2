@@ -7,11 +7,12 @@ import { TransactionsView } from '@/components/forms/TransactionsView';
 import { SetupView } from '@/components/forms/SetupView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
-import { Page, DailyLog } from '@/types';
+import { Page, DailyLog, FBAccount } from '@/types';
 
 export default function CreatorApp() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [pages, setPages] = useState<Page[]>([]);
+  const [accounts, setAccounts] = useState<FBAccount[]>([]);
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -23,6 +24,7 @@ export default function CreatorApp() {
   // Load Initial Data
   useEffect(() => {
     setPages(dataService.getPages());
+    setAccounts(dataService.getAccounts());
     setLogs(dataService.getLogs());
   }, []);
 
@@ -62,6 +64,29 @@ export default function CreatorApp() {
     showToast('ลบเพจเรียบร้อย');
   };
 
+  const handleAddAccount = (accData: Omit<FBAccount, 'id'>) => {
+    const newAcc: FBAccount = {
+      ...accData,
+      id: `acc-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    dataService.saveAccount(newAcc);
+    setAccounts(dataService.getAccounts());
+    showToast('เพิ่มบัญชีสำเร็จ');
+  };
+
+  const handleUpdateAccount = (updatedAcc: FBAccount) => {
+    dataService.saveAccount(updatedAcc);
+    setAccounts(dataService.getAccounts());
+    showToast('อัปเดตบัญชีเรียบร้อย');
+  };
+
+  const handleDeleteAccount = (id: string) => {
+    dataService.deleteAccount(id);
+    setAccounts(dataService.getAccounts());
+    showToast('ลบบัญชีเรียบร้อย');
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
@@ -96,9 +121,13 @@ export default function CreatorApp() {
           {currentTab === 'setup' && (
             <SetupView 
               pages={pages} 
+              accounts={accounts}
               onAdd={handleAddPage} 
               onUpdate={handleUpdatePage}
               onDelete={handleDeletePage} 
+              onAddAccount={handleAddAccount}
+              onUpdateAccount={handleUpdateAccount}
+              onDeleteAccount={handleDeleteAccount}
             />
           )}
         </main>

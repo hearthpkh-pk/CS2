@@ -1,9 +1,10 @@
-import { Page, DailyLog } from "../types";
-import { initialPages, generateMockLogs } from "./mockData";
+import { Page, DailyLog, FBAccount } from "../types";
+import { initialPages, generateMockLogs, initialAccounts } from "./mockData";
 
 const STORAGE_KEYS = {
   PAGES: 'cs_pages',
-  LOGS: 'cs_logs'
+  LOGS: 'cs_logs',
+  ACCOUNTS: 'cs_accounts'
 };
 
 export const dataService = {
@@ -37,6 +38,34 @@ export const dataService = {
     // Also cleanup logs for this page
     const logs = dataService.getLogs().filter(l => l.pageId !== id);
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
+  },
+
+  // --- Accounts ---
+  getAccounts: (): FBAccount[] => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    if (!saved) {
+      const initial = initialAccounts;
+      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(saved);
+  },
+
+  saveAccount: (account: FBAccount): void => {
+    const accounts = dataService.getAccounts();
+    const existingIndex = accounts.findIndex(a => a.id === account.id);
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = account;
+    } else {
+      accounts.push(account);
+    }
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+  },
+
+  deleteAccount: (id: string): void => {
+    const accounts = dataService.getAccounts().filter(a => a.id !== id);
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
   },
 
   // --- Logs ---

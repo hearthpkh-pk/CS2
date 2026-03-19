@@ -21,3 +21,14 @@ export interface DashboardStats {
   totalViews: number;
   viewsTrend: number; // percentage
 }
+export interface FBAccount {
+  id: string;
+  boxId: number;
+  name: string;
+  uid: string;
+  status: 'Live' | 'Check' | 'Die';
+  password?: string;
+  twoFactor?: string;
+  cookie?: string;
+  createdAt?: string;
+}

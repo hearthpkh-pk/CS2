@@ -1,4 +1,10 @@
-import { Page, DailyLog } from "../types";
+import { Page, DailyLog, FBAccount } from "../types";
+
+export const initialAccounts: FBAccount[] = [
+  { id: 'acc-1', boxId: 1, name: 'สมชาย คมกริบ', uid: '100012345678', status: 'Live', password: 'password123', twoFactor: 'ABCD 1234 EFGH 5678', cookie: 'c_user=100012345678; xs=abc:123:xyz;' },
+  { id: 'acc-2', boxId: 2, name: 'Wichai Manee', uid: '100098765432', status: 'Check', twoFactor: 'WXYZ 9999' },
+  { id: 'acc-3', boxId: 3, name: 'Somsak Backup', uid: '100055554444', status: 'Die' },
+];
 
 export const initialPages: Page[] = [
   { id: '1', name: 'กิ้งก่าทอง มาร์เก็ตติ้ง', url: 'fb.com/goldlizard', category: 'หมวดบันเทิง', status: 'Active', boxId: 1 },
