@@ -143,15 +143,15 @@ export default function CreatorApp() {
   };
 
   return (
-    <div className={cn(
-      "flex min-h-screen bg-slate-50 font-prompt transition-colors duration-500",
-      viewMode === 'pages' ? "theme-pages" : "theme-accounts"
-    )}>
+    <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
 
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-      <div className="flex-1 md:ml-20 flex flex-col min-h-screen relative">
+      <div className={cn(
+        "flex-1 md:ml-20 flex flex-col min-h-screen relative transition-colors duration-500",
+        viewMode === 'pages' ? "theme-pages" : "theme-accounts"
+      )}>
         <MobileHeader />
 
         <main className="flex-1 p-4 md:p-6">
