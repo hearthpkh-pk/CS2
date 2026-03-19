@@ -30,7 +30,7 @@ export const KanbanHeader = ({
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Kanban Setup</h2>
           <div className="flex bg-slate-100 p-1 rounded-xl ml-4">
-            <button 
+            <button
               onClick={() => setViewMode('pages')}
               className={cn(
                 "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
@@ -40,7 +40,7 @@ export const KanbanHeader = ({
               <LayoutGrid size={14} />
               <span>Pages</span>
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('accounts')}
               className={cn(
                 "px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2",
@@ -69,7 +69,7 @@ export const KanbanHeader = ({
           className="bg-[var(--primary-blue)] hover:bg-[#0b5ed7] text-white px-5 py-2.5 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-200 text-sm"
         >
           <Plus size={18} />
-          <span>{viewMode === 'pages' ? "เพิ่มเพจใหม่" : "เพิ่มบัญชีหใม่"}</span>
+          <span>{viewMode === 'pages' ? "เพิ่มเพจใหม่" : "เพิ่มบัญชีใหม่"}</span>
         </button>
       </div>
     </div>

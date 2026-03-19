@@ -5,6 +5,13 @@ import { Plus, Shield, Key, Database } from 'lucide-react';
 import { FBAccount } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { SmartImportSection } from './SmartImportSection';
+import { 
+  IdentitySection, 
+  LoginSection, 
+  EmailSection, 
+  BrowserSection 
+} from './AccountFormGroups';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -150,9 +157,6 @@ export const AccountEditorDrawer = ({
       name: name || formData.name
     });
     
-    if (uid || password || twoFactor || cookie || email || profileUrl) {
-       setImportText('');
-    }
   };
 
   return (
@@ -172,211 +176,17 @@ export const AccountEditorDrawer = ({
                 <Plus size={24} className="rotate-45" />
               </button>
             </div>
-
             <form onSubmit={onSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-8 scroll-smooth">
-              {/* Smart Paste Section */}
-              <div className="space-y-3 p-5 bg-blue-50/50 rounded-[2rem] border border-blue-100 border-dashed">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-[10px] font-bold text-[var(--primary-blue)] uppercase tracking-widest flex items-center gap-2">
-                      <Plus size={12} /> Smart Import / Paste
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <button 
-                      type="button"
-                      onClick={() => setImportText('')}
-                      className="text-[9px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"
-                    >
-                      Clear
-                    </button>
-                    <span className="text-[9px] font-bold text-blue-300">MULTI-DATA SUPPORT</span>
-                  </div>
-                </div>
-                <textarea 
-                  value={importText}
-                  onChange={(e) => {
-                    setImportText(e.target.value);
-                    parseAccountString(e.target.value);
-                  }}
-                  placeholder="วางข้อมูลทั้งชุดที่นี่ (รองรับ UID|Pass|2FA|Mail1|Pass1|Mail2...)"
-                  className="w-full bg-white border border-blue-100 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/10 focus:border-[var(--primary-blue)]/50 transition-all text-xs font-inter resize-none h-20 placeholder:text-blue-200"
-                />
-              </div>
+              <SmartImportSection 
+                importText={importText}
+                setImportText={setImportText}
+                onParse={parseAccountString}
+              />
 
-              {/* Group 1: Identity & Profile */}
-              <div className="space-y-5">
-                <div className="flex items-center gap-2 px-1">
-                   <div className="w-1 h-4 bg-[var(--primary-blue)] rounded-full" />
-                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">ข้อมูลพื้นฐาน & โปรไฟล์</span>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-1 relative pt-2">
-                    <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-[var(--primary-blue)] uppercase tracking-widest z-10">ชื่อเรียกบัญชี</label>
-                    <input 
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={e => setFormData({...formData, name: e.target.value})}
-                      placeholder="เช่น บัญชีหลัก 01"
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-noto"
-                    />
-                  </div>
-                  
-                  <div className="space-y-1 relative pt-2">
-                    <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">Facebook Profile Link</label>
-                    <input 
-                      type="url"
-                      value={formData.profileUrl}
-                      onChange={e => setFormData({...formData, profileUrl: e.target.value})}
-                      placeholder="https://www.facebook.com/profile.php?id=..."
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1 relative pt-2">
-                      <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">จัดเก็บลงกล่องที่</label>
-                      <select 
-                        value={formData.boxId}
-                        onChange={e => setFormData({...formData, boxId: parseInt(e.target.value)})}
-                        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-noto"
-                      >
-                        <option value={0}>Admin Box (พิเศษ)</option>
-                        {boxes.filter(b => b > 0).map(b => <option key={b} value={b}>{b}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-1 relative pt-2">
-                      <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">สถานะปัจจุบัน</label>
-                      <div className="grid grid-cols-4 gap-1.5 h-[46px]">
-                        {(['Live', 'Check', 'Die', 'Admin'] as FBAccount['status'][]).map(s => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => setFormData({...formData, status: s})}
-                            className={cn(
-                              "rounded-xl border text-[8px] font-bold transition-all flex items-center justify-center",
-                              formData.status === s 
-                                ? cn(
-                                    "border-transparent text-white",
-                                    s === 'Live' ? "bg-emerald-500 shadow-lg shadow-emerald-100" :
-                                    s === 'Check' ? "bg-amber-500 shadow-lg shadow-amber-100" :
-                                    s === 'Admin' ? "bg-indigo-600 shadow-lg shadow-indigo-100" :
-                                    "bg-red-500 shadow-lg shadow-red-100"
-                                  )
-                                : "bg-white border-slate-200 text-slate-400"
-                            )}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Group 2: Login Credentials */}
-              <div className="space-y-5">
-                <div className="flex items-center gap-2 px-1">
-                   <div className="w-1 h-4 bg-amber-400 rounded-full" />
-                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">ข้อมูลล็อกอินหลัก</span>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-1 relative pt-2">
-                    <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-amber-500 uppercase tracking-widest z-10">Facebook UID</label>
-                    <input 
-                      type="text"
-                      required
-                      value={formData.uid}
-                      onChange={e => setFormData({...formData, uid: e.target.value})}
-                      placeholder="เช่น 1000XXXXXXXXXXX"
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-amber-500/5 focus:border-amber-400 transition-all text-sm font-inter"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1 relative pt-2">
-                      <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">Password</label>
-                      <input 
-                        type="text"
-                        value={formData.password}
-                        onChange={e => setFormData({...formData, password: e.target.value})}
-                        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter"
-                      />
-                    </div>
-                    <div className="space-y-1 relative pt-2">
-                      <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">2FA Secret</label>
-                      <input 
-                        type="text"
-                        value={formData.twoFactor}
-                        onChange={e => setFormData({...formData, twoFactor: e.target.value})}
-                        placeholder="ABCD EFGH..."
-                        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter uppercase"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Group 3: Email Recovery */}
-              <div className="space-y-5">
-                <div className="flex items-center gap-2 px-1">
-                   <div className="w-1 h-4 bg-emerald-400 rounded-full" />
-                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">อีเมลสำรอง & กู้คืน</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1 relative pt-2">
-                    <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-emerald-600 uppercase tracking-widest z-10">อีเมลหลัก ( recovery )</label>
-                    <input 
-                      type="email"
-                      value={formData.email}
-                      onChange={e => setFormData({...formData, email: e.target.value})}
-                      placeholder="mail@outlook.com"
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-emerald-500/5 focus:border-emerald-400 transition-all text-sm font-inter"
-                    />
-                  </div>
-                  <div className="space-y-1 relative pt-2">
-                    <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-emerald-600 uppercase tracking-widest z-10">รหัสผ่านอีเมล</label>
-                    <input 
-                      type="text"
-                      value={formData.emailPassword}
-                      onChange={e => setFormData({...formData, emailPassword: e.target.value})}
-                      className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-emerald-500/5 focus:border-emerald-400 transition-all text-sm font-inter"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1 relative pt-2">
-                  <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">อีเมลที่ 2 ( Backup )</label>
-                  <input 
-                    type="email"
-                    value={formData.email2}
-                    onChange={e => setFormData({...formData, email2: e.target.value})}
-                    placeholder="mail2@getmule.com"
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-sm font-inter"
-                  />
-                </div>
-              </div>
-
-              {/* Group 4: Browser Session */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                   <div className="w-1 h-4 bg-slate-400 rounded-full" />
-                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Browser Session</span>
-                </div>
-                <div className="space-y-1 relative pt-2">
-                  <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">Facebook Cookies</label>
-                  <textarea 
-                    value={formData.cookie}
-                    onChange={e => setFormData({...formData, cookie: e.target.value})}
-                    placeholder="c_user=...; xs=...;"
-                    rows={3}
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-blue)]/5 focus:border-[var(--primary-blue)] transition-all text-[10px] font-inter resize-none h-24"
-                  />
-                </div>
-              </div>
+              <IdentitySection formData={formData} setFormData={setFormData} />
+              <LoginSection formData={formData} setFormData={setFormData} />
+              <EmailSection formData={formData} setFormData={setFormData} />
+              <BrowserSection formData={formData} setFormData={setFormData} />
             </form>
 
             <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">

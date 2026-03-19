@@ -19,6 +19,8 @@ import { AccountCard } from '../kanban/AccountCard';
 import { PageEditorDrawer } from '../kanban/PageEditorDrawer';
 import { AccountEditorDrawer } from '../kanban/AccountEditorDrawer';
 import { BoxConfigModal } from '../kanban/BoxConfigModal';
+import { AdminBar } from '../kanban/AdminBar';
+import { KanbanColumn } from '../kanban/KanbanColumn';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -304,78 +306,35 @@ export const SetupView = ({
         onAddAccount={() => handleOpenAccountAdd()}
       />
 
-      <div className="pb-12 bg-slate-50">
-        <div className="grid grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
-          {boxes.filter(b => activeBoxes.includes(b)).map(boxId => {
-            const boxAccounts = accountsByBox[boxId] || [];
-            return (
-              <div key={boxId} className="flex flex-col h-full min-h-[300px]">
-                <div className="flex items-center justify-between mb-3 px-2">
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-outfit shadow-sm shadow-blue-100",
-                      boxId === 0 ? "bg-indigo-600 text-white" : "bg-[var(--primary-blue)] text-white"
-                    )}>
-                      {boxId}
-                    </div>
-                    <span className="font-bold text-slate-700 text-sm font-noto">
-                      {boxId === 0 ? "ACCOUNT ADMIN" : `กล่องที่ ${boxId}`}
-                    </span>
-                  </div>
-                  <span className="text-[10px] bg-blue-50 text-[var(--primary-blue)] font-bold px-2 py-0.5 rounded-full font-inter">
-                    {viewMode === 'pages' ? pagesByBox[boxId].length : boxAccounts.length} {viewMode.toUpperCase()}
-                  </span>
-                </div>
+      <div className="pb-12 bg-slate-50 space-y-8">
+        <AdminBar 
+          activeBoxes={activeBoxes}
+          accountsByBox={accountsByBox}
+          handleOpenAccountAdd={handleOpenAccountAdd}
+          handleAccountEdit={handleAccountEdit}
+          onDeleteAccount={onDeleteAccount}
+        />
 
-                <div 
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, boxId)}
-                  className="flex-1 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200 p-3 space-y-3 transition-colors"
-                >
-                  {viewMode === 'pages' ? (
-                    <>
-                      {pagesByBox[boxId].map(page => (
-                        <PageCard 
-                          key={page.id}
-                          page={page}
-                          onEdit={handleEdit}
-                          onDelete={onDelete}
-                          onDragStart={handleDragStart}
-                        />
-                      ))}
-                      <button 
-                        onClick={() => handleOpenAdd(boxId)}
-                        className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-200 text-slate-300 hover:text-slate-500 hover:border-slate-300 transition-all flex items-center justify-center gap-2 text-xs font-bold"
-                      >
-                        <Plus size={14} /> เพิ่มเพจ
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {boxAccounts.map(acc => (
-                        <AccountCard 
-                          key={acc.id}
-                          account={acc}
-                          onEdit={handleAccountEdit}
-                          onDelete={onDeleteAccount}
-                        />
-                      ))}
-                      {boxAccounts.length === 0 && (
-                        <button 
-                          onClick={() => handleOpenAccountAdd(boxId)}
-                          className="w-full py-8 rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 hover:text-[var(--primary-blue)] hover:border-blue-200 transition-all flex flex-col items-center justify-center gap-2"
-                        >
-                          <Shield size={20} />
-                          <span className="text-[10px] font-bold font-noto uppercase tracking-tight">No Account</span>
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6 px-2">
+          {boxes.filter(b => b > 0 && activeBoxes.includes(b)).map(boxId => (
+            <KanbanColumn
+              key={boxId}
+              boxId={boxId}
+              viewMode={viewMode}
+              pages={pagesByBox[boxId] || []}
+              accounts={accountsByBox[boxId] || []}
+              handleOpenAdd={handleOpenAdd}
+              handleEdit={handleEdit}
+              onDelete={onDelete}
+              handleDragStart={handleDragStart}
+              handleDragOver={handleDragOver}
+              handleDragLeave={handleDragLeave}
+              handleDrop={handleDrop}
+              handleOpenAccountAdd={handleOpenAccountAdd}
+              handleAccountEdit={handleAccountEdit}
+              onDeleteAccount={onDeleteAccount}
+            />
+          ))}
         </div>
       </div>
 
