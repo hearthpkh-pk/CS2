@@ -1,8 +1,11 @@
 export interface Page {
   id: string;
   name: string;
-  category: string;
-  status: 'Active' | 'Rest' | 'Problem';
+  url?: string;
+  category: 'รายการ' | 'หนัง' | 'ข่าว' | string;
+  status: 'Active' | 'Rest' | 'Error' | 'Problem';
+  boxId: number; // 1-20
+  createdAt?: string;
 }
 
 export interface DailyLog {

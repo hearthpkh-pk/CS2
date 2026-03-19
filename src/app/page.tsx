@@ -38,16 +38,21 @@ export default function CreatorApp() {
     showToast('บันทึกข้อมูลเรียบร้อย');
   };
 
-  const handleAddPage = (name: string) => {
+  const handleAddPage = (pageData: Omit<Page, 'id'>) => {
     const newPage: Page = {
+      ...pageData,
       id: Date.now().toString(),
-      name,
-      category: 'อื่นๆ',
-      status: 'Active'
+      createdAt: new Date().toISOString()
     };
     dataService.savePage(newPage);
     setPages(dataService.getPages());
     showToast('เพิ่มเพจสำเร็จ');
+  };
+
+  const handleUpdatePage = (updatedPage: Page) => {
+    dataService.savePage(updatedPage);
+    setPages(dataService.getPages());
+    showToast('อัปเดตข้อมูลเรียบร้อย');
   };
 
   const handleDeletePage = (id: string) => {
@@ -92,6 +97,7 @@ export default function CreatorApp() {
             <SetupView 
               pages={pages} 
               onAdd={handleAddPage} 
+              onUpdate={handleUpdatePage}
               onDelete={handleDeletePage} 
             />
           )}
