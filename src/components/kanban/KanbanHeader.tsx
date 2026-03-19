@@ -40,37 +40,6 @@ export const KanbanHeader = ({
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Minimal Mode Toggle */}
-        <div className="relative flex bg-slate-100/80 backdrop-blur-sm p-1 rounded-2xl border border-slate-200/50 shadow-inner">
-          {/* Animated Background Pill */}
-          <div 
-            className={cn(
-              "absolute top-1 bottom-1 w-[42px] bg-white rounded-xl shadow-sm transition-all duration-300 ease-in-out",
-              viewMode === 'pages' ? "left-1" : "left-[45px]"
-            )}
-          />
-          <button
-            onClick={() => setViewMode('pages')}
-            className={cn(
-              "relative z-10 w-[42px] h-[34px] flex items-center justify-center rounded-xl transition-all duration-300",
-              viewMode === 'pages' ? "text-[var(--primary-blue)]" : "text-slate-400 hover:text-slate-600"
-            )}
-            title="Pages View"
-          >
-            <LayoutGrid size={18} />
-          </button>
-          <button
-            onClick={() => setViewMode('accounts')}
-            className={cn(
-              "relative z-10 w-[42px] h-[34px] flex items-center justify-center rounded-xl transition-all duration-300",
-              viewMode === 'accounts' ? "text-[var(--primary-blue)]" : "text-slate-400 hover:text-slate-600"
-            )}
-            title="Accounts View"
-          >
-            <Shield size={18} />
-          </button>
-        </div>
-
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenConfig}
@@ -100,6 +69,37 @@ export const KanbanHeader = ({
           <Plus size={18} />
           <span>{viewMode === 'pages' ? "เพิ่มเพจใหม่" : "เพิ่มบัญชีใหม่"}</span>
         </button>
+
+        {/* Minimal Blue-White Mode Toggle - Now at Far Right (Height-Aligned) */}
+        <div className="relative flex bg-gradient-to-br from-[var(--primary-blue)] to-[#0b5ed7] p-1 rounded-2xl shadow-lg border border-white/10 overflow-hidden">
+          {/* Animated White Pill */}
+          <div 
+            className={cn(
+              "absolute top-1 bottom-1 w-[40px] bg-white rounded-xl shadow-md transition-all duration-300 ease-in-out",
+              viewMode === 'pages' ? "left-1" : "left-[43px]"
+            )}
+          />
+          <button
+            onClick={() => setViewMode('pages')}
+            className={cn(
+              "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-all duration-300",
+              viewMode === 'pages' ? "text-[var(--primary-blue)]" : "text-white/70 hover:text-white"
+            )}
+            title="Pages View"
+          >
+            <LayoutGrid size={16} />
+          </button>
+          <button
+            onClick={() => setViewMode('accounts')}
+            className={cn(
+              "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-all duration-300",
+              viewMode === 'accounts' ? "text-[var(--primary-blue)]" : "text-white/70 hover:text-white"
+            )}
+            title="Accounts View"
+          >
+            <Shield size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
