@@ -124,12 +124,12 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
         <div className="p-6 bg-slate-50/30 flex justify-end border-t border-slate-50">
           <button
             type="submit"
-            className="bg-[#facc15] hover:bg-[#eab308] active:scale-[0.98] text-primary-navy font-bold py-2.5 px-6 rounded-2xl flex items-center gap-3 transition-all shadow-[0_8px_20px_-6px_rgba(250,204,21,0.4)]"
+            className="bg-[#0f172a] hover:bg-[#1e293b] active:scale-[0.98] text-white font-bold py-2.5 px-6 rounded-2xl flex items-center gap-3 transition-all shadow-lg shadow-slate-200"
           >
-            <div className="bg-[#0f172a] text-white p-1.5 rounded-lg">
+            <div className="bg-white/20 text-white p-1.5 rounded-lg">
               <Save size={18} />
             </div>
-            <span className="font-noto">บันทึกข้อมูลทั้งหมด</span>
+            <span className="font-noto">บันทึก</span>
           </button>
         </div>
       </form>

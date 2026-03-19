@@ -13,7 +13,8 @@
 - **การใช้สี (Palette)**:
   - **Primary**: Premium Navy Blue (#0a192f) สำหรับ Sidebar และ Main Text
   - **Sidebar Active**: Deep Navy Blue (#172554)
-  - **Accent**: Golden Yellow (สำหรับปุ่ม Action และสถานะสำคัญ)
+  - **Accent**: Premium Navy Blue (#0f172a) สำหรับปุ่ม Action หลัก (Primary Actions) เพื่อความสุขุมและเป็นทางการ
+  - **Highlight**: Golden Yellow (#facc15) สำหรับสถานะสำคัญหรือจุดที่ต้องการการดึงดูดสายตาพิเศษ
   - **Background**: Clean White / Soft Gray (รหัส #fefefe หรือ #f8fafc) เพื่อให้ดูสบายตา
   - **กฎการใช้สี**: "Less is More" ห้ามใช้สีเยอะเกินไป (Limited Palette) เน้นความสะอาดตา
 - **Layout & Layering**:
