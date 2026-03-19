@@ -63,7 +63,7 @@ export default function CreatorApp() {
 
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen relative">
+      <div className="flex-1 md:ml-72 flex flex-col min-h-screen relative">
         <MobileHeader />
 
         <main className="flex-1 p-4 md:p-8">

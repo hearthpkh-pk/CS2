@@ -1212,6 +1212,9 @@ video {
   --tw-text-opacity: 1;
   color: rgb(4 120 87 / var(--tw-text-opacity, 1));
 }
+.text-primary-navy {
+  color: var(--text-primary);
+}
 .text-red-100 {
   --tw-text-opacity: 1;
   color: rgb(254 226 226 / var(--tw-text-opacity, 1));
@@ -1539,6 +1542,10 @@ select {
 
   .md\:ml-64 {
     margin-left: 16rem;
+  }
+
+  .md\:ml-72 {
+    margin-left: 18rem;
   }
 
   .md\:flex {
