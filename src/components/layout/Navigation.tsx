@@ -22,13 +22,13 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-72 bg-sidebar-bg fixed h-full z-20 text-white shadow-2xl border-r border-white/5">
-      <div className="p-8 mb-10">
-        <div className="flex items-center gap-4 group cursor-pointer transition-all">
-          <div className="p-2.5 bg-[#facc15] rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.2)] group-hover:scale-105 transition-transform">
+    <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-40 text-white shadow-2xl border-r border-white/5 transition-all duration-300 ease-in-out">
+      <div className="p-6 mb-10 overflow-hidden">
+        <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
+          <div className="p-2.5 bg-[#facc15] rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.2)] transition-transform flex-shrink-0">
             <Activity size={24} className="text-sidebar-bg" />
           </div>
-          <div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
             <h1 className="text-xl font-bold tracking-tight font-outfit uppercase">CreatorSpace</h1>
             <p className="text-[9px] text-slate-500 font-bold tracking-[0.25em] font-noto -mt-0.5 uppercase">Dashboard Matrix</p>
           </div>
@@ -41,7 +41,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             key={item.id} 
             onClick={() => setCurrentTab(item.id)}
             className={cn(
-              "w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-semibold transition-all duration-300 relative group overflow-hidden text-[13px] font-noto",
+              "w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-semibold transition-all duration-300 relative group/item overflow-hidden text-[13px] font-noto",
               currentTab === item.id 
                 ? 'bg-sidebar-active text-white shadow-inner' 
                 : 'text-slate-500 hover:text-white hover:bg-white/5'
@@ -50,14 +50,14 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             {currentTab === item.id && (
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#facc15] rounded-r-full shadow-[0_0_10px_rgba(250,204,21,0.5)]"></div>
             )}
-            <item.icon size={19} className={cn("transition-colors", currentTab === item.id ? "text-[#facc15]" : "group-hover:text-[#facc15]")} /> 
-            <span className="tracking-wide">{item.label}</span>
+            <item.icon size={19} className={cn("transition-colors flex-shrink-0", currentTab === item.id ? "text-[#facc15]" : "group-hover/item:text-[#facc15]")} /> 
+            <span className="tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">{item.label}</span>
           </button>
         ))}
       </nav>
       
-      <div className="p-8 border-t border-white/5 opacity-40">
-        <p className="text-[10px] font-noto text-slate-500">v1.2.0 • Personal Edition</p>
+      <div className="p-8 border-t border-white/5 opacity-40 overflow-hidden">
+        <p className="text-[10px] font-noto text-slate-500 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v1.2.0 • Personal Edition</p>
       </div>
     </aside>
   );
