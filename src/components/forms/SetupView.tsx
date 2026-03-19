@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Trash2, Plus, ExternalLink, MoreVertical, LayoutGrid, List } from 'lucide-react';
+import { Trash2, Plus, ExternalLink, MoreVertical, LayoutGrid, List, Settings } from 'lucide-react';
 import { Page } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -19,7 +19,9 @@ interface Props {
 
 export const SetupView = ({ pages, onAdd, onUpdate, onDelete }: Props) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
+  const [activeBoxes, setActiveBoxes] = useState<number[]>(Array.from({ length: 20 }, (_, i) => i + 1));
   
   // Form State
   const [formData, setFormData] = useState({
@@ -41,6 +43,12 @@ export const SetupView = ({ pages, onAdd, onUpdate, onDelete }: Props) => {
     return map;
   }, [pages, boxes]);
 
+  const toggleBox = (boxId: number) => {
+    setActiveBoxes(prev => 
+      prev.includes(boxId) ? prev.filter(id => id !== boxId) : [...prev, boxId].sort((a, b) => a - b)
+    );
+  };
+
   const handleOpenAdd = (boxId?: number) => {
     setEditingPage(null);
     setFormData({
@@ -48,7 +56,7 @@ export const SetupView = ({ pages, onAdd, onUpdate, onDelete }: Props) => {
       url: '',
       category: 'รายการ',
       status: 'Rest',
-      boxId: boxId || 1
+      boxId: boxId || (activeBoxes[0] || 1)
     });
     setIsEditorOpen(true);
   };
@@ -124,17 +132,26 @@ export const SetupView = ({ pages, onAdd, onUpdate, onDelete }: Props) => {
           <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight">Kanban Setup</h2>
           <p className="text-slate-400 font-noto text-sm mt-1">จัดการเพจในระบบทั้ง 20 กล่อง (จำกัด Active ได้เพียง 1 เพจต่อกล่อง)</p>
         </div>
-        <button
-          onClick={() => handleOpenAdd()}
-          className="bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-slate-200"
-        >
-          <Plus size={20} />
-          <span>เพิ่มเพจใหม่</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsConfigOpen(true)}
+            className="p-3.5 bg-white border border-slate-200 text-slate-500 hover:text-[#0f172a] hover:border-[#0f172a] rounded-2xl transition-all shadow-sm hover:shadow-md"
+            title="ตั้งค่ากล่อง"
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={() => handleOpenAdd()}
+            className="bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-slate-200"
+          >
+            <Plus size={20} />
+            <span>เพิ่มเพจใหม่</span>
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {boxes.map(boxId => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {boxes.filter(b => activeBoxes.includes(b)).map(boxId => (
           <div key={boxId} className="flex flex-col h-full min-h-[400px]">
             <div className="flex items-center justify-between mb-3 px-2">
               <div className="flex items-center gap-2">
@@ -307,6 +324,66 @@ export const SetupView = ({ pages, onAdd, onUpdate, onDelete }: Props) => {
                     className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-4 rounded-2xl shadow-lg shadow-slate-200 transition-all active:scale-[0.98]"
                   >
                     {editingPage ? 'บันทึกการแก้ไข' : 'ยืนยันเพิ่มเพจ'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Box Configuration Modal */}
+      {isConfigOpen && (
+        <div className="fixed inset-0 z-[60] overflow-hidden font-prompt">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsConfigOpen(false)} />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl animate-fade-in overflow-hidden">
+              <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div>
+                  <h3 className="text-2xl font-bold text-[#0f172a]">ตั้งค่าการแสดงผลกล่อง</h3>
+                  <p className="text-sm text-slate-400 mt-1">เลือกเปิดหรือปิดกล่องที่ต้องการแสดงบนบอร์ด (สูงสุด 20 กล่อง)</p>
+                </div>
+                <button onClick={() => setIsConfigOpen(false)} className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-600 hover:border-slate-200 transition-all shadow-sm">
+                  <Plus size={28} className="rotate-45" />
+                </button>
+              </div>
+
+              <div className="p-10">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+                  {boxes.map(boxId => (
+                    <button
+                      key={boxId}
+                      onClick={() => toggleBox(boxId)}
+                      className={cn(
+                        "h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all group",
+                        activeBoxes.includes(boxId)
+                          ? "bg-[#0f172a] border-[#0f172a] text-white shadow-lg shadow-slate-200 scale-[1.02]"
+                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      )}
+                    >
+                      <span className="text-lg font-bold font-outfit">{boxId}</span>
+                      <span className={cn(
+                        "text-[9px] font-bold uppercase tracking-widest transition-opacity",
+                        activeBoxes.includes(boxId) ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+                      )}>
+                        ACTIVE
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-10 flex gap-4">
+                  <button 
+                    onClick={() => setActiveBoxes(boxes)}
+                    className="flex-1 py-4 rounded-2xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 transition-all"
+                  >
+                    เปิดทั้งหมด
+                  </button>
+                  <button 
+                    onClick={() => setIsConfigOpen(false)}
+                    className="flex-1 py-4 bg-[#0f172a] text-white rounded-2xl font-bold shadow-lg shadow-slate-200 hover:bg-[#1e293b] transition-all"
+                  >
+                    ตกลง
                   </button>
                 </div>
               </div>
