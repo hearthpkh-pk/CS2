@@ -3,13 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --sidebar-bg: #1959b3;
-  /* Muted Navy Blue - More comfortable for eyes */
-  --sidebar-active: #164d9b;
+  --sidebar-bg: #0f51b4;
+  /* Vibrant Blue from "Golden Rule" */
+  --sidebar-active: #0b5ed7;
   --text-primary: #0f172a;
-  /* Original Premium Navy for text */
   --accent-yellow: #facc15;
   --accent-yellow-hover: #eab308;
+
+  --primary-blue: #0d6efd;
+  --secondary-blue: #eff6ff;
+  --success-green: #4ade80;
+  --danger-red: #f87171;
+  --radius-xl: 16px;
 
   --font-heading: var(--font-outfit), sans-serif;
   --font-body: var(--font-noto-thai), sans-serif;

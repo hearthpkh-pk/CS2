@@ -47,36 +47,36 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto animate-fade-in pb-6">
-      <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-6">
+    <div className="max-w-5xl mx-auto animate-fade-in pb-10">
+      <div className="flex justify-between items-end border-b border-slate-200 pb-6 mb-8">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg">
-              <FilePlus className="text-primary-navy" size={22} />
+          <div className="flex items-center gap-3 mb-1.5">
+            <div className="p-2 bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+              <FilePlus className="text-[var(--primary-blue)]" size={22} />
             </div>
-            <h2 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Transactions</h2>
+            <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight leading-none pt-1">Transactions</h2>
           </div>
-          <p className="text-slate-500 text-sm font-noto">กรอกข้อมูลทีละหลายเพจในรูปแบบตาราง</p>
+          <p className="text-slate-400 text-xs font-noto tracking-wide">กรอกข้อมูลทีละหลายเพจในรูปแบบตาราง • <span className="text-[var(--primary-blue)] font-bold italic">Real-time update</span></p>
         </div>
-        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm transition-all focus-within:ring-2 focus-within:ring-slate-100">
+        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm transition-all focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-[var(--primary-blue)]">
           <input
             type="date"
             value={logDate}
             onChange={e => setLogDate(e.target.value)}
-            className="text-slate-700 font-semibold outline-none bg-transparent font-inter text-sm"
+            className="text-slate-700 font-bold outline-none bg-transparent font-inter text-sm cursor-pointer"
           />
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/40 border-b border-slate-100">
-                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto w-1/3">ชื่อเพจ / หมวดหมู่</th>
-                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto text-center">สถานะ</th>
-                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto text-center">ยอดผู้ติดตามล่าสุด</th>
-                <th className="p-4 text-slate-400 font-semibold text-[10px] uppercase tracking-widest font-noto text-center">ยอดวิวของวันนี้</th>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto w-1/3">ชื่อเพจ / หมวดหมู่</th>
+                <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">สถานะ</th>
+                <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">ยอดผู้ติดตาม</th>
+                <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">ยอดวิววันนี้</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -98,22 +98,22 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
                       {p.status}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 px-6">
                     <input
                       type="number"
-                      placeholder="กรอกตัวเลข"
+                      placeholder="0"
                       value={inputData[p.id]?.followers || ''}
                       onChange={e => setInputData(prev => ({ ...prev, [p.id]: { ...prev[p.id], followers: e.target.value } }))}
-                      className="w-full bg-[#fcfcfc] border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-inter outline-none focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 text-center transition-all"
+                      className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold font-inter outline-none focus:border-[var(--primary-blue)] focus:bg-white focus:ring-4 focus:ring-blue-50 text-center transition-all placeholder:text-slate-200"
                     />
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 px-6">
                     <input
                       type="number"
-                      placeholder="กรอกตัวเลข"
+                      placeholder="0"
                       value={inputData[p.id]?.views || ''}
                       onChange={e => setInputData(prev => ({ ...prev, [p.id]: { ...prev[p.id], views: e.target.value } }))}
-                      className="w-full bg-[#fcfcfc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-sm font-inter outline-none focus:border-yellow-400 focus:bg-white focus:ring-4 focus:ring-yellow-400/10 text-center transition-all"
+                      className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold font-inter outline-none focus:border-[var(--primary-blue)] focus:bg-white focus:ring-4 focus:ring-blue-50 text-center transition-all placeholder:text-slate-200"
                     />
                   </td>
                 </tr>
@@ -121,15 +121,13 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
             </tbody>
           </table>
         </div>
-        <div className="p-6 bg-slate-50/30 flex justify-end border-t border-slate-50">
+        <div className="p-8 bg-slate-50/30 flex justify-end border-t border-slate-100">
           <button
             type="submit"
-            className="bg-[#0f172a] hover:bg-[#1e293b] active:scale-[0.98] text-white font-bold py-2.5 px-6 rounded-2xl flex items-center gap-3 transition-all shadow-lg shadow-slate-200"
+            className="bg-[var(--primary-blue)] hover:bg-[#0b5ed7] active:scale-[0.98] text-white font-bold py-3.5 px-10 rounded-2xl flex items-center gap-3 transition-all shadow-xl shadow-blue-100"
           >
-            <div className="bg-white/20 text-white p-1.5 rounded-lg">
-              <Save size={18} />
-            </div>
-            <span className="font-noto">บันทึก</span>
+            <Save size={20} />
+            <span className="font-noto text-lg">บันทึกข้อมูลวันนี้</span>
           </button>
         </div>
       </form>

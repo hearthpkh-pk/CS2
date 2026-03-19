@@ -29,8 +29,8 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             <Activity size={24} className="text-sidebar-bg" />
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
-            <h1 className="text-xl font-bold tracking-tight font-outfit uppercase">CreatorSpace</h1>
-            <p className="text-[9px] text-slate-500 font-bold tracking-[0.25em] font-noto -mt-0.5 uppercase">Dashboard Matrix</p>
+            <h1 className="text-xl font-bold tracking-tight font-outfit uppercase text-white">CreatorSpace</h1>
+            <p className="text-[9px] text-blue-100/60 font-bold tracking-[0.25em] font-noto -mt-0.5 uppercase">Dashboard Matrix</p>
           </div>
         </div>
       </div>
@@ -43,8 +43,8 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             className={cn(
               "w-full flex items-center gap-4 px-5 py-4 rounded-l-3xl font-semibold transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
               currentTab === item.id 
-                ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10px_rgba(0,0,0,0.02)]' 
-                : 'text-slate-500 hover:text-white hover:bg-white/5'
+                ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)]' 
+                : 'text-blue-100/70 hover:text-white hover:bg-white/10'
             )}
           >
             {currentTab === item.id && (
@@ -60,7 +60,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       </nav>
       
       <div className="p-8 border-t border-white/5 opacity-40 overflow-hidden">
-        <p className="text-[10px] font-noto text-slate-500 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v1.2.0 • Personal Edition</p>
+        <p className="text-[10px] font-noto text-blue-100/60 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v1.2.0 • Personal Edition</p>
       </div>
     </aside>
   );
