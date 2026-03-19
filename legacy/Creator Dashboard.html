@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Dashboard</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#F97316', // Orange 500
+            'primary-hover': '#EA580C', // Orange 600
+            'primary-light': '#FFF7ED', // Orange 50
+          },
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+    body { background-color: #F4F6F8; color: #334155; margin: 0; padding: 0; }
+    .custom-shadow { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; appearance: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    // --- ICONS ---
+    const IconProps = { size: 20, strokeWidth: 2, fill: "none", stroke: "currentColor", strokeLinecap: "round", strokeLinejoin: "round" };
+    const Activity = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
+    const LayoutDashboard = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>;
+    const FilePlus = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>;
+    const Settings = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+    const TrendingUp = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
+    const Users = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+    const Eye = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+    const CheckCircle = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+    const Save = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
+    const Trash2 = (p) => <svg {...IconProps} {...p} viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+
+    // --- MOCK DATA ---
+    const initialPages = [
+      { id: '1', name: 'รีวิวหนังมันส์ๆ', category: 'หมวดหนัง', status: 'Active' },
+      { id: '2', name: 'ข่าวสด 24 ชม.', category: 'หมวดข่าว', status: 'Active' },
+      { id: '3', name: 'พาไปกินฟินสุดๆ', category: 'หมวดรายการ', status: 'Active' }
+    ];
+
+    const generateMockLogs = () => {
+      const logs = [];
+      const today = new Date();
+      for(let i = 90; i >= 0; i--) {
+         const d = new Date(today);
+         d.setDate(d.getDate() - i);
+         const dateStr = d.toISOString().split('T')[0];
+         
+         initialPages.forEach(p => {
+            let baseFollowers = 10000 + parseInt(p.id) * 5000;
+            let baseViews = 5000 + parseInt(p.id) * 2000;
+            logs.push({
+                id: `log-${p.id}-${dateStr}`,
+                pageId: p.id,
+                date: dateStr,
+                followers: baseFollowers + ((90 - i) * 150) + Math.floor(Math.random() * 500),
+                views: baseViews + Math.floor(Math.random() * 5000)
+            });
+         });
+      }
+      return logs;
+    }
+    const initialLogs = generateMockLogs();
+
+    const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    const shortThaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+    // --- COMPONENTS ---
+    const Toast = ({ message }) => (
+      <div className="fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg flex items-center gap-3 border border-emerald-200 bg-white text-emerald-700 animate-fade-in">
+         <CheckCircle size={20} className="text-emerald-500" />
+         <span className="font-medium text-sm">{message}</span>
+      </div>
+    );
+
+    // กราฟแบบรวมเส้น 2 เส้น (แบบในรูปตัวอย่าง)
+    const CombinedAreaChart = ({ data }) => {
+      if (!data || data.length === 0) return <div className="h-72 flex items-center justify-center text-slate-400 bg-slate-50 rounded-xl border border-slate-100">ไม่มีข้อมูลในช่วงเวลานี้</div>;
+
+      const width = 900;
+      const height = 300;
+      const padding = 40;
+
+      const maxFollowers = Math.max(...data.map(d => d.followers), 1);
+      const maxViews = Math.max(...data.map(d => d.views), 1);
+      const minFollowers = Math.min(...data.map(d => d.followers), 0);
+      const minViews = Math.min(...data.map(d => d.views), 0);
+      
+      const overallMax = Math.max(maxFollowers, maxViews);
+      const buffer = overallMax * 0.1;
+      const bufferedMax = overallMax + buffer;
+
+      const getPoints = (dataKey) => data.map((d, i) => {
+        const x = padding + (i / Math.max(data.length - 1, 1)) * (width - padding * 2);
+        const y = height - padding - (d[dataKey] / bufferedMax) * (height - padding * 2);
+        return { x, y, value: d[dataKey], date: d.date };
+      });
+
+      const followersPoints = getPoints('followers');
+      const viewsPoints = getPoints('views');
+
+      const createPath = (points) => `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+      const createArea = (points, path) => `M ${points[0].x},${height - padding} L ${path.substring(2)} L ${points[points.length-1].x},${height - padding} Z`;
+
+      const fPath = createPath(followersPoints);
+      const vPath = createPath(viewsPoints);
+      const fArea = createArea(followersPoints, fPath);
+
+      const formatChartDate = (dateString) => {
+        if(!dateString) return '';
+        const d = new Date(dateString);
+        return `${d.getDate()} ${shortThaiMonths[d.getMonth()]}`;
+      };
+
+      return (
+        <div className="w-full overflow-x-auto overflow-y-visible">
+          <div className="min-w-[700px] h-72 relative">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+              <defs>
+                <linearGradient id="grad-followers" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F97316" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#F97316" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              
+              {/* Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                const y = padding + ratio * (height - padding*2);
+                const val = Math.round(bufferedMax - (ratio * bufferedMax));
+                return (
+                  <g key={ratio}>
+                    <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="#E2E8F0" strokeWidth="1" />
+                    <text x={padding - 10} y={y + 4} textAnchor="end" fill="#94A3B8" fontSize="10">{val > 0 ? (val/1000).toFixed(1)+'k' : '0'}</text>
+                  </g>
+                );
+              })}
+
+              {/* Views Line (Gray) */}
+              <path d={vPath} fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              {viewsPoints.map((p, i) => (
+                 <circle key={`v-${i}`} cx={p.x} cy={p.y} r="3" fill="#ffffff" stroke="#94A3B8" strokeWidth="2" />
+              ))}
+
+              {/* Followers Line & Area (Orange) */}
+              <path d={fArea} fill="url(#grad-followers)" />
+              <path d={fPath} fill="none" stroke="#F97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              
+              {/* Tooltip Overlay */}
+              {followersPoints.map((p, i) => (
+                <g key={`f-${i}`} className="group cursor-pointer">
+                  {/* Invisible larger hover area */}
+                  <rect x={p.x - 15} y={padding} width="30" height={height - padding*2} fill="transparent" />
+                  
+                  {/* Point Highlight */}
+                  <circle cx={p.x} cy={p.y} r="5" fill="#ffffff" stroke="#F97316" strokeWidth="2.5" className="opacity-0 group-hover:opacity-100 transition-opacity shadow-md" />
+                  <circle cx={viewsPoints[i].x} cy={viewsPoints[i].y} r="4" fill="#ffffff" stroke="#94A3B8" strokeWidth="2" className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  {/* Tooltip Box (ใหญ่และชัดเจน) */}
+                  <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                     <rect x={p.x - 70} y={Math.min(p.y, viewsPoints[i].y) - 85} width="140" height="70" rx="6" fill="#ffffff" stroke="#E2E8F0" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.1))" />
+                     <text x={p.x} y={Math.min(p.y, viewsPoints[i].y) - 65} textAnchor="middle" fill="#64748B" fontSize="11" fontWeight="500">{formatChartDate(p.date)}</text>
+                     <circle cx={p.x - 50} cy={Math.min(p.y, viewsPoints[i].y) - 48} r="4" fill="#F97316" />
+                     <text x={p.x - 40} y={Math.min(p.y, viewsPoints[i].y) - 44} fill="#1E293B" fontSize="12" fontWeight="bold">ติดตาม: {p.value.toLocaleString()}</text>
+                     <circle cx={p.x - 50} cy={Math.min(p.y, viewsPoints[i].y) - 28} r="4" fill="#94A3B8" />
+                     <text x={p.x - 40} y={Math.min(p.y, viewsPoints[i].y) - 24} fill="#1E293B" fontSize="12" fontWeight="bold">ยอดวิว: {viewsPoints[i].value.toLocaleString()}</text>
+                  </g>
+                </g>
+              ))}
+            </svg>
+            <div className="flex justify-between px-10 text-xs text-slate-400 mt-2 font-medium">
+               <span>{formatChartDate(data[0]?.date)}</span>
+               <span>{formatChartDate(data[Math.floor(data.length/2)]?.date)}</span>
+               <span>{formatChartDate(data[data.length-1]?.date)}</span>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- MAIN APP ---
+    function App() {
+      const [currentTab, setCurrentTab] = useState('dashboard');
+      const [pages, setPages] = useState(initialPages);
+      const [logs, setLogs] = useState(initialLogs);
+      const [toast, setToast] = useState(null);
+
+      const d = new Date();
+      const currentMonth = (d.getMonth() + 1).toString().padStart(2, '0');
+      const currentYear = d.getFullYear().toString();
+
+      // Month/Year Filters
+      const [selectedMonth, setSelectedMonth] = useState('all'); // 'all', '01', '02'...
+      const [selectedYear, setSelectedYear] = useState(currentYear);
+      const [selectedPage, setSelectedPage] = useState('all');
+
+      const showToast = (msg) => {
+        setToast({ message: msg });
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      // --- DATA PROCESSING ---
+      const chartData = useMemo(() => {
+        const relevantPages = selectedPage === 'all' ? pages : pages.filter(p => p.id === selectedPage);
+        const relevantPageIds = relevantPages.map(p => p.id);
+
+        let filteredLogs = logs.filter(l => {
+          const inPages = relevantPageIds.includes(l.pageId);
+          const lDate = new Date(l.date);
+          const inYear = lDate.getFullYear().toString() === selectedYear;
+          const inMonth = selectedMonth === 'all' ? true : (lDate.getMonth() + 1).toString().padStart(2, '0') === selectedMonth;
+          return inPages && inYear && inMonth;
+        });
+        
+        filteredLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Group by Date for Chart
+        const grouped = {};
+        filteredLogs.forEach(log => {
+          if (!grouped[log.date]) grouped[log.date] = { date: log.date, views: 0, followersSum: 0 };
+          grouped[log.date].views += Number(log.views);
+          grouped[log.date].followersSum += Number(log.followers);
+        });
+
+        return Object.values(grouped).map(g => ({
+          date: g.date, 
+          views: g.views, 
+          followers: selectedPage === 'all' ? Math.floor(g.followersSum / relevantPageIds.length) : g.followersSum // Average followers if all pages
+        }));
+      }, [pages, logs, selectedPage, selectedMonth, selectedYear]);
+
+      const totals = useMemo(() => {
+        let currentViews = 0, prevViews = 0;
+        let currentFollowers = chartData.length > 0 ? chartData[chartData.length-1].followers : 0;
+        
+        chartData.forEach(d => currentViews += d.views);
+        // Mock prev value for UI purpose
+        prevViews = Math.floor(currentViews * 0.85);
+
+        return { views: currentViews, prevViews, followers: currentFollowers };
+      }, [chartData]);
+
+
+      // --- VIEWS ---
+      const DashboardView = () => (
+        <div className="animate-fade-in space-y-6 max-w-6xl mx-auto pb-10">
+          
+          {/* Header & Filters (เหมือนในรูปเป๊ะ) */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200 pb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">Dashboard</h2>
+              <p className="text-slate-500 text-sm mt-1">สรุปการเติบโตและสถิติ</p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">เพจ:</span>
+                <select value={selectedPage} onChange={e => setSelectedPage(e.target.value)} className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-primary shadow-sm min-w-[140px]">
+                   <option value="all">ทั้งหมด</option>
+                   {pages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">เดือน:</span>
+                <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-primary shadow-sm hover:border-primary cursor-pointer w-32">
+                   <option value="all">ทั้งหมด</option>
+                   {thaiMonths.map((m, i) => <option key={i} value={(i+1).toString().padStart(2, '0')}>{m}</option>)}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">ปี:</span>
+                <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-primary shadow-sm hover:border-primary cursor-pointer w-24">
+                   <option value="2024">2567</option>
+                   <option value="2025">2568</option>
+                   <option value="2026">2569</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl p-5 border border-slate-100 custom-shadow flex items-center justify-between">
+              <div>
+                <p className="text-slate-500 text-sm mb-1">ผู้ติดตามปัจจุบัน</p>
+                <h3 className="text-3xl font-bold text-primary">{totals.followers.toLocaleString()}</h3>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-primary">
+                <Users size={24} />
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-5 border border-slate-100 custom-shadow flex items-center justify-between">
+              <div>
+                <p className="text-slate-500 text-sm mb-1">ยอดวิวรวม (ช่วงเวลาที่เลือก)</p>
+                <div className="flex items-baseline gap-3">
+                   <h3 className="text-3xl font-bold text-slate-800">{totals.views.toLocaleString()}</h3>
+                   <span className="text-xs font-semibold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded">
+                     +{((totals.views - totals.prevViews)/totals.prevViews * 100 || 0).toFixed(1)}%
+                   </span>
+                </div>
+              </div>
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                <Eye size={24} />
+              </div>
+            </div>
+          </div>
+
+          {/* Main Chart */}
+          <div className="bg-white rounded-xl p-6 border border-slate-100 custom-shadow">
+            <div className="flex justify-between items-center mb-6">
+               <h3 className="text-lg font-bold text-slate-800">แนวโน้มสถิติ</h3>
+               <div className="flex gap-4 text-sm font-medium">
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-primary"></div> ผู้ติดตาม</div>
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-slate-400"></div> ยอดวิว</div>
+               </div>
+            </div>
+            <CombinedAreaChart data={chartData} />
+          </div>
+
+        </div>
+      );
+
+      // --- ADD LOG VIEW ---
+      const AddLogView = () => {
+        const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+        const [inputData, setInputData] = useState({});
+
+        useEffect(() => {
+          const dataForDate = {};
+          pages.forEach(p => {
+            const existingLog = logs.find(l => l.pageId === p.id && l.date === logDate);
+            dataForDate[p.id] = { followers: existingLog?.followers || '', views: existingLog?.views || '' };
+          });
+          setInputData(dataForDate);
+        }, [logDate, pages, logs]);
+
+        const handleSaveMultiple = (e) => {
+          e.preventDefault();
+          let updatedLogs = [...logs];
+          let hasUpdates = false;
+
+          pages.forEach(p => {
+            const f = inputData[p.id]?.followers;
+            const v = inputData[p.id]?.views;
+            if (f !== '' && v !== '' && f !== undefined && v !== undefined) {
+              const existingIndex = updatedLogs.findIndex(l => l.pageId === p.id && l.date === logDate);
+              const newLog = { id: existingIndex >= 0 ? updatedLogs[existingIndex].id : `log-${p.id}-${Date.now()}`, pageId: p.id, date: logDate, followers: parseInt(f), views: parseInt(v) };
+              if (existingIndex >= 0) updatedLogs[existingIndex] = newLog;
+              else updatedLogs.push(newLog);
+              hasUpdates = true;
+            }
+          });
+          if (hasUpdates) { setLogs(updatedLogs); showToast('บันทึกข้อมูลเรียบร้อย'); }
+        };
+
+        return (
+          <div className="max-w-4xl mx-auto animate-fade-in pb-10">
+            <div className="flex justify-between items-end border-b border-slate-200 pb-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">ลงบันทึกประจำวัน</h2>
+                <p className="text-slate-500 text-sm mt-1">กรอกข้อมูลทีละหลายเพจ</p>
+              </div>
+              <input type="date" value={logDate} onChange={e => setLogDate(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-800 font-medium outline-none focus:border-primary shadow-sm" />
+            </div>
+            
+            <form onSubmit={handleSaveMultiple} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="p-4 text-slate-500 font-medium text-sm w-1/3">ชื่อเพจ</th>
+                    <th className="p-4 text-slate-500 font-medium text-sm">ยอดผู้ติดตามล่าสุด</th>
+                    <th className="p-4 text-slate-500 font-medium text-sm">ยอดวิวของวันนี้</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {pages.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/30 transition-colors">
+                      <td className="p-4">
+                        <div className="font-semibold text-slate-800">{p.name}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{p.category}</div>
+                      </td>
+                      <td className="p-4">
+                        <input type="number" placeholder="0" value={inputData[p.id]?.followers || ''} onChange={e => setInputData(prev => ({...prev, [p.id]: {...prev[p.id], followers: e.target.value}}))} className="w-full max-w-[200px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-colors" />
+                      </td>
+                      <td className="p-4">
+                        <input type="number" placeholder="0" value={inputData[p.id]?.views || ''} onChange={e => setInputData(prev => ({...prev, [p.id]: {...prev[p.id], views: e.target.value}}))} className="w-full max-w-[200px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-sm outline-none focus:border-primary focus:bg-white transition-colors" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button type="submit" className="bg-primary hover:bg-primary-hover text-white font-medium py-2 px-6 rounded-lg flex items-center transition-colors">
+                  <Save size={18} className="mr-2" /> บันทึกข้อมูล
+                </button>
+              </div>
+            </form>
+          </div>
+        );
+      };
+
+      // --- MANAGE PAGES VIEW ---
+      const ManagePagesView = () => {
+        const [name, setName] = useState('');
+        return (
+          <div className="max-w-4xl mx-auto animate-fade-in pb-10">
+            <div className="border-b border-slate-200 pb-4 mb-6">
+              <h2 className="text-2xl font-bold text-slate-800">จัดการเพจ</h2>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6 p-5">
+              <div className="flex gap-3">
+                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="ชื่อเพจใหม่..." className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 outline-none focus:border-primary focus:bg-white" />
+                <button onClick={() => { if(name) { setPages([...pages, { id: Date.now().toString(), name, category: 'อื่นๆ', status: 'Active' }]); setName(''); showToast('เพิ่มสำเร็จ'); } }} className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">เพิ่มเพจ</button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+               {pages.map(page => (
+                  <div key={page.id} className="flex items-center justify-between p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                     <div>
+                        <div className="font-semibold text-slate-800">{page.name}</div>
+                        <div className="text-xs text-slate-400 mt-1">{page.category}</div>
+                     </div>
+                     <button onClick={() => { setPages(pages.filter(p => p.id !== page.id)); showToast('ลบสำเร็จ'); }} className="text-slate-400 hover:text-red-500 p-2"><Trash2 size={18}/></button>
+                  </div>
+               ))}
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className="flex min-h-screen">
+          {toast && <Toast message={toast.message} />}
+
+          {/* Sidebar (Light Theme with Orange active state) */}
+          <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 fixed h-full z-20">
+            <div className="p-6 mb-2 flex items-center gap-3">
+              <div className="bg-primary p-2 rounded-xl text-white">
+                <Activity size={24}/>
+              </div>
+              <h1 className="text-xl font-bold text-slate-800">CreatorSpace</h1>
+            </div>
+            
+            <nav className="flex-1 px-4 space-y-1.5">
+              {[
+                { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+                { id: 'add-log', icon: FilePlus, label: 'Transactions' },
+                { id: 'manage-pages', icon: Settings, label: 'Setup' }
+              ].map(item => (
+                <button key={item.id} onClick={() => setCurrentTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
+                    currentTab === item.id 
+                      ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  }`}>
+                  <item.icon size={20} /> {item.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Main Content Area */}
+          <div className="flex-1 md:ml-64 flex flex-col min-h-screen relative">
+            {/* Mobile Header */}
+            <header className="md:hidden bg-white border-b border-slate-200 p-4 sticky top-0 z-30 flex items-center gap-2">
+              <div className="bg-primary p-1.5 rounded-lg text-white"><Activity size={20}/></div>
+              <h1 className="text-lg font-bold text-slate-800">CreatorSpace</h1>
+            </header>
+
+            <main className="flex-1 p-4 md:p-8">
+              {currentTab === 'dashboard' && <DashboardView />}
+              {currentTab === 'add-log' && <AddLogView />}
+              {currentTab === 'manage-pages' && <ManagePagesView />}
+            </main>
+
+            {/* Mobile Bottom Nav */}
+            <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around p-2 z-50">
+              {[
+                { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+                { id: 'add-log', icon: FilePlus, label: 'Add Data' },
+                { id: 'manage-pages', icon: Settings, label: 'Setup' }
+              ].map(item => (
+                <button key={item.id} onClick={() => setCurrentTab(item.id)} className={`flex flex-col items-center p-2 rounded-lg ${currentTab === item.id ? 'text-primary' : 'text-slate-400'}`}>
+                   <item.icon size={22} className="mb-1" />
+                   <span className="text-[10px] font-medium">{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

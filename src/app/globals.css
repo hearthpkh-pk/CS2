@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sidebar-bg: #1959b3;
+  /* Muted Navy Blue - More comfortable for eyes */
+  --sidebar-active: #164d9b;
+  --text-primary: #0f172a;
+  /* Original Premium Navy for text */
+  --accent-yellow: #facc15;
+  --accent-yellow-hover: #eab308;
+
+  --font-heading: var(--font-outfit), sans-serif;
+  --font-body: var(--font-noto-thai), sans-serif;
+  --font-mono: var(--font-inter), monospace;
+}
+
+body {
+  background-color: #fefefe;
+  color: #205bb9;
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+}
+
+.font-noto {
+  font-family: var(--font-body);
+}
+
+.font-outfit {
+  font-family: var(--font-heading);
+}
+
+.font-inter {
+  font-family: var(--font-mono);
+}
+
+.custom-shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Custom Select styling */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+  padding-right: 2.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
