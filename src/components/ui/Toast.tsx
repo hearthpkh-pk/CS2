@@ -8,8 +8,10 @@ interface Props {
 }
 
 export const Toast = ({ message }: Props) => (
-  <div className="fixed top-5 right-5 z-[100] px-5 py-3 rounded-lg shadow-lg flex items-center gap-3 border border-emerald-200 bg-white text-emerald-700 animate-fade-in font-prompt">
-     <CheckCircle size={20} className="text-emerald-500" />
-     <span className="font-medium text-sm">{message}</span>
+  <div className="fixed bottom-8 right-8 z-[250] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-emerald-100 bg-white text-emerald-800 animate-fade-in font-noto">
+     <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shadow-sm">
+        <CheckCircle size={22} className="text-emerald-500" />
+     </div>
+     <span className="font-bold text-sm tracking-tight">{message}</span>
   </div>
 );

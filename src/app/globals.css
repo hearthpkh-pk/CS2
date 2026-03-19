@@ -16,9 +16,11 @@
   --danger-red: #f87171;
   --radius-xl: 16px;
 
-  --font-heading: var(--font-outfit), sans-serif;
+  --font-heading: var(--font-outfit), var(--font-noto-thai), sans-serif;
   --font-body: var(--font-noto-thai), sans-serif;
   --font-mono: var(--font-inter), monospace;
+  --font-noto: var(--font-noto-thai), sans-serif;
+  --font-prompt: var(--font-noto-thai), sans-serif;
 }
 
 body {

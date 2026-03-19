@@ -7,6 +7,8 @@ export interface Page {
   adminIds?: string[];
   boxId: number; // 1-20
   createdAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface DailyLog {
@@ -36,4 +38,6 @@ export interface FBAccount {
   profileUrl?: string;
   cookie?: string;
   createdAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }

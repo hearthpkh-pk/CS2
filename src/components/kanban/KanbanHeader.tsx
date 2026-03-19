@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LayoutGrid, Shield, Settings, Plus } from 'lucide-react';
+import { LayoutGrid, Shield, Settings, Plus, Trash2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,6 +15,8 @@ interface KanbanHeaderProps {
   onOpenConfig: () => void;
   onAddPage: () => void;
   onAddAccount: () => void;
+  onOpenTrash: () => void;
+  trashCount: number;
 }
 
 export const KanbanHeader = ({
@@ -22,7 +24,9 @@ export const KanbanHeader = ({
   setViewMode,
   onOpenConfig,
   onAddPage,
-  onAddAccount
+  onAddAccount,
+  onOpenTrash,
+  trashCount
 }: KanbanHeaderProps) => {
   return (
     <div className="sticky top-0 z-40 bg-slate-50 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 pb-6 mb-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
@@ -52,7 +56,7 @@ export const KanbanHeader = ({
             </button>
           </div>
         </div>
-        <p className="text-slate-400 font-noto text-[11px] mt-1.5 italic">
+        <p className="text-slate-400 font-noto text-[11px] mt-1.5">
           {viewMode === 'pages' ? "One Active per box • 20 Units Max" : "Manage Facebook Credentials for each box"}
         </p>
       </div>
@@ -63,6 +67,18 @@ export const KanbanHeader = ({
           title="ตั้งค่ากล่อง"
         >
           <Settings size={18} />
+        </button>
+        <button
+          onClick={onOpenTrash}
+          className="p-3 bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 rounded-2xl transition-all shadow-sm hover:shadow-md relative group"
+          title="ถังขยะ"
+        >
+          <Trash2 size={18} />
+          {trashCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm group-hover:scale-110 transition-transform">
+              {trashCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => viewMode === 'pages' ? onAddPage() : onAddAccount()}

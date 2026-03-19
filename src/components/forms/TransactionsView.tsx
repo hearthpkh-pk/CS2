@@ -56,7 +56,7 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
             </div>
             <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight leading-none pt-1">Transactions</h2>
           </div>
-          <p className="text-slate-400 text-xs font-noto tracking-wide">กรอกข้อมูลทีละหลายเพจในรูปแบบตาราง • <span className="text-[var(--primary-blue)] font-bold italic">Real-time update</span></p>
+          <p className="text-slate-400 text-xs font-noto tracking-wide">กรอกข้อมูลทีละหลายเพจในรูปแบบตาราง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span></p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm transition-all focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-[var(--primary-blue)]">
           <input

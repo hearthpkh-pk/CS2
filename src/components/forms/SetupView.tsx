@@ -7,7 +7,7 @@ import {
   Key, Database, ChevronRight, Copy, 
   CheckCircle2, AlertCircle 
 } from 'lucide-react';
-import { Page, FBAccount } from '@/types';
+import { FBAccount, Page } from '@/types';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -21,6 +21,8 @@ import { AccountEditorDrawer } from '../kanban/AccountEditorDrawer';
 import { BoxConfigModal } from '../kanban/BoxConfigModal';
 import { AdminBar } from '../kanban/AdminBar';
 import { KanbanColumn } from '../kanban/KanbanColumn';
+import { ConfirmationModal } from '../kanban/ConfirmationModal';
+import { TrashDrawer } from '../kanban/TrashDrawer';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,16 +34,24 @@ interface Props {
   onAdd: (page: Omit<Page, 'id'>) => void;
   onUpdate: (page: Page) => void;
   onDelete: (id: string) => void;
+  onRestorePage: (id: string) => void;
+  onPermanentDeletePage: (id: string) => void;
   onAddAccount: (acc: Omit<FBAccount, 'id'>) => void;
   onUpdateAccount: (acc: FBAccount) => void;
   onDeleteAccount: (id: string) => void;
+  onRestoreAccount: (id: string) => void;
+  onPermanentDeleteAccount: (id: string) => void;
+  onClearTrash: () => void;
 }
 
 const BOXES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
-export const SetupView = ({ 
+export const SetupView = ({
   pages, accounts, onAdd, onUpdate, onDelete,
-  onAddAccount, onUpdateAccount, onDeleteAccount 
+  onRestorePage, onPermanentDeletePage,
+  onAddAccount, onUpdateAccount, onDeleteAccount,
+  onRestoreAccount, onPermanentDeleteAccount,
+  onClearTrash
 }: Props) => {
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -51,6 +61,26 @@ export const SetupView = ({
   const [editingAccount, setEditingAccount] = useState<FBAccount | null>(null);
   const [activeBoxes, setActiveBoxes] = useState<number[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Trash & Confirmation State
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const activePages = useMemo(() => pages.filter(p => !p.isDeleted), [pages]);
+  const activeAccounts = useMemo(() => accounts.filter(a => !a.isDeleted), [accounts]);
+  const deletedPages = useMemo(() => pages.filter(p => p.isDeleted), [pages]);
+  const deletedAccounts = useMemo(() => accounts.filter(a => a.isDeleted), [accounts]);
 
   const boxes = BOXES;
 
@@ -107,7 +137,7 @@ export const SetupView = ({
   const pagesByBox = useMemo(() => {
     const map: Record<number, Page[]> = {};
     boxes.forEach(b => map[b] = []);
-    pages.forEach(p => {
+    activePages.forEach(p => {
       if (map[p.boxId]) map[p.boxId].push(p);
     });
 
@@ -121,12 +151,12 @@ export const SetupView = ({
     });
 
     return map;
-  }, [pages, boxes]);
+  }, [activePages, boxes]);
 
   const accountsByBox = useMemo(() => {
     const grouped: Record<number, FBAccount[]> = {};
     boxes.forEach(boxId => {
-      grouped[boxId] = accounts
+      grouped[boxId] = activeAccounts
         .filter(acc => acc.boxId === boxId)
         .sort((a, b) => {
           // Priority: Admin > Live > Others
@@ -142,10 +172,10 @@ export const SetupView = ({
         });
     });
     return grouped;
-  }, [accounts, boxes]);
+  }, [activeAccounts, boxes]);
 
   const toggleBox = (boxId: number) => {
-    setActiveBoxes(prev => 
+    setActiveBoxes(prev =>
       prev.includes(boxId) ? prev.filter(id => id !== boxId) : [...prev, boxId].sort((a, b) => a - b)
     );
   };
@@ -276,7 +306,7 @@ export const SetupView = ({
   const handleDrop = (e: React.DragEvent, targetBoxId: number) => {
     e.preventDefault();
     const pageId = e.dataTransfer.getData('pageId');
-    const page = pages.find(p => p.id === pageId);
+    const page = activePages.find(p => p.id === pageId);
     if (page && page.boxId !== targetBoxId) {
       if (page.status === 'Active') {
         enforceSingleActive(targetBoxId, page.id);
@@ -298,21 +328,32 @@ export const SetupView = ({
 
   return (
     <div className="animate-fade-in pb-20 relative bg-slate-50 min-h-screen -m-6 p-6">
-      <KanbanHeader 
+      <KanbanHeader
         viewMode={viewMode}
         setViewMode={setViewMode}
         onOpenConfig={() => setIsConfigOpen(true)}
+        onOpenTrash={() => setIsTrashOpen(true)}
         onAddPage={() => handleOpenAdd()}
         onAddAccount={() => handleOpenAccountAdd()}
+        trashCount={deletedPages.length + deletedAccounts.length}
       />
 
       <div className="pb-12 bg-slate-50 space-y-8">
-        <AdminBar 
+        <AdminBar
           activeBoxes={activeBoxes}
           accountsByBox={accountsByBox}
           handleOpenAccountAdd={handleOpenAccountAdd}
           handleAccountEdit={handleAccountEdit}
-          onDeleteAccount={onDeleteAccount}
+          onDeleteAccount={(id) => {
+            const acc = activeAccounts.find(a => a.id === id);
+            setConfirmConfig({
+              isOpen: true,
+              title: 'ย้ายบัญชีลงถังขยะ?',
+              message: `คุณแน่ใจหรือไม่ว่าต้องการย้ายบัญชี "${acc?.name}" ลงถังขยะ? บัญชีนี้จะไม่แสดงบนกระดานแต่ยังสามารถกู้คืนได้ภายหลัง`,
+              onConfirm: () => onDeleteAccount(id),
+              variant: 'warning'
+            });
+          }}
         />
 
         <div className="grid grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6 px-2">
@@ -325,14 +366,32 @@ export const SetupView = ({
               accounts={accountsByBox[boxId] || []}
               handleOpenAdd={handleOpenAdd}
               handleEdit={handleEdit}
-              onDelete={onDelete}
+              onDelete={(id) => {
+                const page = activePages.find(p => p.id === id);
+                setConfirmConfig({
+                  isOpen: true,
+                  title: 'ย้ายเพจลงถังขยะ?',
+                  message: `คุณแน่ใจหรือไม่ว่าต้องการย้ายเพจ "${page?.name}" ลงถังขยะ? บัญชีนี้จะไม่แสดงบนกระดานแต่ยังสามารถกู้คืนได้ภายหลัง`,
+                  onConfirm: () => onDelete(id),
+                  variant: 'warning'
+                });
+              }}
               handleDragStart={handleDragStart}
               handleDragOver={handleDragOver}
               handleDragLeave={handleDragLeave}
               handleDrop={handleDrop}
               handleOpenAccountAdd={handleOpenAccountAdd}
               handleAccountEdit={handleAccountEdit}
-              onDeleteAccount={onDeleteAccount}
+              onDeleteAccount={(id) => {
+                const acc = activeAccounts.find(a => a.id === id);
+                setConfirmConfig({
+                  isOpen: true,
+                  title: 'ย้ายบัญชีลงถังขยะ?',
+                  message: `คุณแน่ใจหรือไม่ว่าต้องการย้ายบัญชี "${acc?.name}" ลงถังขยะ? บัญชีนี้จะไม่แสดงบนกระดานแต่ยังสามารถกู้คืนได้ภายหลัง`,
+                  onConfirm: () => onDeleteAccount(id),
+                  variant: 'warning'
+                });
+              }}
             />
           ))}
         </div>
@@ -366,6 +425,51 @@ export const SetupView = ({
         activeBoxes={activeBoxes}
         onToggle={toggleBox}
         onShowAll={() => setActiveBoxes(boxes)}
+      />
+
+      <TrashDrawer 
+        isOpen={isTrashOpen}
+        onClose={() => setIsTrashOpen(false)}
+        deletedPages={deletedPages}
+        deletedAccounts={deletedAccounts}
+        onRestorePage={onRestorePage}
+        onRestoreAccount={onRestoreAccount}
+        onPermanentDeletePage={(id) => {
+          setConfirmConfig({
+            isOpen: true,
+            title: 'Delete Data Permanently?',
+            message: 'Are you sure you want to delete this page permanently? This action cannot be undone and its logs will also be removed.',
+            onConfirm: () => onPermanentDeletePage(id),
+            variant: 'danger'
+          });
+        }}
+        onPermanentDeleteAccount={(id) => {
+          setConfirmConfig({
+            isOpen: true,
+            title: 'Delete Account Permanently?',
+            message: 'Are you sure you want to delete this account permanently? This action cannot be undone.',
+            onConfirm: () => onPermanentDeleteAccount(id),
+            variant: 'danger'
+          });
+        }}
+        onClearAll={() => {
+          setConfirmConfig({
+            isOpen: true,
+            title: 'Clear Entire Trash?',
+            message: 'Are you sure you want to permanently delete all items in the trash? This action is IRREVERSIBLE.',
+            onConfirm: onClearTrash,
+            variant: 'danger'
+          });
+        }}
+      />
+
+      <ConfirmationModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        variant={confirmConfig.variant}
       />
     </div>
   );

@@ -57,11 +57,29 @@ export default function CreatorApp() {
     showToast('อัปเดตข้อมูลเรียบร้อย');
   };
 
-  const handleDeletePage = (id: string) => {
+  const handleTrashPage = (id: string) => {
+    const page = pages.find(p => p.id === id);
+    if (page) {
+      dataService.savePage({ ...page, isDeleted: true, deletedAt: new Date().toISOString() });
+      setPages(dataService.getPages());
+      showToast('ย้ายเพจลงถังขยะเรียบร้อย');
+    }
+  };
+
+  const handleRestorePage = (id: string) => {
+    const page = pages.find(p => p.id === id);
+    if (page) {
+      dataService.savePage({ ...page, isDeleted: false, deletedAt: undefined });
+      setPages(dataService.getPages());
+      showToast('กู้คืนเพจเรียบร้อย');
+    }
+  };
+
+  const handlePermanentDeletePage = (id: string) => {
     dataService.deletePage(id);
     setPages(dataService.getPages());
     setLogs(dataService.getLogs());
-    showToast('ลบเพจเรียบร้อย');
+    showToast('ลบเพจถาวรเรียบร้อย');
   };
 
   const handleAddAccount = (accData: Omit<FBAccount, 'id'>) => {
@@ -81,10 +99,40 @@ export default function CreatorApp() {
     showToast('อัปเดตบัญชีเรียบร้อย');
   };
 
-  const handleDeleteAccount = (id: string) => {
+  const handleTrashAccount = (id: string) => {
+    const acc = accounts.find(a => a.id === id);
+    if (acc) {
+      dataService.saveAccount({ ...acc, isDeleted: true, deletedAt: new Date().toISOString() });
+      setAccounts(dataService.getAccounts());
+      showToast('ย้ายบัญชีลงถังขยะเรียบร้อย');
+    }
+  };
+
+  const handleRestoreAccount = (id: string) => {
+    const acc = accounts.find(a => a.id === id);
+    if (acc) {
+      dataService.saveAccount({ ...acc, isDeleted: false, deletedAt: undefined });
+      setAccounts(dataService.getAccounts());
+      showToast('กู้คืนบัญชีเรียบร้อย');
+    }
+  };
+
+  const handlePermanentDeleteAccount = (id: string) => {
     dataService.deleteAccount(id);
     setAccounts(dataService.getAccounts());
-    showToast('ลบบัญชีเรียบร้อย');
+    showToast('ลบบัญชีถาวรเรียบร้อย');
+  };
+
+  const handleClearTrash = () => {
+    const deletedPages = pages.filter(p => p.isDeleted);
+    const deletedAccounts = accounts.filter(a => a.isDeleted);
+    
+    deletedPages.forEach(p => dataService.deletePage(p.id));
+    deletedAccounts.forEach(a => dataService.deleteAccount(a.id));
+    
+    setPages(dataService.getPages());
+    setAccounts(dataService.getAccounts());
+    showToast('ล้างถังขยะเรียบร้อย');
   };
 
   return (
@@ -124,10 +172,15 @@ export default function CreatorApp() {
               accounts={accounts}
               onAdd={handleAddPage} 
               onUpdate={handleUpdatePage}
-              onDelete={handleDeletePage} 
+              onDelete={handleTrashPage} 
+              onRestorePage={handleRestorePage}
+              onPermanentDeletePage={handlePermanentDeletePage}
               onAddAccount={handleAddAccount}
               onUpdateAccount={handleUpdateAccount}
-              onDeleteAccount={handleDeleteAccount}
+              onDeleteAccount={handleTrashAccount}
+              onRestoreAccount={handleRestoreAccount}
+              onPermanentDeleteAccount={handlePermanentDeleteAccount}
+              onClearTrash={handleClearTrash}
             />
           )}
         </main>
