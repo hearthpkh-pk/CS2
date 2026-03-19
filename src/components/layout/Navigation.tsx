@@ -22,10 +22,10 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-40 text-white shadow-2xl border-r border-white/5 transition-all duration-300 ease-in-out">
+    <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-40 text-white shadow-2xl transition-all duration-300 ease-in-out">
       <div className="p-6 mb-10 overflow-hidden">
         <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
-          <div className="p-2.5 bg-[#facc15] rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.2)] transition-transform flex-shrink-0">
+          <div className="p-2.5 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-transform flex-shrink-0">
             <Activity size={24} className="text-sidebar-bg" />
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
@@ -35,22 +35,25 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
         </div>
       </div>
       
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="flex-1 pl-4 space-y-2 overflow-visible">
         {menuItems.map(item => (
           <button 
             key={item.id} 
             onClick={() => setCurrentTab(item.id)}
             className={cn(
-              "w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-semibold transition-all duration-300 relative group/item overflow-hidden text-[13px] font-noto",
+              "w-full flex items-center gap-4 px-5 py-4 rounded-l-3xl font-semibold transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
               currentTab === item.id 
-                ? 'bg-sidebar-active text-white shadow-inner' 
+                ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10px_rgba(0,0,0,0.02)]' 
                 : 'text-slate-500 hover:text-white hover:bg-white/5'
             )}
           >
             {currentTab === item.id && (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#facc15] rounded-r-full shadow-[0_0_10px_rgba(250,204,21,0.5)]"></div>
+              <>
+                <div className="absolute -top-6 right-0 w-6 h-6 bg-[#fefefe] before:absolute before:inset-0 before:bg-sidebar-bg before:rounded-br-[24px]"></div>
+                <div className="absolute -bottom-6 right-0 w-6 h-6 bg-[#fefefe] before:absolute before:inset-0 before:bg-sidebar-bg before:rounded-tr-[24px]"></div>
+              </>
             )}
-            <item.icon size={19} className={cn("transition-colors flex-shrink-0", currentTab === item.id ? "text-[#facc15]" : "group-hover/item:text-[#facc15]")} /> 
+            <item.icon size={19} className={cn("transition-colors flex-shrink-0", currentTab === item.id ? "text-sidebar-bg" : "group-hover/item:text-[#facc15]")} /> 
             <span className="tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">{item.label}</span>
           </button>
         ))}
