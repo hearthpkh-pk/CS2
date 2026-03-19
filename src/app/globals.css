@@ -5,12 +5,12 @@
 :root {
   --sidebar-bg: #0f51b4;
   /* Vibrant Blue from "Golden Rule" */
-  --sidebar-active: #0b5ed7;
+  --sidebar-active: #0f51b4;
   --text-primary: #0f172a;
   --accent-yellow: #facc15;
   --accent-yellow-hover: #eab308;
 
-  --primary-blue: #0d6efd;
+  --primary-blue: #2871df;
   --secondary-blue: #eff6ff;
   --success-green: #4ade80;
   --danger-red: #f87171;

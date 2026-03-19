@@ -1407,6 +1407,12 @@ video {
 .text-\[var\(--primary-blue\)\] {
   color: var(--primary-blue);
 }
+.text-blue-100\/60 {
+  color: rgb(219 234 254 / 0.6);
+}
+.text-blue-100\/70 {
+  color: rgb(219 234 254 / 0.7);
+}
 .text-blue-500 {
   --tw-text-opacity: 1;
   color: rgb(59 130 246 / var(--tw-text-opacity, 1));
@@ -1465,12 +1471,6 @@ video {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
-.text-blue-100\/60 {
-  color: rgb(219 234 254 / 0.6);
-}
-.text-blue-100\/70 {
-  color: rgb(219 234 254 / 0.7);
-}
 .antialiased {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -1497,9 +1497,9 @@ video {
   --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
-.shadow-\[-4px_0_10px_rgba\(0\2c 0\2c 0\2c 0\.02\)\] {
-  --tw-shadow: -4px 0 10px rgba(0,0,0,0.02);
-  --tw-shadow-colored: -4px 0 10px var(--tw-shadow-color);
+.shadow-\[-4px_0_10_rgba\(0\2c 0\2c 0\2c 0\.02\)\] {
+  --tw-shadow: -4px 0 10 rgba(0,0,0,0.02);
+  --tw-shadow-colored: -4px 0 10 var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .shadow-\[0_0_12px_rgba\(250\2c 204\2c 21\2c 0\.5\)\] {
@@ -1530,11 +1530,6 @@ video {
 .shadow-xl {
   --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-}
-.shadow-\[-4px_0_10_rgba\(0\2c 0\2c 0\2c 0\.02\)\] {
-  --tw-shadow: -4px 0 10 rgba(0,0,0,0.02);
-  --tw-shadow-colored: -4px 0 10 var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .shadow-black\/40 {
@@ -1598,12 +1593,12 @@ video {
 :root {
   --sidebar-bg: #0f51b4;
   /* Vibrant Blue from "Golden Rule" */
-  --sidebar-active: #0b5ed7;
+  --sidebar-active: #0f51b4;
   --text-primary: #0f172a;
   --accent-yellow: #facc15;
   --accent-yellow-hover: #eab308;
 
-  --primary-blue: #0d6efd;
+  --primary-blue: #2871df;
   --secondary-blue: #eff6ff;
   --success-green: #4ade80;
   --danger-red: #f87171;
@@ -1747,9 +1742,6 @@ select {
 }
 .hover\:bg-slate-50\/20:hover {
   background-color: rgb(248 250 252 / 0.2);
-}
-.hover\:bg-white\/5:hover {
-  background-color: rgb(255 255 255 / 0.05);
 }
 .hover\:bg-white\/10:hover {
   background-color: rgb(255 255 255 / 0.1);
