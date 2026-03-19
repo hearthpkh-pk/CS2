@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2, ExternalLink, Shield } from 'lucide-react';
 import { Page } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -49,19 +49,28 @@ export const PageCard = ({
       <h4 className="font-bold text-slate-800 text-sm font-noto truncate mb-1">{page.name}</h4>
       <p className="text-[10px] text-slate-400 font-noto">{page.category}</p>
       
-      {page.url && (
-        <div className="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between">
-           <a 
-             href={page.url} 
-             target="_blank" 
-             rel="noopener noreferrer"
-             onClick={(e) => e.stopPropagation()}
-             className="text-[9px] text-[var(--primary-blue)] flex items-center gap-1 hover:underline font-bold"
-           >
-             <ExternalLink size={10} /> Link
-           </a>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
+        <div className="flex items-center gap-2">
+          {page.url && (
+            <a 
+              href={page.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[9px] text-[var(--primary-blue)] flex items-center gap-1 hover:underline font-bold"
+            >
+              <ExternalLink size={10} /> Link
+            </a>
+          )}
         </div>
-      )}
+        
+        {page.adminIds && page.adminIds.length > 0 && (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 rounded-full border border-indigo-100/50">
+             <Shield size={10} className="text-indigo-600" />
+             <span className="text-[9px] font-bold text-indigo-600 font-inter">{page.adminIds.length} ADMIN</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

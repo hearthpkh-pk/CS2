@@ -56,12 +56,17 @@ export const BoxConfigModal = ({
                       : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50"
                   )}
                 >
-                  <span className="text-lg font-bold font-outfit">{boxId}</span>
+                  <span className={cn(
+                    "text-lg font-bold font-outfit",
+                    boxId === 0 && "text-[10px] tracking-widest"
+                  )}>
+                    {boxId === 0 ? "ADMIN" : boxId}
+                  </span>
                   <span className={cn(
                     "text-[9px] font-bold uppercase tracking-widest transition-opacity",
                     activeBoxes.includes(boxId) ? "opacity-100" : "opacity-0 group-hover:opacity-40"
                   )}>
-                    ACTIVE
+                    {activeBoxes.includes(boxId) ? "ACTIVE" : "HIDDEN"}
                   </span>
                 </button>
               ))}

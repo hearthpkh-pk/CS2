@@ -35,6 +35,8 @@ interface Props {
   onDeleteAccount: (id: string) => void;
 }
 
+const BOXES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
 export const SetupView = ({ 
   pages, accounts, onAdd, onUpdate, onDelete,
   onAddAccount, onUpdateAccount, onDeleteAccount 
@@ -45,50 +47,60 @@ export const SetupView = ({
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
   const [editingAccount, setEditingAccount] = useState<FBAccount | null>(null);
-  const [activeBoxes, setActiveBoxes] = useState<number[]>([]); 
+  const [activeBoxes, setActiveBoxes] = useState<number[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const boxes = BOXES;
 
   // Persistence Logic
   React.useEffect(() => {
-    const saved = localStorage.getItem('active-kanban-boxes');
+    const saved = localStorage.getItem('kanban_active_boxes');
     if (saved) {
       try {
-        setActiveBoxes(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setActiveBoxes(parsed);
+        } else {
+          setActiveBoxes(boxes); // Default to all if empty or invalid
+        }
       } catch (e) {
-        setActiveBoxes(Array.from({ length: 20 }, (_, i) => i + 1));
+        setActiveBoxes(boxes);
       }
     } else {
-      setActiveBoxes(Array.from({ length: 20 }, (_, i) => i + 1));
+      setActiveBoxes([0, 1, 2, 3]);
     }
     setIsLoaded(true);
-  }, []);
+  }, [boxes]);
 
   React.useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('active-kanban-boxes', JSON.stringify(activeBoxes));
+      localStorage.setItem('kanban_active_boxes', JSON.stringify(activeBoxes));
     }
   }, [activeBoxes, isLoaded]);
-  
+
   // Form State
   const [pageFormData, setPageFormData] = useState({
     name: '',
     url: '',
     category: 'รายการ',
     status: 'Active' as Page['status'],
-    boxId: 1
+    boxId: 1,
+    adminIds: [] as string[]
   });
 
-  const [accFormData, setAccFormData] = useState({
+  const [accFormData, setAccFormData] = useState<Omit<FBAccount, 'id' | 'createdAt'>>({
     name: '',
     uid: '',
-    status: 'Live' as FBAccount['status'],
+    status: 'Live',
+    boxId: 1,
     password: '',
     twoFactor: '',
-    cookie: '',
-    boxId: 1
+    email: '',
+    emailPassword: '',
+    email2: '',
+    profileUrl: '',
+    cookie: ''
   });
-
-  const boxes = Array.from({ length: 20 }, (_, i) => i + 1);
 
   const pagesByBox = useMemo(() => {
     const map: Record<number, Page[]> = {};
@@ -110,12 +122,24 @@ export const SetupView = ({
   }, [pages, boxes]);
 
   const accountsByBox = useMemo(() => {
-    const map: Record<number, FBAccount[]> = {};
-    boxes.forEach(b => map[b] = []);
-    accounts.forEach(a => {
-      if (map[a.boxId]) map[a.boxId].push(a);
+    const grouped: Record<number, FBAccount[]> = {};
+    boxes.forEach(boxId => {
+      grouped[boxId] = accounts
+        .filter(acc => acc.boxId === boxId)
+        .sort((a, b) => {
+          // Priority: Admin > Live > Others
+          const getPriority = (status: string) => {
+            if (status === 'Admin') return 0;
+            if (status === 'Live') return 1;
+            return 2;
+          };
+          const pA = getPriority(a.status);
+          const pB = getPriority(b.status);
+          if (pA !== pB) return pA - pB;
+          return a.name.localeCompare(b.name);
+        });
     });
-    return map;
+    return grouped;
   }, [accounts, boxes]);
 
   const toggleBox = (boxId: number) => {
@@ -124,9 +148,27 @@ export const SetupView = ({
     );
   };
 
+  const enforceSingleLiveAccount = (boxId: number, exceptAccountId?: string) => {
+    // Only enforce for non-admin boxes (boxId !== 0)
+    if (boxId === 0) return;
+
+    const accountsInBox = accountsByBox[boxId] || [];
+    accountsInBox.forEach(acc => {
+      // If an account is Live and not the one being edited/added, change its status to 'Check'
+      if (acc.id !== exceptAccountId && acc.status === 'Live') {
+        onUpdateAccount({ ...acc, status: 'Check' });
+      }
+    });
+  };
+
   const handleAccountSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!accFormData.name.trim()) return;
+
+    // Enforce Single Live per Box (except Admin Box 0 or Admin status)
+    if (accFormData.status === 'Live' && accFormData.boxId !== 0) {
+      enforceSingleLiveAccount(accFormData.boxId, editingAccount?.id);
+    }
 
     if (editingAccount) {
       onUpdateAccount({ ...editingAccount, ...accFormData });
@@ -144,6 +186,10 @@ export const SetupView = ({
       status: 'Live',
       password: '',
       twoFactor: '',
+      email: '',
+      emailPassword: '',
+      email2: '',
+      profileUrl: '',
       cookie: '',
       boxId: boxId || (activeBoxes[0] || 1)
     });
@@ -158,6 +204,10 @@ export const SetupView = ({
       status: acc.status,
       password: acc.password || '',
       twoFactor: acc.twoFactor || '',
+      email: acc.email || '',
+      emailPassword: acc.emailPassword || '',
+      email2: acc.email2 || '',
+      profileUrl: acc.profileUrl || '',
       cookie: acc.cookie || '',
       boxId: acc.boxId
     });
@@ -171,7 +221,8 @@ export const SetupView = ({
       url: '',
       category: 'รายการ',
       status: 'Active',
-      boxId: boxId || (activeBoxes[0] || 1)
+      boxId: boxId || (activeBoxes[0] || 1),
+      adminIds: []
     });
     setIsEditorOpen(true);
   };
@@ -183,7 +234,8 @@ export const SetupView = ({
       url: page.url || '',
       category: page.category,
       status: page.status,
-      boxId: page.boxId
+      boxId: page.boxId,
+      adminIds: page.adminIds || []
     });
     setIsEditorOpen(true);
   };
@@ -254,68 +306,76 @@ export const SetupView = ({
 
       <div className="pb-12 bg-slate-50">
         <div className="grid grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6">
-          {boxes.filter(b => activeBoxes.includes(b)).map(boxId => (
-            <div key={boxId} className="flex flex-col h-full min-h-[300px]">
-              <div className="flex items-center justify-between mb-3 px-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 bg-[var(--primary-blue)] text-white rounded-lg flex items-center justify-center text-xs font-bold font-outfit shadow-sm shadow-blue-100">
-                    {boxId}
+          {boxes.filter(b => activeBoxes.includes(b)).map(boxId => {
+            const boxAccounts = accountsByBox[boxId] || [];
+            return (
+              <div key={boxId} className="flex flex-col h-full min-h-[300px]">
+                <div className="flex items-center justify-between mb-3 px-2">
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-outfit shadow-sm shadow-blue-100",
+                      boxId === 0 ? "bg-indigo-600 text-white" : "bg-[var(--primary-blue)] text-white"
+                    )}>
+                      {boxId}
+                    </div>
+                    <span className="font-bold text-slate-700 text-sm font-noto">
+                      {boxId === 0 ? "ACCOUNT ADMIN" : `กล่องที่ ${boxId}`}
+                    </span>
+                  </div>
+                  <span className="text-[10px] bg-blue-50 text-[var(--primary-blue)] font-bold px-2 py-0.5 rounded-full font-inter">
+                    {viewMode === 'pages' ? pagesByBox[boxId].length : boxAccounts.length} {viewMode.toUpperCase()}
                   </span>
-                  <span className="font-bold text-slate-700 text-sm font-noto">กล่องที่ {boxId}</span>
                 </div>
-                <span className="text-[10px] bg-blue-50 text-[var(--primary-blue)] font-bold px-2 py-0.5 rounded-full font-inter">
-                  {viewMode === 'pages' ? pagesByBox[boxId].length : accountsByBox[boxId].length} {viewMode.toUpperCase()}
-                </span>
-              </div>
 
-              <div 
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, boxId)}
-                className="flex-1 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200 p-3 space-y-3 transition-colors"
-              >
-                {viewMode === 'pages' ? (
-                  <>
-                    {pagesByBox[boxId].map(page => (
-                      <PageCard 
-                        key={page.id}
-                        page={page}
-                        onEdit={handleEdit}
-                        onDelete={onDelete}
-                        onDragStart={handleDragStart}
-                      />
-                    ))}
-                    <button 
-                      onClick={() => handleOpenAdd(boxId)}
-                      className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-200 text-slate-300 hover:text-slate-500 hover:border-slate-300 transition-all flex items-center justify-center gap-2 text-xs font-bold"
-                    >
-                      <Plus size={14} /> เพิ่มเพจ
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {accountsByBox[boxId].map(acc => (
-                      <AccountCard 
-                        key={acc.id}
-                        account={acc}
-                        onEdit={handleAccountEdit}
-                        onDelete={onDeleteAccount}
-                      />
-                    ))}
-                    {accountsByBox[boxId].length === 0 && (
+                <div 
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, boxId)}
+                  className="flex-1 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200 p-3 space-y-3 transition-colors"
+                >
+                  {viewMode === 'pages' ? (
+                    <>
+                      {pagesByBox[boxId].map(page => (
+                        <PageCard 
+                          key={page.id}
+                          page={page}
+                          onEdit={handleEdit}
+                          onDelete={onDelete}
+                          onDragStart={handleDragStart}
+                        />
+                      ))}
                       <button 
-                        onClick={() => handleOpenAccountAdd(boxId)}
-                        className="w-full py-8 rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 hover:text-[var(--primary-blue)] hover:border-blue-200 transition-all flex flex-col items-center justify-center gap-2"
+                        onClick={() => handleOpenAdd(boxId)}
+                        className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-200 text-slate-300 hover:text-slate-500 hover:border-slate-300 transition-all flex items-center justify-center gap-2 text-xs font-bold"
                       >
-                        <Shield size={20} />
-                        <span className="text-[10px] font-bold font-noto uppercase tracking-tight">No Account</span>
+                        <Plus size={14} /> เพิ่มเพจ
                       </button>
-                    )}
-                  </>
-                )}
+                    </>
+                  ) : (
+                    <>
+                      {boxAccounts.map(acc => (
+                        <AccountCard 
+                          key={acc.id}
+                          account={acc}
+                          onEdit={handleAccountEdit}
+                          onDelete={onDeleteAccount}
+                        />
+                      ))}
+                      {boxAccounts.length === 0 && (
+                        <button 
+                          onClick={() => handleOpenAccountAdd(boxId)}
+                          className="w-full py-8 rounded-3xl border-2 border-dashed border-slate-100 text-slate-300 hover:text-[var(--primary-blue)] hover:border-blue-200 transition-all flex flex-col items-center justify-center gap-2"
+                        >
+                          <Shield size={20} />
+                          <span className="text-[10px] font-bold font-noto uppercase tracking-tight">No Account</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -327,6 +387,7 @@ export const SetupView = ({
         setFormData={setPageFormData}
         onSubmit={handleSubmit}
         boxes={boxes}
+        adminAccounts={accounts.filter(acc => acc.status === 'Admin')}
       />
 
       <AccountEditorDrawer 

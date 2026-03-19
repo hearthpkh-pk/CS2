@@ -4,6 +4,7 @@ export interface Page {
   url?: string;
   category: 'รายการ' | 'หนัง' | 'ข่าว' | string;
   status: 'Active' | 'Rest' | 'Error' | 'Problem';
+  adminIds?: string[];
   boxId: number; // 1-20
   createdAt?: string;
 }
@@ -26,9 +27,13 @@ export interface FBAccount {
   boxId: number;
   name: string;
   uid: string;
-  status: 'Live' | 'Check' | 'Die';
+  status: 'Live' | 'Check' | 'Die' | 'Admin';
   password?: string;
   twoFactor?: string;
+  email?: string;
+  emailPassword?: string;
+  email2?: string;
+  profileUrl?: string;
   cookie?: string;
   createdAt?: string;
 }
