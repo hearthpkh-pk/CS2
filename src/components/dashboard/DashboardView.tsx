@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Users, Eye, Filter, Calendar, Activity } from 'lucide-react';
+import { Users, Eye, Filter, Calendar, Activity, RefreshCw } from 'lucide-react';
 import { Page, DailyLog, User } from '@/types';
 import { CombinedAreaChart } from './CombinedAreaChart';
 
@@ -187,71 +187,88 @@ export const DashboardView = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
            {pages
              .filter(p => p.status === 'Active' && (selectedPage === 'all' || p.id === selectedPage))
-             .sort((a, b) => (a.boxId || 0) - (b.boxId || 0))
+             .sort((a, b) => (Number(a.boxId) || 0) - (Number(b.boxId) || 0))
              .map(page => (
                <a 
                  key={page.id} 
                  href={page.facebookUrl} 
                  target="_blank" 
                  rel="noopener noreferrer"
-                 className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden flex flex-col min-h-[240px] cursor-pointer"
+                 className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden flex flex-col min-h-[250px] cursor-pointer"
                >
-                {page.facebookData ? (
-                  <>
-                    <div className="flex items-start justify-between mb-4">
-                       <div className="relative">
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 group-hover:border-blue-100 transition-colors">
-                             <img 
-                               src={page.facebookData?.profilePic} 
-                               alt={page.name} 
-                               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                             />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-white shadow-sm shadow-emerald-200"></div>
-                       </div>
-                       <div className="text-right">
-                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest block mb-1">Followers</span>
-                          <span className="text-sm font-black text-slate-800 font-inter tracking-tight">
-                             {page.facebookData?.followers?.toLocaleString()}
-                          </span>
-                       </div>
-                    </div>
-
-                    <h4 className="font-bold text-slate-800 text-sm font-noto mb-2 group-hover:text-blue-600 transition-colors truncate">
-                       {page.name}
-                    </h4>
-                    <p className="text-[10px] text-slate-400 font-noto line-clamp-2 leading-relaxed mb-4 flex-1">
-                       {page.facebookData?.description}
-                    </p>
-
-                    <div className="pt-4 border-t border-slate-50 flex items-center justify-between mt-auto">
-                       <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                          <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Live Status</span>
-                       </div>
-                       <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                          Sync {new Date(page.facebookData?.lastSyncAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                       </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
-                     <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 border-dashed">
-                        <Activity className="text-slate-300 animate-pulse" size={24} />
+                 {!page.facebookData ? (
+                   <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
+                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 border-dashed">
+                         <Activity className="text-slate-300 animate-pulse" size={24} />
+                      </div>
+                      <h4 className="font-bold text-slate-800 text-sm font-noto mb-1 truncate w-full">{page.name}</h4>
+                      <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">Waiting for smart sync...</p>
+                      
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onSyncPage?.(page.id, page.facebookUrl || `https://facebook.com/${page.id}`);
+                        }}
+                        className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 transition-all"
+                      >
+                         Sync Now
+                      </button>
+                   </div>
+                 ) : (
+                   <>
+                     <div className="flex items-start justify-between mb-4">
+                        <div className="relative">
+                           <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 group-hover:border-blue-100 transition-colors">
+                              <img 
+                                src={page.facebookData.profilePic || 'https://images.unsplash.com/photo-1614850523598-92751cd01d1d?w=400&q=80'} 
+                                alt={page.name} 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                              />
+                           </div>
+                           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-white shadow-sm shadow-emerald-200"></div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                           <button 
+                             onClick={(e) => {
+                               e.preventDefault();
+                               e.stopPropagation();
+                               onSyncPage?.(page.id, page.facebookUrl || '');
+                             }}
+                             className="p-1.5 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-slate-100"
+                             title="Refresh Metadata"
+                           >
+                             <RefreshCw size={12} className="hover:rotate-180 transition-transform duration-500" />
+                           </button>
+                           <div className="text-right">
+                              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest block mb-1">Followers</span>
+                              <span className="text-sm font-black text-slate-800 font-inter tracking-tight">
+                                 {page.facebookData.followers?.toLocaleString() || '---'}
+                              </span>
+                           </div>
+                        </div>
                      </div>
-                     <h4 className="font-bold text-slate-800 text-sm font-noto mb-1 truncate w-full">{page.name}</h4>
-                     <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">Waiting for smart sync...</p>
-                     
-                     <button 
-                       onClick={() => onSyncPage?.(page.id, page.facebookUrl || `https://facebook.com/${page.id}`)}
-                       className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 transition-all"
-                     >
-                        Sync Now
-                     </button>
-                  </div>
-                )}
-             </a>
-           ))}
+
+                     <div className="mb-4 flex-1">
+                        <h3 className="font-bold text-slate-900 text-base leading-tight group-hover:text-blue-600 transition-colors line-clamp-1">{page.name}</h3>
+                        <p className="text-[10px] text-slate-500 line-clamp-2 mt-2 font-inter italic leading-relaxed">
+                           {page.facebookData.description || 'ดึงข้อมูลจากระบบ Facebook โดยตรงเพื่อวิเคราะห์ประสิทธิภาพ'}
+                        </p>
+                     </div>
+
+                     <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                           <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Live Status</span>
+                        </div>
+                        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                          {page.facebookData.lastSyncAt ? `Sync ${new Date(page.facebookData.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Not synced'}
+                        </span>
+                     </div>
+                   </>
+                 )}
+               </a>
+             ))}
         </div>
       </div>
     </div>

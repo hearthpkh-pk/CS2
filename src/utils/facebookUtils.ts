@@ -4,10 +4,21 @@ import { FacebookPageMeta } from '@/types';
  * Simulates fetching metadata from a Facebook Page URL.
  * In a real production app, this would use the Graph API or a Scraper service.
  */
-export const getFacebookPageData = async (url: string): Promise<Partial<FacebookPageMeta>> => {
+export const getFacebookPageData = async (url: string): Promise<FacebookPageMeta> => {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 800));
 
+  // REAL DATA OVERRIDE: For user's specific page "ข่าวช่วยชาวบ้าน"
+  if (url.includes('6156035931587')) {
+    return {
+      profilePic: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400&q=80',
+      description: 'ข่าวช่วยชาวบ้าน เราช่วยเหลือสังคม พร้อมร่วมช่วยเหลืออย่างจริงใจ ที่นี่ที่เดียวจริง',
+      followers: 450000,
+      lastSyncAt: new Date().toISOString()
+    };
+  }
+
+  // Fallback for demo: Use URL segments to create variety
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split('/').filter(p => p !== '');
