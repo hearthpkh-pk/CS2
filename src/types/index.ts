@@ -1,4 +1,33 @@
-export type Role = 'Staff' | 'Manager' | 'Admin' | 'Super Admin';
+export enum Role {
+  Staff = 'Staff',
+  Manager = 'Manager',
+  Admin = 'Admin',
+  SuperAdmin = 'Super Admin'
+}
+
+export type LeaveType = 'Sick' | 'Vacation' | 'Personal' | 'Business';
+export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
+
+export interface LeaveRequest {
+  id: string;
+  staffId: string;
+  staffName: string;
+  startDate: string; // ISO
+  endDate: string; // ISO
+  type: LeaveType;
+  reason: string;
+  status: LeaveStatus;
+  createdAt: string;
+  approvedBy?: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  type: 'Holiday' | 'DoublePay' | 'WorkSent' | 'Leave';
+  status?: LeaveStatus;
+}
 
 export interface User {
   id: string;

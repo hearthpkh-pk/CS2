@@ -1,11 +1,11 @@
-import { Page, DailyLog, FBAccount, User } from "../types";
+import { Page, FBAccount, User, Role, LeaveRequest, CalendarEvent, DailyLog } from '../types';
 
 export const initialUsers: User[] = [
-  { id: 'u-super', name: 'Super Admin HQ', role: 'Super Admin', username: 'super' },
-  { id: 'u-admin', name: 'Admin Operations', role: 'Admin', teamId: 'team-a', username: 'admin' },
-  { id: 'u-mgr-a', name: 'Team Lead Alpha', role: 'Manager', teamId: 'team-a', username: 'manager' },
-  { id: 'u-staff-a1', name: 'Staff A1', role: 'Staff', teamId: 'team-a', username: 'staff1' },
-  { id: 'u-staff-a2', name: 'Staff A2', role: 'Staff', teamId: 'team-a', username: 'staff2' },
+  { id: 'u1', name: 'Super Admin', role: Role.SuperAdmin, username: 'admin' },
+  { id: 'u2', name: 'Admin A', role: Role.Admin, teamId: 'team1', username: 'admin_a' },
+  { id: 'u3', name: 'Manager B', role: Role.Manager, teamId: 'team1', username: 'manager_b' },
+  { id: 'u4', name: 'Staff C1', role: Role.Staff, teamId: 'team1', username: 'staff_c1' },
+  { id: 'u5', name: 'Staff C2', role: Role.Staff, teamId: 'team1', username: 'staff_c2' },
 ];
 
 export const initialAccounts: FBAccount[] = [
@@ -44,3 +44,25 @@ export const generateMockLogs = (pages: Page[]): DailyLog[] => {
   }
   return logs;
 };
+
+export const initialLeaveRequests: LeaveRequest[] = [
+  {
+    id: 'l1',
+    staffId: 'u4',
+    staffName: 'Staff C1',
+    startDate: '2026-03-25T00:00:00.000Z',
+    endDate: '2026-03-26T00:00:00.000Z',
+    type: 'Sick',
+    reason: 'เป็นไข้หวัดใหญ่ครับ',
+    status: 'Pending',
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const initialCalendarEvents: CalendarEvent[] = [
+  { id: 'h1', date: '2026-04-13', title: 'Songkran Festival', type: 'Holiday' },
+  { id: 'h2', date: '2026-04-14', title: 'Songkran Festival', type: 'Holiday' },
+  { id: 'h3', date: '2026-04-15', title: 'Songkran Festival', type: 'Holiday' },
+  { id: 'd1', date: '2026-03-20', title: 'วัน 2 แรง (แคมเปญใหญ่)', type: 'DoublePay' },
+  { id: 'd2', date: '2026-03-21', title: 'วัน 2 แรง (แคมเปญใหญ่)', type: 'DoublePay' }
+];

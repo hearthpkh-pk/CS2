@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Activity, LayoutDashboard, FilePlus, Settings, Users, CreditCard, ChevronRight } from 'lucide-react';
+import {
+  Plus, Users, LayoutDashboard, FilePlus,
+  Settings, CreditCard, Activity, BarChart3,
+  Building2, History as HistoryIcon, HelpCircle,
+  PieChart, ChevronRight, Calendar
+} from 'lucide-react';
 import { initialUsers } from '@/services/mockData';
 import { User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
@@ -19,19 +24,43 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser }: SidebarProps) => {
-  const menuItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'setup', icon: Settings, label: 'จัดการเพจและบัญชี', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: ['Admin', 'Super Admin'] },
-    { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน (Payroll)', roles: ['Super Admin'] },
+  const menuGroups = [
+    {
+      title: 'Workspace',
+      items: [
+        { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'calendar', icon: Calendar, label: 'ปฏิทินงาน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'setup', icon: Settings, label: 'จัดการเพจและบัญชี', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+      ]
+    },
+    {
+      title: 'Organization',
+      items: [
+        { id: 'hq-dashboard', icon: PieChart, label: 'แดชบอร์ดรายงานรวม', roles: ['Manager', 'Admin', 'Super Admin'] },
+        { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: ['Admin', 'Super Admin'] },
+      ]
+    },
+    {
+      title: 'Enterprise',
+      items: [
+        { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: ['Super Admin'] },
+        { id: 'reports', icon: BarChart3, label: 'รายงานและสถิติ', roles: ['Admin', 'Super Admin'] },
+        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: ['Admin', 'Super Admin'] },
+      ]
+    },
+    {
+      title: 'System',
+      items: [
+        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: ['Super Admin'] },
+        { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+      ]
+    }
   ];
-
-  const visibleItems = menuItems.filter(item => item.roles.includes(currentUser.role));
 
   return (
     <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-40 text-white shadow-2xl transition-all duration-500 ease-in-out">
-      <div className="p-6 mb-10 overflow-hidden">
+      <div className="p-6 mb-6 overflow-hidden">
         <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
           <div className="p-2.5 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-transform flex-shrink-0">
             <Activity size={24} className="text-sidebar-bg" />
@@ -42,29 +71,41 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
           </div>
         </div>
       </div>
-      
-      <nav className="flex-1 pl-4 space-y-2 overflow-visible">
-        {visibleItems.map(item => (
-          <button 
-            key={item.id} 
-            onClick={() => setCurrentTab(item.id)}
-            className={cn(
-              "w-full flex items-center gap-4 px-5 py-4 rounded-l-3xl font-semibold transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
-              currentTab === item.id 
-                ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)]' 
-                : 'text-blue-100/70 hover:text-white hover:bg-white/10'
-            )}
-          >
-            {currentTab === item.id && (
-              <>
-                <div className="absolute -top-6 right-0 w-6 h-6 bg-[#fefefe] before:absolute before:inset-0 before:bg-sidebar-bg before:rounded-br-[24px]"></div>
-                <div className="absolute -bottom-6 right-0 w-6 h-6 bg-[#fefefe] before:absolute before:inset-0 before:bg-sidebar-bg before:rounded-tr-[24px]"></div>
-              </>
-            )}
-            <item.icon size={19} className={cn("transition-colors flex-shrink-0", currentTab === item.id ? "text-sidebar-bg" : "group-hover/item:text-[#facc15]")} /> 
-            <span className="tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">{item.label}</span>
-          </button>
-        ))}
+
+      <nav className="flex-1 pl-4 space-y-6 overflow-y-auto no-scrollbar scroll-smooth">
+        {menuGroups.map((group, gIdx) => {
+          const visibleItems = group.items.filter(item => item.roles.includes(currentUser.role));
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={gIdx} className="space-y-1">
+              <p className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[10px] font-bold text-blue-100/30 uppercase tracking-[0.2em] px-5 mb-2 h-4 overflow-hidden">
+                {group.title}
+              </p>
+              {visibleItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentTab(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-4 px-5 py-3.5 rounded-l-3xl font-semibold transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
+                    currentTab === item.id
+                      ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)]'
+                      : 'text-blue-100/70 hover:text-white hover:bg-white/10'
+                  )}
+                >
+                  {currentTab === item.id && (
+                    <>
+                      <div className="absolute -top-6 right-0 w-6 h-6 bg-[#fefefe] before:absolute before:inset-0 before:bg-sidebar-bg before:rounded-br-[24px]"></div>
+                      <div className="absolute -bottom-6 right-0 w-6 h-6 bg-[#fefefe] before:absolute before:inset-0 before:bg-sidebar-bg before:rounded-tr-[24px]"></div>
+                    </>
+                  )}
+                  <item.icon size={19} className={cn("transition-colors flex-shrink-0", currentTab === item.id ? "text-sidebar-bg" : "group-hover/item:text-[#facc15]")} />
+                  <span className="tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Role Switcher Section (Simulation) */}
@@ -78,16 +119,16 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
                 onClick={() => setCurrentUser(user)}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] transition-all duration-200",
-                  currentUser.id === user.id 
-                    ? "bg-white/20 text-white shadow-lg border border-white/10" 
+                  currentUser.id === user.id
+                    ? "bg-white/20 text-white shadow-lg border border-white/10"
                     : "text-blue-100/40 hover:bg-white/5 hover:text-white"
                 )}
               >
                 <div className={cn(
                   "w-2 h-2 rounded-full",
                   user.role === 'Super Admin' ? "bg-purple-400" :
-                  user.role === 'Admin' ? "bg-blue-400" :
-                  user.role === 'Manager' ? "bg-emerald-400" : "bg-slate-400"
+                    user.role === 'Admin' ? "bg-blue-400" :
+                      user.role === 'Manager' ? "bg-emerald-400" : "bg-slate-400"
                 )} />
                 <span className="truncate">{user.name}</span>
                 {currentUser.id === user.id && <ChevronRight size={12} className="ml-auto" />}
@@ -107,7 +148,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
           </div>
         </div>
       </div>
-      
+
       <div className="p-8 border-t border-white/5 opacity-40 overflow-hidden">
         <p className="text-[10px] font-noto text-blue-100/60 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v1.2.0 • Enterprise Edition</p>
       </div>
@@ -118,7 +159,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
 export const MobileHeader = () => (
   <header className="md:hidden bg-sidebar-bg p-5 sticky top-0 z-30 flex items-center gap-3 text-white border-b border-white/5">
     <div className="p-1.5 bg-white rounded-lg shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-      <Activity size={18} className="text-sidebar-bg"/>
+      <Activity size={18} className="text-sidebar-bg" />
     </div>
     <h1 className="text-lg font-bold font-outfit uppercase tracking-tight">CreatorSpace</h1>
   </header>
@@ -137,9 +178,9 @@ export const MobileBottomNav = ({ currentTab, setCurrentTab, currentUser }: Omit
   return (
     <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-sidebar-bg/95 backdrop-blur-md border border-white/10 flex justify-around p-3 z-50 rounded-[2rem] shadow-2xl shadow-black/40">
       {visibleItems.map(item => (
-        <button 
-          key={item.id} 
-          onClick={() => setCurrentTab(item.id)} 
+        <button
+          key={item.id}
+          onClick={() => setCurrentTab(item.id)}
           className={cn(
             "flex flex-col items-center px-4 py-2 rounded-2xl transition-all duration-300",
             currentTab === item.id ? 'text-white bg-white/10' : 'text-blue-100/40 hover:text-white'

@@ -2,10 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar, MobileHeader, MobileBottomNav } from '@/components/layout/Navigation';
-import { Users, CreditCard } from 'lucide-react';
+import { 
+  Plus, Users, LayoutDashboard, FilePlus, 
+  Settings, CreditCard, Activity, BarChart3, 
+  Building2, History as HistoryIcon, HelpCircle,
+  PieChart
+} from 'lucide-react';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { TransactionsView } from '@/components/forms/TransactionsView';
 import { SetupView } from '@/components/forms/SetupView';
+import { CalendarView } from '@/components/workspace/CalendarView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
 import { initialUsers } from '@/services/mockData';
@@ -19,6 +25,7 @@ function cn(...inputs: ClassValue[]) {
 
 export default function CreatorApp() {
   const [currentUser, setCurrentUser] = useState<User>(initialUsers[0]); // Default to Super Admin for dev
+  const [users, setUsers] = useState<User[]>(initialUsers);
   const [currentTab, setCurrentTab] = useState('setup');
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [pages, setPages] = useState<Page[]>([]);
@@ -176,23 +183,75 @@ export default function CreatorApp() {
             />
           )}
 
+          {currentTab === 'calendar' && (
+            <CalendarView currentUser={currentUser} />
+          )}
+
           {currentTab === 'transactions' && (
-            <TransactionsView 
-              pages={pages} 
-              logs={logs} 
-              onSave={handleSaveLogs} 
+            <TransactionsView
+              pages={pages}
+              logs={logs}
+              onSave={handleSaveLogs}
             />
           )}
 
+          {currentTab === 'hq-dashboard' && (
+             <div className="space-y-6 animate-in fade-in duration-700">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                   <div>
+                      <h2 className="text-2xl font-bold text-slate-800 font-outfit uppercase tracking-tight">HQ Dashboard</h2>
+                      <p className="text-slate-400 text-xs font-medium uppercase tracking-[0.2em] mt-1">ทีมงานและภาพรวมองค์กร • Team Aggregation</p>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-500 font-noto focus:ring-2 ring-emerald-100 outline-none">
+                         <option>กรองรายคน (Staff Filter)</option>
+                         {users.filter(u => u.role === 'Staff').map(u => <option key={u.id}>{u.name}</option>)}
+                      </select>
+                      <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-500 font-noto focus:ring-2 ring-emerald-100 outline-none">
+                         <option>กรองตามสถานะ (Status)</option>
+                         <option>Live Only</option>
+                         <option>Restricted</option>
+                      </select>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                   {[
+                      { label: 'Total Pages', val: pages.length, icon: Settings, color: 'text-blue-500' },
+                      { label: 'Total Accounts', val: accounts.length, icon: Users, color: 'text-emerald-500' },
+                      { label: 'Team Activity', val: '98%', icon: Activity, color: 'text-purple-500' },
+                      { label: 'Avg Health', val: 'Good', icon: Activity, color: 'text-orange-500' },
+                   ].map((stat, i) => (
+                      <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                         <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</span>
+                            <stat.icon size={16} className={stat.color} />
+                         </div>
+                         <p className="text-2xl font-black text-slate-700 font-inter">{stat.val}</p>
+                      </div>
+                   ))}
+                </div>
+
+                <div className="bg-white/40 border border-dashed border-slate-200 rounded-[3rem] h-64 flex items-center justify-center text-slate-400">
+                   <div className="text-center">
+                      <PieChart size={48} className="mx-auto mb-4 opacity-10" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">Team Charts & Analytics Hub</p>
+                   </div>
+                </div>
+             </div>
+          )}
+
           {currentTab === 'setup' && (
-            <SetupView 
+            <SetupView
               viewMode={viewMode}
               setViewMode={setViewMode}
-              pages={pages} 
+              currentUser={currentUser}
+              users={users}
+              pages={pages}
               accounts={accounts}
-              onAdd={handleAddPage} 
+              onAdd={handleAddPage}
               onUpdate={handleUpdatePage}
-              onDelete={handleTrashPage} 
+              onDelete={handleTrashPage}
               onRestorePage={handleRestorePage}
               onPermanentDeletePage={handlePermanentDeletePage}
               onAddAccount={handleAddAccount}
@@ -212,11 +271,35 @@ export default function CreatorApp() {
              </div>
           )}
 
-          {currentTab === 'payroll' && (
+          {currentTab === 'reports' && (
              <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <CreditCard size={64} className="mb-4 opacity-20" />
-                <h3 className="text-xl font-bold text-slate-600">Payroll System</h3>
-                <p className="text-sm">Available only for Super Admin</p>
+                <BarChart3 size={64} className="mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-slate-600">Reports & Analytics</h3>
+                <p className="text-sm">Comprehensive performance metrics coming soon...</p>
+             </div>
+          )}
+
+          {currentTab === 'settings' && (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+                <Building2 size={64} className="mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-slate-600">Company Settings</h3>
+                <p className="text-sm">Global organization configuration coming soon...</p>
+             </div>
+          )}
+
+          {currentTab === 'audit' && (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+                <HistoryIcon size={64} className="mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-slate-600">Activity Audit</h3>
+                <p className="text-sm">Security logs and activity tracking coming soon...</p>
+             </div>
+          )}
+
+          {currentTab === 'help' && (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+                <HelpCircle size={64} className="mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-slate-600">Help Center</h3>
+                <p className="text-sm">Documentation and tutorials coming soon...</p>
              </div>
           )}
         </main>
