@@ -31,14 +31,17 @@ export const generateMockLogs = (pages: Page[]): DailyLog[] => {
     const dateStr = d.toISOString().split('T')[0];
 
     pages.forEach(p => {
-      let baseFollowers = 10000 + parseInt(p.id) * 5000;
-      let baseViews = 5000 + parseInt(p.id) * 2000;
+      const baseFollowers = 10000 + parseInt(p.id) * 5000;
+      const baseViews = 5000 + parseInt(p.id) * 2000;
       logs.push({
         id: `log-${p.id}-${dateStr}`,
         pageId: p.id,
+        staffId: p.ownerId || 'u1', // Default to Super Admin for mock
         date: dateStr,
         followers: baseFollowers + ((90 - i) * 150) + Math.floor(Math.random() * 500),
-        views: baseViews + Math.floor(Math.random() * 5000)
+        views: baseViews + Math.floor(Math.random() * 5000),
+        source: 'API',
+        createdAt: new Date().toISOString()
       });
     });
   }

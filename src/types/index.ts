@@ -55,9 +55,16 @@ export interface Page {
 export interface DailyLog {
   id: string;
   pageId: string;
-  date: string; // ISO format: YYYY-MM-DD
+  staffId: string; // Attributed to
+  date: string;    // YYYY-MM-DD
   followers: number;
   views: number;
+  reach?: number;
+  engagement?: number;
+  statusAtTime?: string; // Captured status on that day
+  isManual?: boolean;    // True if entered by staff
+  source?: 'API' | 'CSV' | 'Manual';
+  createdAt: string;
 }
 
 export interface DashboardStats {
@@ -84,4 +91,37 @@ export interface FBAccount {
   createdAt?: string;
   isDeleted?: boolean;
   deletedAt?: string;
+}
+
+export interface DailySubmission {
+  id: string;
+  staffId: string;
+  date: string;
+  pageId: string;
+  videoLinks: string[]; // ปกติ 4 ลิงก์ต่อเพจ
+  createdAt: string;
+}
+
+export interface PolicyConfiguration {
+  minViewTarget: number;
+  penaltyAmount: number;
+  bonusStep1: number;
+  superBonusThreshold: number;
+  bonusStep2: number;
+  requiredPagesPerDay: number;
+  clipsPerPageInLog: number;
+}
+
+export interface VideoTutorial {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  category: 'Mandatory' | 'Technical';
+  thumbnailUrl: string;
+  videoUrl: string; // Embed URL or Raw Link
+  tags: string[]; // e.g., 'Google Sheets', 'Premiere Pro'
+  priority: number; // 0 (Low) to 10 (High)
+  isNew?: boolean;
+  createdAt: string;
 }

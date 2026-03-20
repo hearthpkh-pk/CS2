@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Users, Eye, Filter, Calendar } from 'lucide-react';
-import { Page, DailyLog } from '@/types';
+import { Page, DailyLog, User } from '@/types';
 import { CombinedAreaChart } from './CombinedAreaChart';
 
 interface Props {
@@ -14,13 +14,16 @@ interface Props {
   setSelectedMonth: (m: string) => void;
   selectedYear: string;
   setSelectedYear: (y: string) => void;
+  onNavigateToTask: () => void;
+  currentUser: User;
 }
 
 const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
 export const DashboardView = ({
   pages, logs, selectedPage, setSelectedPage,
-  selectedMonth, setSelectedMonth, selectedYear, setSelectedYear
+  selectedMonth, setSelectedMonth, selectedYear, setSelectedYear,
+  onNavigateToTask, currentUser
 }: Props) => {
 
   const chartData = useMemo(() => {
@@ -59,6 +62,8 @@ export const DashboardView = ({
     return { views: currentViews, prevViews, followers: currentFollowers };
   }, [chartData]);
 
+  const showSubmissionPrompt = currentUser.role === 'Staff' || currentUser.role === 'Admin';
+
   return (
     <div className="animate-fade-in max-w-6xl mx-auto pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-100 pb-6">
@@ -91,6 +96,26 @@ export const DashboardView = ({
           </div>
         </div>
       </div>
+
+      {showSubmissionPrompt && (
+        <div className="mb-10 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={onNavigateToTask}>
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
+             <Eye size={120} className="rotate-12 -mr-10 -mt-10" />
+          </div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                 🔥 Goal: 40 Clips / Day
+              </div>
+              <h3 className="text-2xl font-black font-outfit uppercase tracking-tight">คุณยังไม่ได้ส่งงานของวันนี้หรือเปล่า?</h3>
+              <p className="text-blue-100/70 text-sm font-noto mt-1">คลิกที่นี่เพื่อไปที่หน้าส่งคลิปงาน 40 ลิงก์ (10 เพจ) เพื่อรักษาสถิติการทำงานของคุณ</p>
+            </div>
+            <button className="bg-white text-blue-600 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg">
+              ไปที่หน้าส่งงาน
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
         <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200">

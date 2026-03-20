@@ -75,15 +75,6 @@ export const PageCard = ({
           </div>
         )}
 
-        {/* Ownership Badge (Visible for Managers/Admins) */}
-        {currentUser.role !== 'Staff' && (
-          <div className="flex items-center gap-1.5 ml-auto">
-            <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-               <span className="text-[8px] font-bold text-slate-500">{ownerName.charAt(0)}</span>
-            </div>
-            <span className="text-[9px] font-bold text-slate-400 font-noto truncate max-w-[60px]">{ownerName}</span>
-          </div>
-        )}
       </div>
     </div>
   );

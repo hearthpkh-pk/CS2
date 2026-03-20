@@ -3,9 +3,11 @@
 import React from 'react';
 import {
   Plus, Users, LayoutDashboard, FilePlus,
-  Settings, CreditCard, Activity, BarChart3,
-  Building2, History as HistoryIcon, HelpCircle,
-  PieChart, ChevronRight, Calendar
+  CreditCard, Activity, BarChart3,
+  Building2, Calendar as CalendarIcon,
+  Video as VideoIcon, Settings as SettingsIcon,
+  History as HistoryIcon, HelpCircle,
+  PieChart, ChevronRight, Scale, BookOpen
 } from 'lucide-react';
 import { initialUsers } from '@/services/mockData';
 import { User } from '@/types';
@@ -29,8 +31,9 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
       title: 'Workspace',
       items: [
         { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'calendar', icon: Calendar, label: 'ปฏิทินงาน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'setup', icon: Settings, label: 'จัดการเพจและบัญชี', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'calendar', icon: CalendarIcon, label: 'ปฏิทินงาน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'daily-task', icon: VideoIcon, label: 'ส่งงานรายวัน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'setup', icon: SettingsIcon, label: 'จัดการเพจและบัญชี', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
         { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
       ]
     },
@@ -45,14 +48,16 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
       title: 'Enterprise',
       items: [
         { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: ['Super Admin'] },
-        { id: 'reports', icon: BarChart3, label: 'รายงานและสถิติ', roles: ['Admin', 'Super Admin'] },
-        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: ['Admin', 'Super Admin'] },
+        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: ['Admin', 'Super Admin'] },
+        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: ['Super Admin'] },
+        { id: 'rules', icon: Scale, label: 'กฎระเบียบบริษัท', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
       ]
     },
     {
       title: 'System',
       items: [
-        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: ['Super Admin'] },
+        { id: 'learning', icon: BookOpen, label: 'ศูนย์การเรียนรู้', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: ['Admin', 'Super Admin'] },
         { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
       ]
     }
@@ -169,7 +174,7 @@ export const MobileBottomNav = ({ currentTab, setCurrentTab, currentUser }: Omit
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ด', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
     { id: 'transactions', icon: FilePlus, label: 'บันทึก', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'setup', icon: Settings, label: 'จัดการ', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+    { id: 'setup', icon: SettingsIcon, label: 'จัดการ', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
     { id: 'team', icon: Users, label: 'ทีม', roles: ['Admin', 'Super Admin'] },
   ];
 

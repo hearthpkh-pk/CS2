@@ -105,10 +105,18 @@ export const dataService = {
     const logs = dataService.getLogs();
     newLogs.forEach(nLog => {
       const existingIndex = logs.findIndex(l => l.pageId === nLog.pageId && l.date === nLog.date);
+      
+      const logToSave: DailyLog = {
+        ...nLog,
+        source: nLog.source || 'Manual',
+        isManual: nLog.isManual ?? true,
+        createdAt: nLog.createdAt || new Date().toISOString()
+      };
+
       if (existingIndex >= 0) {
-        logs[existingIndex] = nLog;
+        logs[existingIndex] = logToSave;
       } else {
-        logs.push(nLog);
+        logs.push(logToSave);
       }
     });
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));

@@ -12,9 +12,13 @@ import { DashboardView } from '@/components/dashboard/DashboardView';
 import { TransactionsView } from '@/components/forms/TransactionsView';
 import { SetupView } from '@/components/forms/SetupView';
 import { CalendarView } from '@/components/workspace/CalendarView';
+import { DailyTaskView } from '@/components/workspace/DailyTaskView';
+import { LearningCenterView } from '@/components/workspace/LearningCenterView';
+import { PolicyCenterView } from '@/components/workspace/PolicyCenterView';
+import { PolicySettingsView } from '@/components/admin/PolicySettingsView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
-import { initialUsers } from '@/services/mockData';
+import { initialUsers, initialPages } from '@/services/mockData';
 import { Page, DailyLog, FBAccount, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -143,10 +147,10 @@ export default function CreatorApp() {
   const handleClearTrash = () => {
     const deletedPages = pages.filter(p => p.isDeleted);
     const deletedAccounts = accounts.filter(a => a.isDeleted);
-    
+
     deletedPages.forEach(p => dataService.deletePage(p.id));
     deletedAccounts.forEach(a => dataService.deleteAccount(a.id));
-    
+
     setPages(dataService.getPages());
     setAccounts(dataService.getAccounts());
     showToast('ล้างถังขยะเรียบร้อย');
@@ -156,9 +160,9 @@ export default function CreatorApp() {
     <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
 
-      <Sidebar 
-        currentTab={currentTab} 
-        setCurrentTab={setCurrentTab} 
+      <Sidebar
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
         currentUser={currentUser}
         setCurrentUser={setCurrentUser}
       />
@@ -171,8 +175,8 @@ export default function CreatorApp() {
 
         <main className="flex-1 p-4 md:p-6">
           {currentTab === 'dashboard' && (
-            <DashboardView 
-              pages={pages} 
+            <DashboardView
+              pages={pages}
               logs={logs}
               selectedPage={selectedPage}
               setSelectedPage={setSelectedPage}
@@ -180,11 +184,29 @@ export default function CreatorApp() {
               setSelectedMonth={setSelectedMonth}
               selectedYear={selectedYear}
               setSelectedYear={setSelectedYear}
+              onNavigateToTask={() => setCurrentTab('daily-task')}
+              currentUser={currentUser}
             />
           )}
 
           {currentTab === 'calendar' && (
             <CalendarView currentUser={currentUser} />
+          )}
+
+          {currentTab === 'daily-task' && (
+              <DailyTaskView currentUser={currentUser} pages={initialPages} />
+            )}
+
+          {currentTab === 'learning' && (
+            <LearningCenterView currentUser={currentUser} />
+          )}
+
+          {currentTab === 'rules' && (
+            <PolicyCenterView />
+          )}
+
+          {currentTab === 'payroll' && currentUser.role === 'Super Admin' && (
+            <PolicySettingsView currentUser={currentUser} />
           )}
 
           {currentTab === 'transactions' && (
@@ -303,7 +325,6 @@ export default function CreatorApp() {
              </div>
           )}
         </main>
-
         <MobileBottomNav 
           currentTab={currentTab} 
           setCurrentTab={setCurrentTab} 
