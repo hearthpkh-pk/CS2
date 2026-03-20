@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar, MobileHeader, MobileBottomNav } from '@/components/layout/Navigation';
+import { Users, CreditCard } from 'lucide-react';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { TransactionsView } from '@/components/forms/TransactionsView';
 import { SetupView } from '@/components/forms/SetupView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
-import { Page, DailyLog, FBAccount } from '@/types';
+import { initialUsers } from '@/services/mockData';
+import { Page, DailyLog, FBAccount, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -16,6 +18,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function CreatorApp() {
+  const [currentUser, setCurrentUser] = useState<User>(initialUsers[0]); // Default to Super Admin for dev
   const [currentTab, setCurrentTab] = useState('setup');
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [pages, setPages] = useState<Page[]>([]);
@@ -28,12 +31,12 @@ export default function CreatorApp() {
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
-  // Load Initial Data
+  // Load Initial Data - Reactive to currentUser
   useEffect(() => {
-    setPages(dataService.getPages());
-    setAccounts(dataService.getAccounts());
+    setPages(dataService.getPages(currentUser));
+    setAccounts(dataService.getAccounts(currentUser));
     setLogs(dataService.getLogs());
-  }, []);
+  }, [currentUser]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -146,7 +149,12 @@ export default function CreatorApp() {
     <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
 
-      <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      <Sidebar 
+        currentTab={currentTab} 
+        setCurrentTab={setCurrentTab} 
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+      />
 
       <div className={cn(
         "flex-1 md:ml-20 flex flex-col min-h-screen relative transition-colors duration-500",
@@ -195,9 +203,29 @@ export default function CreatorApp() {
               onClearTrash={handleClearTrash}
             />
           )}
+
+          {currentTab === 'team' && (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+                <Users size={64} className="mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-slate-600">Team Management</h3>
+                <p className="text-sm">Coming soon in Phase 2 Expansion...</p>
+             </div>
+          )}
+
+          {currentTab === 'payroll' && (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
+                <CreditCard size={64} className="mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-slate-600">Payroll System</h3>
+                <p className="text-sm">Available only for Super Admin</p>
+             </div>
+          )}
         </main>
 
-        <MobileBottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
+        <MobileBottomNav 
+          currentTab={currentTab} 
+          setCurrentTab={setCurrentTab} 
+          currentUser={currentUser}
+        />
       </div>
     </div>
   );

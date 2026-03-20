@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Trash2, Shield, Key, Database, Copy, Mail, Lock, Link as LinkIcon } from 'lucide-react';
-import { FBAccount } from '@/types';
+import { FBAccount, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,12 +12,16 @@ function cn(...inputs: ClassValue[]) {
 
 interface AccountCardProps {
   account: FBAccount;
+  currentUser: User;
+  ownerName: string;
   onEdit: (acc: FBAccount) => void;
   onDelete: (id: string) => void;
 }
 
 export const AccountCard = ({
   account,
+  currentUser,
+  ownerName,
   onDelete,
   onEdit
 }: AccountCardProps) => {
@@ -78,6 +82,13 @@ export const AccountCard = ({
               : cn(base, active)
           );
           
+          // Data Masking Logic: Only Admins/Managers or the Owner (if Staff) can see sensitive data
+          // For now, let's keep it simple: Staff can see their own, Managers can see team's.
+          // BUT the user asked for "Security Simulation": Staff see personal, Admin see team.
+          // If we are simulating "Staff A1" viewing, they should see their own data.
+          // If "Admin" views, they see everything.
+          const isAllowed = currentUser.role !== 'Staff' || account.ownerId === currentUser.id;
+
           return (
             <>
               {account.profileUrl && (
@@ -92,7 +103,7 @@ export const AccountCard = ({
                   <LinkIcon size={12} />
                 </button>
               )}
-              {account.password && (
+              {isAllowed && account.password && (
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 
@@ -104,7 +115,7 @@ export const AccountCard = ({
                   <Key size={12} />
                 </button>
               )}
-              {account.twoFactor && (
+              {isAllowed && account.twoFactor && (
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 
@@ -116,7 +127,7 @@ export const AccountCard = ({
                   <Database size={12} />
                 </button>
               )}
-              {account.email && (
+              {isAllowed && account.email && (
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 
@@ -128,7 +139,7 @@ export const AccountCard = ({
                   <Mail size={12} />
                 </button>
               )}
-              {account.emailPassword && (
+              {isAllowed && account.emailPassword && (
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 
@@ -140,29 +151,14 @@ export const AccountCard = ({
                   <Lock size={12} />
                 </button>
               )}
-              {account.email2 && (
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    navigator.clipboard.writeText(account.email2!);
-                  }}
-                  className={btnClass("bg-teal-50 text-teal-400 border-teal-100", "hover:text-teal-600 hover:bg-white")}
-                  title="Copy Email 2"
-                >
-                  <Mail size={12} className="opacity-70" />
-                </button>
-              )}
-              {account.cookie && (
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    navigator.clipboard.writeText(account.cookie!);
-                  }}
-                  className={btnClass("bg-slate-50 text-slate-400 border-slate-100", "hover:text-[var(--primary-theme)] hover:bg-white")}
-                  title="Copy Cookie"
-                >
-                  <Copy size={12} />
-                </button>
+              {/* Ownership Indicator for Admins */}
+              {currentUser.role !== 'Staff' && (
+                <div className="ml-auto flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center border border-slate-200">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase">{ownerName.charAt(0)}</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-400 font-noto truncate max-w-[50px]">{ownerName}</span>
+                </div>
               )}
             </>
           );

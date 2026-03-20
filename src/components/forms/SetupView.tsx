@@ -7,7 +7,7 @@ import {
   Key, Database, ChevronRight, Copy, 
   CheckCircle2, AlertCircle 
 } from 'lucide-react';
-import { FBAccount, Page } from '@/types';
+import { FBAccount, Page, User } from '@/types';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,12 +27,13 @@ import { TrashDrawer } from '../kanban/TrashDrawer';
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
 interface Props {
   viewMode: 'pages' | 'accounts';
   setViewMode: (mode: 'pages' | 'accounts') => void;
   pages: Page[];
   accounts: FBAccount[];
+  currentUser: User;
+  users: User[];
   onAdd: (page: Omit<Page, 'id'>) => void;
   onUpdate: (page: Page) => void;
   onDelete: (id: string) => void;
@@ -51,7 +52,8 @@ const BOXES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 export const SetupView = ({
   viewMode,
   setViewMode,
-  pages, accounts, onAdd, onUpdate, onDelete,
+  pages, accounts, currentUser, users,
+  onAdd, onUpdate, onDelete,
   onRestorePage, onPermanentDeletePage,
   onAddAccount, onUpdateAccount, onDeleteAccount,
   onRestoreAccount, onPermanentDeleteAccount,
@@ -348,6 +350,8 @@ export const SetupView = ({
         <AdminBar
           activeBoxes={activeBoxes}
           accountsByBox={accountsByBox}
+          currentUser={currentUser}
+          users={users}
           handleOpenAccountAdd={handleOpenAccountAdd}
           handleAccountEdit={handleAccountEdit}
           onDeleteAccount={(id) => {
@@ -368,6 +372,8 @@ export const SetupView = ({
               key={boxId}
               boxId={boxId}
               viewMode={viewMode}
+              currentUser={currentUser}
+              users={users}
               pages={pagesByBox[boxId] || []}
               accounts={accountsByBox[boxId] || []}
               handleOpenAdd={handleOpenAdd}

@@ -1,5 +1,5 @@
-import { Page, DailyLog, FBAccount } from "../types";
-import { initialPages, generateMockLogs, initialAccounts } from "./mockData";
+import { Page, DailyLog, FBAccount, User } from "../types";
+import { initialPages, generateMockLogs, initialAccounts, initialUsers } from "./mockData";
 
 const STORAGE_KEYS = {
   PAGES: 'cs_pages',
@@ -9,15 +9,25 @@ const STORAGE_KEYS = {
 
 export const dataService = {
   // --- Pages ---
-  getPages: (): Page[] => {
+  getPages: (user?: User): Page[] => {
     if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem(STORAGE_KEYS.PAGES);
+    let pages: Page[] = [];
+    
     if (!saved) {
-      const initial = initialPages;
-      localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(initial));
-      return initial;
+      pages = initialPages;
+      localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
+    } else {
+      pages = JSON.parse(saved);
     }
-    return JSON.parse(saved);
+
+    // RBAC Scoping
+    if (!user || user.role === 'Super Admin') return pages;
+    if (user.role === 'Admin' || user.role === 'Manager') {
+      return pages.filter(p => p.teamId === user.teamId || p.ownerId === user.id);
+    }
+    // Staff
+    return pages.filter(p => p.ownerId === user.id);
   },
 
   savePage: (page: Page): void => {
@@ -41,15 +51,25 @@ export const dataService = {
   },
 
   // --- Accounts ---
-  getAccounts: (): FBAccount[] => {
+  getAccounts: (user?: User): FBAccount[] => {
     if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    let accounts: FBAccount[] = [];
+
     if (!saved) {
-      const initial = initialAccounts;
-      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(initial));
-      return initial;
+      accounts = initialAccounts;
+      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+    } else {
+      accounts = JSON.parse(saved);
     }
-    return JSON.parse(saved);
+
+    // RBAC Scoping
+    if (!user || user.role === 'Super Admin') return accounts;
+    if (user.role === 'Admin' || user.role === 'Manager') {
+      return accounts.filter(a => a.teamId === user.teamId || a.ownerId === user.id);
+    }
+    // Staff
+    return accounts.filter(a => a.ownerId === user.id);
   },
 
   saveAccount: (account: FBAccount): void => {
@@ -92,5 +112,38 @@ export const dataService = {
       }
     });
     localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
+  },
+
+  // --- Users ---
+  getUsers: (requestingUser?: User): User[] => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem('cs_users');
+    let users: User[] = [];
+
+    if (!saved) {
+      users = initialUsers;
+      localStorage.setItem('cs_users', JSON.stringify(users));
+    } else {
+      users = JSON.parse(saved);
+    }
+
+    // RBAC Scoping for User Management
+    if (!requestingUser || requestingUser.role === 'Super Admin') return users;
+    if (requestingUser.role === 'Admin') {
+      // Admins manage same or lower roles in their team
+      return users.filter(u => u.teamId === requestingUser.teamId);
+    }
+    return []; // Others can't see user list
+  },
+
+  saveUser: (user: User): void => {
+    const users = dataService.getUsers();
+    const existingIndex = users.findIndex(u => u.id === user.id);
+    if (existingIndex >= 0) {
+      users[existingIndex] = user;
+    } else {
+      users.push(user);
+    }
+    localStorage.setItem('cs_users', JSON.stringify(users));
   }
 };

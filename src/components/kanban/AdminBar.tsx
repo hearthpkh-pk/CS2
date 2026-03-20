@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Shield, Plus } from 'lucide-react';
-import { FBAccount } from '@/types';
+import { FBAccount, User } from '@/types';
 import { AccountCard } from './AccountCard';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -14,6 +14,8 @@ function cn(...inputs: ClassValue[]) {
 interface AdminBarProps {
   activeBoxes: number[];
   accountsByBox: Record<number, FBAccount[]>;
+  currentUser: User;
+  users: User[];
   handleOpenAccountAdd: (boxId: number) => void;
   handleAccountEdit: (acc: FBAccount) => void;
   onDeleteAccount: (id: string) => void;
@@ -22,10 +24,16 @@ interface AdminBarProps {
 export const AdminBar = ({
   activeBoxes,
   accountsByBox,
+  currentUser,
+  users,
   handleOpenAccountAdd,
   handleAccountEdit,
   onDeleteAccount
 }: AdminBarProps) => {
+  const getOwnerName = (ownerId?: string) => {
+    if (!ownerId) return 'Unassigned';
+    return users.find(u => u.id === ownerId)?.name || 'Unknown';
+  };
   if (!activeBoxes.includes(0)) return null;
 
   const adminAccounts = accountsByBox[0] || [];
@@ -86,6 +94,8 @@ export const AdminBar = ({
                 <div key={acc.id} className="w-80 flex-shrink-0 transition-transform">
                   <AccountCard 
                     account={acc}
+                    currentUser={currentUser}
+                    ownerName={getOwnerName(acc.ownerId)}
                     onEdit={handleAccountEdit}
                     onDelete={onDeleteAccount}
                   />

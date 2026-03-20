@@ -1,3 +1,13 @@
+export type Role = 'Staff' | 'Manager' | 'Admin' | 'Super Admin';
+
+export interface User {
+  id: string;
+  name: string;
+  role: Role;
+  teamId?: string;
+  username: string;
+}
+
 export interface Page {
   id: string;
   name: string;
@@ -6,6 +16,8 @@ export interface Page {
   status: 'Active' | 'Rest' | 'Error' | 'Problem';
   adminIds?: string[];
   boxId: number; // 1-20
+  ownerId?: string; // Links to User.id
+  teamId?: string;  // Links to User.teamId
   createdAt?: string;
   isDeleted?: boolean;
   deletedAt?: string;
@@ -24,12 +36,15 @@ export interface DashboardStats {
   totalViews: number;
   viewsTrend: number; // percentage
 }
+
 export interface FBAccount {
   id: string;
   boxId: number;
   name: string;
   uid: string;
   status: 'Live' | 'Check' | 'Die' | 'Admin';
+  ownerId?: string; // Links to User.id
+  teamId?: string;  // Links to User.teamId
   password?: string;
   twoFactor?: string;
   email?: string;

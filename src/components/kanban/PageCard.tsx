@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Trash2, ExternalLink, Shield } from 'lucide-react';
-import { Page } from '@/types';
+import { Page, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,6 +12,8 @@ function cn(...inputs: ClassValue[]) {
 
 interface PageCardProps {
   page: Page;
+  currentUser: User;
+  ownerName: string;
   onEdit: (page: Page) => void;
   onDelete: (id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
@@ -19,6 +21,8 @@ interface PageCardProps {
 
 export const PageCard = ({
   page,
+  currentUser,
+  ownerName,
   onEdit,
   onDelete,
   onDragStart
@@ -68,6 +72,16 @@ export const PageCard = ({
           <div className="flex items-center gap-1 px-2 py-0.5 bg-[var(--primary-theme-bg)] rounded-full border border-[var(--primary-theme-border)]">
              <Shield size={10} className="text-[var(--primary-theme)]" />
              <span className="text-[10px] font-bold text-[var(--primary-theme)] font-inter">{page.adminIds.length}</span>
+          </div>
+        )}
+
+        {/* Ownership Badge (Visible for Managers/Admins) */}
+        {currentUser.role !== 'Staff' && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+               <span className="text-[8px] font-bold text-slate-500">{ownerName.charAt(0)}</span>
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 font-noto truncate max-w-[60px]">{ownerName}</span>
           </div>
         )}
       </div>

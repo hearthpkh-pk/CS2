@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { Plus, Shield } from 'lucide-react';
-import { Page, FBAccount } from '@/types';
+import { Page, FBAccount, User } from '@/types';
 import { PageCard } from './PageCard';
 import { AccountCard } from './AccountCard';
 
 interface KanbanColumnProps {
   boxId: number;
   viewMode: 'pages' | 'accounts';
+  currentUser: User;
+  users: User[];
   pages: Page[];
   accounts: FBAccount[];
   handleOpenAdd: (boxId: number) => void;
@@ -26,6 +28,8 @@ interface KanbanColumnProps {
 export const KanbanColumn = ({
   boxId,
   viewMode,
+  currentUser,
+  users,
   pages,
   accounts,
   handleOpenAdd,
@@ -39,6 +43,10 @@ export const KanbanColumn = ({
   handleAccountEdit,
   onDeleteAccount
 }: KanbanColumnProps) => {
+  const getOwnerName = (ownerId?: string) => {
+    if (!ownerId) return 'Unassigned';
+    return users.find(u => u.id === ownerId)?.name || 'Unknown';
+  };
   return (
     <div className="flex flex-col h-full min-h-[300px]">
       <div className="flex items-center justify-between mb-3 px-2">
@@ -67,6 +75,8 @@ export const KanbanColumn = ({
               <PageCard 
                 key={page.id}
                 page={page}
+                currentUser={currentUser}
+                ownerName={getOwnerName(page.ownerId)}
                 onEdit={handleEdit}
                 onDelete={onDelete}
                 onDragStart={handleDragStart}
@@ -85,6 +95,8 @@ export const KanbanColumn = ({
               <AccountCard 
                 key={acc.id}
                 account={acc}
+                currentUser={currentUser}
+                ownerName={getOwnerName(acc.ownerId)}
                 onEdit={handleAccountEdit}
                 onDelete={onDeleteAccount}
               />
