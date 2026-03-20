@@ -37,12 +37,21 @@ export interface User {
   username: string;
 }
 
+export interface FacebookPageMeta {
+  profilePic?: string;
+  description?: string;
+  followers?: number;
+  lastSyncAt: string;
+}
+
+export type PageStatus = 'Active' | 'Rest' | 'Error' | 'Problem';
+
 export interface Page {
   id: string;
   name: string;
   url?: string;
   category: 'รายการ' | 'หนัง' | 'ข่าว' | string;
-  status: 'Active' | 'Rest' | 'Error' | 'Problem';
+  status: PageStatus;
   adminIds?: string[];
   boxId: number; // 1-20
   ownerId?: string; // Links to User.id
@@ -50,6 +59,13 @@ export interface Page {
   createdAt?: string;
   isDeleted?: boolean;
   deletedAt?: string;
+  adType?: 'Lead' | 'Message' | 'Conversion'; // Added as optional, assuming not all pages have this
+  managerId?: string; // Added as optional
+  staffId?: string; // Added as optional
+  accountId?: string; // ID of the Business Account it belongs to // Added as optional
+  lastUpdated?: string; // Added as optional
+  facebookUrl?: string;
+  facebookData?: FacebookPageMeta;
 }
 
 export interface DailyLog {
@@ -116,12 +132,20 @@ export interface VideoTutorial {
   id: string;
   title: string;
   description: string;
-  duration: string;
+  duration: string; // Helpful for planning training time
   category: 'Mandatory' | 'Technical';
   thumbnailUrl: string;
-  videoUrl: string; // Embed URL or Raw Link
-  tags: string[]; // e.g., 'Google Sheets', 'Premiere Pro'
-  priority: number; // 0 (Low) to 10 (High)
+  videoUrl: string; // Embed URL
+  tags: string[];
+  priority: number; // 1-10
   isNew?: boolean;
   createdAt: string;
+}
+
+export interface LearningProgress {
+  userId: string;
+  videoId: string;
+  status: 'Started' | 'Completed';
+  lastWatchedAt: string;
+  percentComplete: number;
 }

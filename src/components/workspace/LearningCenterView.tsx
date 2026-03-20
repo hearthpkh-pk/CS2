@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Play, BookOpen, Clock, Search, Filter, ShieldAlert, Zap, Plus, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, BookOpen, Clock, Search, Filter, ShieldAlert, Zap, Plus, Edit, Trash2, CheckCircle2 } from 'lucide-react';
 import { User, VideoTutorial } from '@/types';
 import { LearningEditorDrawer } from './LearningEditorDrawer';
 import { clsx, type ClassValue } from 'clsx';
@@ -63,6 +63,23 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<VideoTutorial | null>(null);
+  const [completedVideoIds, setCompletedVideoIds] = useState<string[]>([]);
+
+  // Simulate loading progress
+  useEffect(() => {
+    const saved = localStorage.getItem(`learning_progress_${currentUser.id}`);
+    if (saved) setCompletedVideoIds(JSON.parse(saved));
+  }, [currentUser.id]);
+
+  const toggleCompletion = (videoId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const newCompleted = completedVideoIds.includes(videoId)
+      ? completedVideoIds.filter(id => id !== videoId)
+      : [...completedVideoIds, videoId];
+    
+    setCompletedVideoIds(newCompleted);
+    localStorage.setItem(`learning_progress_${currentUser.id}`, JSON.stringify(newCompleted));
+  };
 
   // Get all unique tags
   const allTags = Array.from(new Set(videos.flatMap(v => v.tags)));
@@ -224,6 +241,24 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
               <h3 className="text-2xl font-black text-white font-outfit uppercase tracking-tight mb-2">{selectedVideo.title}</h3>
               <p className="text-slate-400 text-sm font-noto leading-relaxed max-w-2xl">{selectedVideo.description}</p>
            </div>
+           
+           <div className="px-8 pb-8 flex justify-end">
+              <button 
+                onClick={() => toggleCompletion(selectedVideo.id)}
+                className={cn(
+                  "px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg",
+                  completedVideoIds.includes(selectedVideo.id)
+                    ? "bg-green-500 text-white shadow-green-100"
+                    : "bg-white text-slate-900 border border-slate-100 hover:bg-slate-50 shadow-slate-100"
+                )}
+              >
+                {completedVideoIds.includes(selectedVideo.id) ? (
+                  <><CheckCircle2 size={16} /> เรียนรู้เรียบร้อยแล้ว</>
+                ) : (
+                  <>Mark as Finished</>
+                )}
+              </button>
+           </div>
         </div>
       )}
 
@@ -238,6 +273,12 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
             {video.isNew && (
               <div className="absolute top-4 left-4 z-10 px-2 py-1 bg-yellow-400 text-slate-900 text-[8px] font-black rounded-lg uppercase tracking-widest shadow-lg">
                  New
+              </div>
+            )}
+
+            {completedVideoIds.includes(video.id) && (
+              <div className="absolute top-4 left-4 z-10 px-2 py-1 bg-green-500 text-white text-[8px] font-black rounded-lg uppercase tracking-widest shadow-lg flex items-center gap-1">
+                 <CheckCircle2 size={10} /> Completed
               </div>
             )}
             
@@ -323,6 +364,7 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
         onClose={() => setIsEditorOpen(false)}
         onSave={handleSaveVideo}
         editingVideo={editingVideo}
+        allExistingTags={allTags}
       />
     </div>
   );

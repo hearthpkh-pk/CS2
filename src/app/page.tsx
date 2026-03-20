@@ -22,6 +22,7 @@ import { initialUsers, initialPages } from '@/services/mockData';
 import { Page, DailyLog, FBAccount, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { getFacebookPageData } from '@/utils/facebookUtils';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -156,6 +157,18 @@ export default function CreatorApp() {
     showToast('ล้างถังขยะเรียบร้อย');
   };
 
+  const handleSyncPage = async (id: string, url: string) => {
+    showToast('กำลังซิงค์ข้อมูลจาก Facebook...');
+    const meta = await getFacebookPageData(url);
+    const page = pages.find(p => p.id === id);
+    if (page) {
+      const updatedPage = { ...page, facebookData: meta as any };
+      dataService.savePage(updatedPage);
+      setPages(dataService.getPages());
+      showToast('ซิงค์ข้อมูลสำเร็จ');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
@@ -186,6 +199,7 @@ export default function CreatorApp() {
               setSelectedYear={setSelectedYear}
               onNavigateToTask={() => setCurrentTab('daily-task')}
               currentUser={currentUser}
+              onSyncPage={handleSyncPage}
             />
           )}
 

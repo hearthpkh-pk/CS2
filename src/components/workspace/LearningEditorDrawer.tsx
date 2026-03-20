@@ -16,10 +16,11 @@ interface LearningEditorDrawerProps {
   onClose: () => void;
   onSave: (video: Partial<VideoTutorial>) => void;
   editingVideo: VideoTutorial | null;
+  allExistingTags: string[];
 }
 
 export const LearningEditorDrawer: React.FC<LearningEditorDrawerProps> = ({ 
-  isOpen, onClose, onSave, editingVideo 
+  isOpen, onClose, onSave, editingVideo, allExistingTags
 }) => {
   const [formData, setFormData] = useState<Partial<VideoTutorial>>({
     title: '',
@@ -213,6 +214,29 @@ export const LearningEditorDrawer: React.FC<LearningEditorDrawerProps> = ({
                         </div>
                       ))}
                    </div>
+                   
+                   {/* Suggested Tags */}
+                   {allExistingTags.length > 0 && (
+                     <div className="mb-4">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2 px-1">Tags เดิมที่มีอยู่:</span>
+                        <div className="flex flex-wrap gap-2">
+                           {allExistingTags
+                             .filter(tag => !formData.tags?.includes(tag))
+                             .map(tag => (
+                               <button 
+                                 key={tag}
+                                 type="button"
+                                 onClick={() => setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), tag] }))}
+                                 className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[9px] font-bold hover:bg-blue-100 hover:text-blue-600 transition-colors border border-transparent hover:border-blue-200"
+                               >
+                                 + {tag}
+                               </button>
+                             ))
+                           }
+                        </div>
+                     </div>
+                   )}
+
                    <div className="relative">
                       <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
                       <input 
