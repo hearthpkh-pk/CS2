@@ -227,6 +227,7 @@ export default function CreatorApp() {
             <TransactionsView
               pages={pages}
               logs={logs}
+              currentUser={currentUser}
               onSave={handleSaveLogs}
             />
           )}

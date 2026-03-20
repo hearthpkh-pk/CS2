@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { Save, FilePlus } from 'lucide-react';
-import { Page, DailyLog } from '@/types';
+import { Page, DailyLog, User } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface Props {
   pages: Page[];
   logs: DailyLog[];
+  currentUser: User;
   onSave: (newLogs: DailyLog[]) => void;
 }
 
-export const TransactionsView = ({ pages, logs, onSave }: Props) => {
+export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) => {
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
   const [inputData, setInputData] = useState<Record<string, { followers: string; views: string }>>({});
 
@@ -37,9 +38,11 @@ export const TransactionsView = ({ pages, logs, onSave }: Props) => {
         newLogs.push({
           id: `log-${p.id}-${logDate}`,
           pageId: p.id,
+          staffId: p.ownerId || currentUser.id,
           date: logDate,
           followers: parseInt(f),
-          views: parseInt(v)
+          views: parseInt(v),
+          createdAt: new Date().toISOString()
         });
       }
     });
