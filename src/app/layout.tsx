@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Noto_Sans_Thai, Inter } from "next/font/google";
+import { Outfit, Noto_Sans_Thai, Kanit, Inter } from "next/font/google";
 import "./globals.css";
 
 const outfit = Outfit({ 
@@ -10,6 +10,12 @@ const outfit = Outfit({
 const notoThai = Noto_Sans_Thai({ 
   subsets: ["thai"], 
   variable: "--font-noto-thai" 
+});
+
+const kanit = Kanit({ 
+  subsets: ["thai"], 
+  weight: ["300", "400", "500", "700", "800", "900"],
+  variable: "--font-kanit" 
 });
 
 const inter = Inter({ 
@@ -28,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${outfit.variable} ${notoThai.variable} ${inter.variable}`}>
+    <html lang="th" className={`${outfit.variable} ${notoThai.variable} ${kanit.variable} ${inter.variable}`}>
       <body className="font-noto antialiased bg-[#fefefe] text-[#1e293b]">
         {children}
       </body>

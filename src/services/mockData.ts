@@ -17,54 +17,6 @@ export const initialAccounts: FBAccount[] = [
 
 export const initialPages: Page[] = [
   { 
-    id: '1', 
-    name: 'กิ้งก่าทอง มาร์เก็ตติ้ง', 
-    category: 'หมวดบันเทิง', 
-    status: 'Active', 
-    boxId: 1, 
-    ownerId: 'u-staff-a1', 
-    teamId: 'team-a',
-    facebookUrl: 'https://www.facebook.com/GoldenLizard',
-    facebookData: {
-      profilePic: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=400&q=80',
-      description: 'เพจกิ้งก่าทอง มาร์เก็ตติ้ง - รวมคลิปฮา คลิปเด็ดประจำวัน',
-      followers: 45200,
-      lastSyncAt: new Date().toISOString()
-    }
-  },
-  { 
-    id: '2', 
-    name: 'Healthy Life TH', 
-    category: 'หมวดสุขภาพ', 
-    status: 'Rest', 
-    boxId: 1, 
-    ownerId: 'u-staff-a1', 
-    teamId: 'team-a',
-    facebookUrl: 'https://www.facebook.com/HealthyLifeTH',
-    facebookData: {
-      profilePic: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=400&q=80',
-      description: 'แชร์เคล็ดลับสุขภาพดี วิถีไทย',
-      followers: 12800,
-      lastSyncAt: new Date().toISOString()
-    }
-  },
-  { 
-    id: '3', 
-    name: 'Tech Inside', 
-    category: 'หมวดเทคโนโลยี', 
-    status: 'Problem', 
-    boxId: 2, 
-    ownerId: 'u-staff-a2', 
-    teamId: 'team-a',
-    facebookUrl: 'https://www.facebook.com/TechInside',
-    facebookData: {
-      profilePic: 'https://images.unsplash.com/photo-1614850523011-8f49ffc73908?w=400&q=80',
-      description: 'อัปเดตข่าวสารไอทีแบบเจาะลึก',
-      followers: 34500,
-      lastSyncAt: new Date().toISOString()
-    }
-  },
-  { 
     id: '4', 
     name: 'ข่าวช่วยชาวบ้าน - News', 
     category: 'ข่าว', 

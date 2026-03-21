@@ -42,7 +42,7 @@ export default function CreatorApp() {
 
   // Filters State (Stored here for Dashboard)
   const [selectedPage, setSelectedPage] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   // Load Initial Data - Reactive to currentUser
@@ -193,6 +193,8 @@ export default function CreatorApp() {
             <DashboardView
               pages={pages}
               logs={logs}
+              allPages={pages}
+              allLogs={logs}
               selectedPage={selectedPage}
               setSelectedPage={setSelectedPage}
               selectedMonth={selectedMonth}

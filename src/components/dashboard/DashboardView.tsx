@@ -3,7 +3,9 @@
 import React, { useMemo } from 'react';
 import { Users, Eye, Filter, Calendar, Activity, RefreshCw } from 'lucide-react';
 import { Page, DailyLog, User } from '@/types';
-import { CombinedAreaChart } from './CombinedAreaChart';
+import { PerformanceChart } from './PerformanceChart';
+import { ComparisonLineChart } from './ComparisonLineChart';
+import { buildFakeDatabase } from '@/data/mockDashboardData';
 
 interface Props {
   pages: Page[];
@@ -17,6 +19,8 @@ interface Props {
   onNavigateToTask: () => void;
   currentUser: User;
   onSyncPage?: (id: string, url: string) => void;
+  allPages: Page[]; 
+  allLogs: DailyLog[]; 
 }
 
 const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -24,72 +28,159 @@ const thaiMonths = ["มกราคม", "กุมภาพันธ์", "ม
 export const DashboardView = ({
   pages, logs, selectedPage, setSelectedPage,
   selectedMonth, setSelectedMonth, selectedYear, setSelectedYear,
-  onNavigateToTask, currentUser, onSyncPage
+  onNavigateToTask, currentUser, onSyncPage,
+  allPages, allLogs
 }: Props) => {
+  const [isDemoMode, setIsDemoMode] = React.useState(false);
+
+  // --- Real vs Fake Database Interception ---
+  const { fakePages, fakeLogs } = useMemo(() => buildFakeDatabase(selectedYear), [selectedYear]);
+  
+  const workingPages = isDemoMode ? fakePages : pages;
+  const workingLogs = isDemoMode ? fakeLogs : logs;
+  const workingAllPages = isDemoMode ? fakePages : allPages;
+  const workingAllLogs = isDemoMode ? fakeLogs : allLogs;
 
   const chartData = useMemo(() => {
-    const relevantPages = selectedPage === 'all' ? pages : pages.filter(p => p.id === selectedPage);
+    const relevantPages = selectedPage === 'all' ? workingPages : workingPages.filter(p => p.id === selectedPage);
     const relevantPageIds = relevantPages.map(p => p.id);
 
-    let filteredLogs = logs.filter(l => {
-      const inPages = relevantPageIds.includes(l.pageId);
-      const lDate = new Date(l.date);
-      const inYear = lDate.getFullYear().toString() === selectedYear;
-      const inMonth = selectedMonth === 'all' ? true : (lDate.getMonth() + 1).toString().padStart(2, '0') === selectedMonth;
-      return inPages && inYear && inMonth;
+    let filteredLogs = workingLogs.filter(l => {
+      // Use string splitting to avoid UTC shift issues
+      const parts = l.date.split('-');
+      const lYear = parts[0];
+      const lMonth = parts[1];
+      const inYear = lYear === selectedYear;
+      const inMonth = selectedMonth === 'all' ? true : lMonth === selectedMonth;
+      return relevantPageIds.includes(l.pageId) && inYear && inMonth;
     });
 
-    filteredLogs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    filteredLogs.sort((a, b) => a.date.localeCompare(b.date));
 
-    const grouped: Record<string, { date: string; views: number; followersSum: number }> = {};
+    if (selectedMonth === 'all') {
+      // Group by Month (1-12) - Pre-populate for January START
+      const monthly: Record<string, { date: string; views: number; pageFollowers: Record<string, number>; count: number }> = {};
+      for (let i = 0; i < 12; i++) {
+        const key = `${selectedYear}-${(i + 1).toString().padStart(2, '0')}-01`;
+        monthly[key] = { date: key, views: 0, pageFollowers: {}, count: 0 };
+      }
+      filteredLogs.forEach(log => {
+        // Timezone-safe month extraction using string parts instead of Date object
+        const monthPart = log.date.split('-')[1];
+        const key = `${selectedYear}-${monthPart}-01`;
+        if (monthly[key]) {
+          monthly[key].views += Math.floor(Number(log.views));
+          // Track the maximum follower count for EACH page in this month
+          monthly[key].pageFollowers[log.pageId] = Math.max(
+            monthly[key].pageFollowers[log.pageId] || 0,
+            Math.floor(Number(log.followers))
+          );
+          monthly[key].count += 1;
+        }
+      });
+      return Object.values(monthly)
+        .filter(g => g.count > 0) // Strip out future/unreached months with no data
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map(g => {
+          // Sum the peak followers of all pages in this month
+          const followersSum = Object.values(g.pageFollowers).reduce((acc, val) => acc + val, 0);
+          return {
+            date: g.date,
+            views: g.views,
+            followers: followersSum
+          };
+        });
+    }
+
+    // Daily grouping
+    const grouped: Record<string, { date: string; views: number; pageFollowers: Record<string, number> }> = {};
     filteredLogs.forEach(log => {
-      if (!grouped[log.date]) grouped[log.date] = { date: log.date, views: 0, followersSum: 0 };
-      grouped[log.date].views += Number(log.views);
-      grouped[log.date].followersSum += Number(log.followers);
+      if (!grouped[log.date]) grouped[log.date] = { date: log.date, views: 0, pageFollowers: {} };
+      grouped[log.date].views += Math.floor(Number(log.views));
+      // Track the maximum follower count for EACH page in this specific day (in case of multiple daily logs)
+      grouped[log.date].pageFollowers[log.pageId] = Math.max(
+        grouped[log.date].pageFollowers[log.pageId] || 0,
+        Math.floor(Number(log.followers))
+      );
     });
 
-    return Object.values(grouped).map(g => ({
-      date: g.date,
-      views: g.views,
-      followers: selectedPage === 'all' ? Math.floor(g.followersSum / Math.max(relevantPageIds.length, 1)) : g.followersSum
-    }));
-  }, [pages, logs, selectedPage, selectedMonth, selectedYear]);
+    return Object.values(grouped)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(g => {
+        // Sum the daily peak followers of all pages
+        const followersSum = Object.values(g.pageFollowers).reduce((acc, val) => acc + val, 0);
+        return {
+          date: g.date,
+          views: g.views,
+          followers: followersSum
+        };
+      });
+  }, [workingPages, workingLogs, selectedPage, selectedMonth, selectedYear]);
 
   const totals = useMemo(() => {
-    let currentViews = 0;
-    let currentFollowers = chartData.length > 0 ? chartData[chartData.length - 1].followers : 0;
-    chartData.forEach(d => currentViews += d.views);
-    const prevViews = Math.floor(currentViews * 0.85);
-    return { views: currentViews, prevViews, followers: currentFollowers };
+    // Derive directly from chartData — diagnostic proved this produces identical results
+    // to the ComparisonLineChart's per-page aggregation
+    const totalViews = chartData.reduce((acc, d) => acc + d.views, 0);
+    const currentFollowers = chartData.length > 0 ? chartData[chartData.length - 1].followers : 0;
+    const prevViews = Math.floor(totalViews * 0.85);
+
+    return {
+      views: Math.floor(totalViews),
+      prevViews: Math.floor(prevViews),
+      followers: Math.floor(currentFollowers)
+    };
   }, [chartData]);
 
-  const showSubmissionPrompt = currentUser.role === 'Staff' || currentUser.role === 'Admin';
+  const showSubmissionPrompt = true; // Forcing true for V2 data storytelling clarity across all roles
 
   return (
     <div className="animate-fade-in max-w-6xl mx-auto pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-100 pb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight">Dashboard</h2>
-          <p className="text-slate-400 font-noto text-sm mt-1">ภาพรวมการเติบโตและสถิติสะสมของคุณ</p>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold text-slate-800 font-outfit tracking-tight">
+            Dashboard
+          </h2>
+          <div className="flex items-center gap-2 text-slate-400 font-noto text-[10px] uppercase tracking-widest font-bold">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+            รายงานข้อมูลเพจ
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-5 py-2.5 shadow-sm">
-            <Filter size={18} className="text-slate-300" />
-            <select value={selectedPage} onChange={e => setSelectedPage(e.target.value)} className="bg-transparent text-slate-700 text-sm font-semibold font-noto outline-none min-w-[150px]">
-              <option value="all">ทุกเพจพร้อมกัน</option>
-              {pages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          {/* Data Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto">
+            <button
+              onClick={() => setIsDemoMode(false)}
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${!isDemoMode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+            >
+              Real
+            </button>
+            <button
+              onClick={() => setIsDemoMode(true)}
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${isDemoMode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+            >
+              Mockup
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 w-full sm:w-auto">
+            <Filter size={14} className="text-slate-300" />
+            <select value={selectedPage} onChange={e => setSelectedPage(e.target.value)} className="bg-transparent text-slate-700 text-xs font-semibold font-noto outline-none flex-1">
+              <option value="all">ทุกเพจ</option>
+              {workingPages.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-5 py-2.5 shadow-sm">
-            <Calendar size={18} className="text-slate-300" />
-            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-transparent text-slate-700 text-sm font-semibold font-noto outline-none">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 w-full sm:w-auto">
+            <Calendar size={14} className="text-slate-300" />
+            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-transparent text-slate-700 text-xs font-semibold font-noto outline-none">
               <option value="all">ทุกเดือน</option>
               {thaiMonths.map((m, i) => <option key={i} value={(i + 1).toString().padStart(2, '0')}>{m}</option>)}
             </select>
-            <div className="w-px h-4 bg-slate-100"></div>
-            <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-transparent text-slate-700 text-sm font-semibold font-noto outline-none">
+            <div className="w-px h-3 bg-slate-100"></div>
+            <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-transparent text-slate-700 text-xs font-semibold font-noto outline-none">
               <option value="2024">2567</option>
               <option value="2025">2568</option>
               <option value="2026">2569</option>
@@ -99,176 +190,167 @@ export const DashboardView = ({
       </div>
 
       {showSubmissionPrompt && (
-        <div className="mb-10 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-100 relative overflow-hidden group cursor-pointer" onClick={onNavigateToTask}>
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
-             <Eye size={120} className="rotate-12 -mr-10 -mt-10" />
-          </div>
+        <div className="mb-12 bg-slate-50 border border-slate-200/60 rounded-2xl p-6 text-slate-800 relative overflow-hidden group shadow-sm transition-all hover:shadow-md">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                 🔥 Goal: 40 Clips / Day
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">ลำดับความสำคัญ</span>
               </div>
-              <h3 className="text-2xl font-black font-outfit uppercase tracking-tight">คุณยังไม่ได้ส่งงานของวันนี้หรือเปล่า?</h3>
-              <p className="text-blue-100/70 text-sm font-noto mt-1">คลิกที่นี่เพื่อไปที่หน้าส่งคลิปงาน 40 ลิงก์ (10 เพจ) เพื่อรักษาสถิติการทำงานของคุณ</p>
+              <h3 className="text-base font-medium text-slate-800 font-thai-premium tracking-wide uppercase">เป้าหมายรายวัน: 40 คลิป / วัน</h3>
+
+              <div className="mt-4 flex gap-1 items-center max-w-sm">
+                {Array.from({ length: 10 }).map((_, idx) => (
+                  <div key={idx} className="h-3 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-1000 ${isDemoMode && idx < 7.5 ? 'bg-blue-600' : 'bg-white'
+                        }`}
+                    />
+                  </div>
+                ))}
+                <span className="ml-3 text-[10px] font-bold text-blue-600 font-thai-premium uppercase tracking-[0.1em]">
+                  {isDemoMode ? `ยืนยันแล้ว 75%` : 'ยังไม่มีข้อมูล'}
+                </span>
+              </div>
             </div>
-            <button className="bg-white text-blue-600 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg">
-              ไปที่หน้าส่งงาน
-            </button>
+            <div className="flex flex-col items-start md:items-end md:text-right gap-3">
+              <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">สถานะรายงาน</div>
+              <button
+                onClick={onNavigateToTask}
+                className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-sm"
+              >
+                ส่งรายงานประจำเดือน
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200">
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-              <Users className="text-primary-navy" size={26} />
-            </div>
-            <div className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
-              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider font-inter">+{((totals.followers / Math.max(totals.followers * 0.9, 1)) * 10 - 10).toFixed(1)}%</span>
-            </div>
-          </div>
-          <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.15em] font-noto mb-2">Total Followers</p>
-          <h3 className="text-4xl font-bold text-primary-navy font-inter tracking-tight">
-            {totals.followers.toLocaleString()}
-          </h3>
-        </div>
-
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200">
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-              <Eye className="text-primary-navy" size={26} />
-            </div>
-            <div className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
-              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                +{((totals.views - totals.prevViews) / Math.max(totals.prevViews, 1) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-          <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.15em] font-noto mb-2">Total Views Performance</p>
-          <h3 className="text-4xl font-bold text-primary-navy font-inter tracking-tight">
-            {totals.views.toLocaleString()}
-          </h3>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pt-4">
+        <PerformanceChart
+          data={chartData.map(d => ({ date: d.date, value: d.followers }))}
+          label="การเติบโตของผู้ติดตาม"
+          color="#1e40af"
+          gradientId="grad-followers"
+          type={selectedMonth === 'all' ? 'monthly' : 'daily'}
+          displayValue={totals.followers}
+          growth={Number(((totals.followers / Math.max(totals.followers * 0.9, 1)) * 10 - 10).toFixed(0))}
+        />
+        <PerformanceChart
+          data={chartData.map(d => ({ date: d.date, value: d.views }))}
+          label="ประสิทธิภาพการรับชม"
+          color="#2563eb"
+          gradientId="grad-views"
+          type={selectedMonth === 'all' ? 'monthly' : 'daily'}
+          displayValue={totals.views}
+          growth={Number((((totals.views - totals.prevViews) / Math.max(totals.prevViews, 1)) * 100).toFixed(0))}
+        />
       </div>
 
-      <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div>
-            <h3 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-wider">Growth Performance</h3>
-            <p className="text-xs text-slate-400 font-noto mt-1 uppercase tracking-widest">Statistical Trend Analysis</p>
-          </div>
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded-full bg-[#facc15] shadow-[0_0_12px_rgba(250,204,21,0.5)]"></div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] font-noto">ผู้ติดตาม</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded-full bg-slate-300"></div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.12em] font-noto">ยอดการรับชม</span>
-            </div>
-          </div>
-        </div>
-        <CombinedAreaChart data={chartData} />
-      </div>
+      <ComparisonLineChart
+        pages={workingAllPages}
+        logs={workingAllLogs}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        selectedPage={selectedPage} 
+      />
 
       {/* Active Pages (Smart Insights) */}
       <div className="mt-12">
         <div className="mb-6 flex items-center justify-between">
-           <div>
-              <h3 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-wider">Active Pages (Smart Insights)</h3>
-              <p className="text-xs text-slate-400 font-noto mt-1 uppercase tracking-widest px-1">เรียลไทม์ข้อมูลจาก Facebook Page ของคุณ</p>
-           </div>
-           <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
-              <Activity size={14} /> Smart Sync Active
-           </div>
+          <div>
+            <h3 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-wider">Active Pages (Smart Insights)</h3>
+            <p className="text-xs text-slate-400 font-noto mt-1 uppercase tracking-widest px-1">เรียลไทม์ข้อมูลจาก Facebook Page ของคุณ</p>
+          </div>
+          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
+            <Activity size={14} /> Smart Sync Active
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-           {pages
-             .filter(p => p.status === 'Active' && (selectedPage === 'all' || p.id === selectedPage))
-             .sort((a, b) => (Number(a.boxId) || 0) - (Number(b.boxId) || 0))
-             .map(page => (
-               <a 
-                 key={page.id} 
-                 href={page.facebookUrl} 
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden flex flex-col min-h-[250px] cursor-pointer"
-               >
-                 {!page.facebookData ? (
-                   <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
-                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 border-dashed">
-                         <Activity className="text-slate-300 animate-pulse" size={24} />
+          {pages
+            .filter(p => p.status === 'Active' && (selectedPage === 'all' || p.id === selectedPage))
+            .sort((a, b) => (Number(a.boxId) || 0) - (Number(b.boxId) || 0))
+            .map(page => (
+              <a
+                key={page.id}
+                href={page.facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden flex flex-col min-h-[250px] cursor-pointer"
+              >
+                {!page.facebookData ? (
+                  <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 border-dashed">
+                      <Activity className="text-slate-300 animate-pulse" size={24} />
+                    </div>
+                    <h4 className="font-bold text-slate-800 text-sm font-noto mb-1 truncate w-full">{page.name}</h4>
+                    <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">Waiting for smart sync...</p>
+
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSyncPage?.(page.id, page.facebookUrl || `https://facebook.com/${page.id}`);
+                      }}
+                      className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 transition-all"
+                    >
+                      Sync Now
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 group-hover:border-blue-100 transition-colors">
+                          <img
+                            src={page.facebookData.profilePic || 'https://images.unsplash.com/photo-1614850523598-92751cd01d1d?w=400&q=80'}
+                            alt={page.name}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-white shadow-sm shadow-emerald-200"></div>
                       </div>
-                      <h4 className="font-bold text-slate-800 text-sm font-noto mb-1 truncate w-full">{page.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">Waiting for smart sync...</p>
-                      
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onSyncPage?.(page.id, page.facebookUrl || `https://facebook.com/${page.id}`);
-                        }}
-                        className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 transition-all"
-                      >
-                         Sync Now
-                      </button>
-                   </div>
-                 ) : (
-                   <>
-                     <div className="flex items-start justify-between mb-4">
-                        <div className="relative">
-                           <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 group-hover:border-blue-100 transition-colors">
-                              <img 
-                                src={page.facebookData.profilePic || 'https://images.unsplash.com/photo-1614850523598-92751cd01d1d?w=400&q=80'} 
-                                alt={page.name} 
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                              />
-                           </div>
-                           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-white shadow-sm shadow-emerald-200"></div>
+                      <div className="flex flex-col items-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onSyncPage?.(page.id, page.facebookUrl || '');
+                          }}
+                          className="p-1.5 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-slate-100"
+                          title="Refresh Metadata"
+                        >
+                          <RefreshCw size={12} className="hover:rotate-180 transition-transform duration-500" />
+                        </button>
+                        <div className="text-right">
+                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest block mb-1">Followers</span>
+                          <span className="text-sm font-black text-slate-800 font-inter tracking-tight">
+                            {page.facebookData.followers?.toLocaleString() || '---'}
+                          </span>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                           <button 
-                             onClick={(e) => {
-                               e.preventDefault();
-                               e.stopPropagation();
-                               onSyncPage?.(page.id, page.facebookUrl || '');
-                             }}
-                             className="p-1.5 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-slate-100"
-                             title="Refresh Metadata"
-                           >
-                             <RefreshCw size={12} className="hover:rotate-180 transition-transform duration-500" />
-                           </button>
-                           <div className="text-right">
-                              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest block mb-1">Followers</span>
-                              <span className="text-sm font-black text-slate-800 font-inter tracking-tight">
-                                 {page.facebookData.followers?.toLocaleString() || '---'}
-                              </span>
-                           </div>
-                        </div>
-                     </div>
+                      </div>
+                    </div>
 
-                     <div className="mb-4 flex-1">
-                        <h3 className="font-bold text-slate-900 text-base leading-tight group-hover:text-blue-600 transition-colors line-clamp-1">{page.name}</h3>
-                        <p className="text-[10px] text-slate-500 line-clamp-2 mt-2 font-inter italic leading-relaxed">
-                           {page.facebookData.description || 'ดึงข้อมูลจากระบบ Facebook โดยตรงเพื่อวิเคราะห์ประสิทธิภาพ'}
-                        </p>
-                     </div>
+                    <div className="mb-4 flex-1">
+                      <h3 className="font-bold text-slate-900 text-base leading-tight group-hover:text-blue-600 transition-colors line-clamp-1">{page.name}</h3>
+                      <p className="text-[10px] text-slate-500 line-clamp-2 mt-2 font-noto italic leading-relaxed">
+                        {page.facebookData.description || 'ดึงข้อมูลจากระบบ Facebook โดยตรงเพื่อวิเคราะห์ประสิทธิภาพ'}
+                      </p>
+                    </div>
 
-                     <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                           <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Live Status</span>
-                        </div>
-                        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                          {page.facebookData.lastSyncAt ? `Sync ${new Date(page.facebookData.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Not synced'}
-                        </span>
-                     </div>
-                   </>
-                 )}
-               </a>
-             ))}
+                    <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Live Status</span>
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                        {page.facebookData.lastSyncAt ? `Sync ${new Date(page.facebookData.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Not synced'}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </a>
+            ))}
         </div>
       </div>
     </div>

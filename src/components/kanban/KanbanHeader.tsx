@@ -29,7 +29,7 @@ export const KanbanHeader = ({
   trashCount
 }: KanbanHeaderProps) => {
   return (
-    <div className="sticky top-0 z-40 bg-slate-50 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 pb-6 mb-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+    <div className="sticky top-0 z-40 bg-slate-50 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 pb-6 mb-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-y-4 md:gap-x-12 shadow-sm">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Facebok Page Setup</h2>
@@ -64,10 +64,10 @@ export const KanbanHeader = ({
 
         <button
           onClick={() => viewMode === 'pages' ? onAddPage() : onAddAccount()}
-          className="bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-5 py-2.5 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100 text-sm whitespace-nowrap"
+          className="bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-5 py-2.5 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100 text-sm whitespace-nowrap flex-shrink-0"
         >
           <Plus size={18} />
-          <span>{viewMode === 'pages' ? "เพิ่มเพจใหม่" : "เพิ่มบัญชีใหม่"}</span>
+          <span className="hidden sm:inline">{viewMode === 'pages' ? "เพิ่มเพจใหม่" : "เพิ่มบัญชีใหม่"}</span>
         </button>
 
         {/* Minimal Theme-Based Mode Toggle - Now at Far Right (Height-Aligned) */}
