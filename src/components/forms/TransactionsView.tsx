@@ -19,7 +19,8 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   // CSV Import States
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importStep, setImportStep] = useState<'select' | 'confirm'>('select');
-  const [pendingCsvRows, setPendingCsvRows] = useState<{ date: string; views: number }[]>([]);
+  const [pendingCsvRows, setPendingCsvRows] = useState<{ date: string; followers: number; views: number }[]>([]);
+  const [importSummary, setImportSummary] = useState({ days: 0, hasViews: false, hasFollowers: false });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetPageId, setSelectedTargetPageId] = useState<string | null>(null);
 
@@ -51,48 +52,72 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
 
   const parseCSV = (text: string) => {
     const lines = text.split('\n');
-    const newLogsFromCsv: DailyLog[] = [];
+    const dataByDate: Record<string, { followers: number; views: number }> = {};
+    
+    let currentMetric: 'views' | 'followers' | null = null;
+    let inDataBlock = false;
 
-    // Facebook CSV often starts with "sep=," or "Views" metadata lines
-    // We look for the header row "Date","Primary"
-    let headerIndex = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes('"Date"') && lines[i].includes('"Primary"')) {
-        headerIndex = i;
-        break;
-      }
-    }
-
-    if (headerIndex === -1) {
-      alert('ไม่พบรูปแบบไฟล์ที่ถูกต้อง (ต้องการคอลัมน์ "Date" และ "Primary")');
-      return;
-    }
-
-    const rows: { date: string; views: number }[] = [];
-    for (let i = headerIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line) continue;
+      if (!line) {
+        inDataBlock = false;
+        continue;
+      }
 
-      const parts = line.split(',').map(p => p.replace(/"/g, ''));
-      if (parts.length < 2) continue;
+      // Check for metric indicators in lines preceding or in metadata
+      if (line.includes('"ยอดดู"') || line.toLowerCase().includes('"views"')) {
+        currentMetric = 'views';
+      } else if (line.includes('"จำนวนการติดตามบน Facebook"') || line.toLowerCase().includes('"facebook follows"')) {
+        currentMetric = 'followers';
+      }
 
-      const rawDate = parts[0];
-      const viewsStr = parts[1];
-      const dateOnly = rawDate.split('T')[0];
-      const views = parseInt(viewsStr) || 0;
+      // Check for header row
+      const isHeader = (line.includes('"Date"') || line.includes('"วันที่"')) && line.includes('"Primary"');
+      
+      if (isHeader) {
+        inDataBlock = true;
+        continue;
+      }
 
-      if (dateOnly && !isNaN(views)) {
-        rows.push({ date: dateOnly, views });
+      if (inDataBlock && currentMetric) {
+        const parts = line.split(',').map(p => p.replace(/"/g, ''));
+        if (parts.length >= 2) {
+          const rawDate = parts[0];
+          const valStr = parts[1];
+          const dateOnly = rawDate.split('T')[0];
+          const value = parseInt(valStr) || 0;
+
+          if (dateOnly && !isNaN(value)) {
+            if (!dataByDate[dateOnly]) {
+              dataByDate[dateOnly] = { followers: 0, views: 0 };
+            }
+            if (currentMetric === 'views') {
+              dataByDate[dateOnly].views = value;
+            } else {
+              dataByDate[dateOnly].followers = value;
+            }
+          }
+        }
       }
     }
+
+    const rows = Object.entries(dataByDate).map(([date, data]) => ({
+      date,
+      ...data
+    }));
 
     if (rows.length === 0) {
-      alert('ไม่พบข้อมูลที่สามารถนำเข้าได้');
+      alert('ไม่พบข้อมูลที่สามารถนำเข้าได้ หรือรูปแบบไฟล์ไม่รองรับ');
       return;
     }
 
     setPendingCsvRows(rows);
-    setSearchQuery(''); // Reset search
+    setImportSummary({
+      days: rows.length,
+      hasViews: rows.some(r => r.views > 0),
+      hasFollowers: rows.some(r => r.followers > 0)
+    });
+    setSearchQuery('');
 
     if (pages.length === 1) {
       setSelectedTargetPageId(pages[0].id);
@@ -115,15 +140,22 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
     const targetPage = pages.find(p => p.id === pageId);
     if (!targetPage || !pageId) return;
 
-    const newLogs = rows.map(r => ({
-      id: `log-${pageId}-${r.date}`,
-      pageId: pageId,
-      staffId: targetPage.ownerId || currentUser.id,
-      date: r.date,
-      followers: 0,
-      views: r.views,
-      createdAt: new Date().toISOString()
-    }));
+    const newLogs = rows.map(r => {
+      // Find existing log to merge data
+      const existingLog = logs.find(l => l.pageId === pageId && l.date === r.date);
+      
+      return {
+        id: `log-${pageId}-${r.date}`,
+        pageId: pageId,
+        staffId: targetPage.ownerId || currentUser.id,
+        date: r.date,
+        // Merge: If CSV has non-zero value, use it. Otherwise keep existing.
+        followers: r.followers !== 0 ? r.followers : (existingLog?.followers || 0),
+        views: r.views !== 0 ? r.views : (existingLog?.views || 0),
+        createdAt: existingLog?.createdAt || new Date().toISOString()
+      };
+    });
+
     onSave(newLogs);
     setIsImportModalOpen(false);
     setPendingCsvRows([]);
@@ -351,8 +383,16 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                   </div>
                   <h3 className="text-xl font-bold text-slate-800 font-outfit uppercase tracking-tight mb-2">ยืนยันการนำเข้าข้อมูล</h3>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-6">
-                    <p className="text-sm text-slate-600 font-medium">ต้องการนำเข้าข้อมูลจำนวน <span className="text-blue-600 font-black">{pendingCsvRows.length} วัน</span></p>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">ไปยังเพจ: {pages.find(p => p.id === selectedTargetPageId)?.name}</p>
+                    <p className="text-sm text-slate-600 font-medium">พบข้อมูลรวม <span className="text-blue-600 font-black">{importSummary.days} วัน</span></p>
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                       {importSummary.hasFollowers && (
+                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-bold rounded-lg border border-emerald-100">ผู้ติดตาม</span>
+                       )}
+                       {importSummary.hasViews && (
+                         <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-bold rounded-lg border border-blue-100">ยอดดู</span>
+                       )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-widest font-bold border-t border-slate-100 pt-3">ไปยังเพจ: {pages.find(p => p.id === selectedTargetPageId)?.name}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
