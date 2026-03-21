@@ -131,7 +131,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
               >
                 <div className={cn(
                   "w-2 h-2 rounded-full",
-                  user.role === 'Super Admin' ? "bg-purple-400" :
+                  user.role === 'Super Admin' ? "bg-blue-600" :
                     user.role === 'Admin' ? "bg-blue-400" :
                       user.role === 'Manager' ? "bg-emerald-400" : "bg-slate-400"
                 )} />

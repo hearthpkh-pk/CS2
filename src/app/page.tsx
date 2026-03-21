@@ -16,6 +16,8 @@ import { DailyTaskView } from '@/components/workspace/DailyTaskView';
 import { LearningCenterView } from '@/components/workspace/LearningCenterView';
 import { PolicyCenterView } from '@/components/workspace/PolicyCenterView';
 import { PolicySettingsView } from '@/components/admin/PolicySettingsView';
+import { HQDashboardView } from '@/components/admin/HQDashboardView';
+import { PlaceholderView } from '@/components/ui/PlaceholderView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
 import { initialUsers, initialPages } from '@/services/mockData';
@@ -186,7 +188,7 @@ export default function CreatorApp() {
       )}>
         <MobileHeader />
 
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 text-slate-900">
           {currentTab === 'dashboard' && (
             <DashboardView
               pages={pages}
@@ -233,49 +235,11 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'hq-dashboard' && (
-             <div className="space-y-6 animate-in fade-in duration-700">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                   <div>
-                      <h2 className="text-2xl font-bold text-slate-800 font-outfit uppercase tracking-tight">HQ Dashboard</h2>
-                      <p className="text-slate-400 text-xs font-medium uppercase tracking-[0.2em] mt-1">ทีมงานและภาพรวมองค์กร • Team Aggregation</p>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-500 font-noto focus:ring-2 ring-emerald-100 outline-none">
-                         <option>กรองรายคน (Staff Filter)</option>
-                         {users.filter(u => u.role === 'Staff').map(u => <option key={u.id}>{u.name}</option>)}
-                      </select>
-                      <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-slate-500 font-noto focus:ring-2 ring-emerald-100 outline-none">
-                         <option>กรองตามสถานะ (Status)</option>
-                         <option>Live Only</option>
-                         <option>Restricted</option>
-                      </select>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                   {[
-                      { label: 'Total Pages', val: pages.length, icon: Settings, color: 'text-blue-500' },
-                      { label: 'Total Accounts', val: accounts.length, icon: Users, color: 'text-emerald-500' },
-                      { label: 'Team Activity', val: '98%', icon: Activity, color: 'text-purple-500' },
-                      { label: 'Avg Health', val: 'Good', icon: Activity, color: 'text-orange-500' },
-                   ].map((stat, i) => (
-                      <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</span>
-                            <stat.icon size={16} className={stat.color} />
-                         </div>
-                         <p className="text-2xl font-black text-slate-700 font-inter">{stat.val}</p>
-                      </div>
-                   ))}
-                </div>
-
-                <div className="bg-white/40 border border-dashed border-slate-200 rounded-[3rem] h-64 flex items-center justify-center text-slate-400">
-                   <div className="text-center">
-                      <PieChart size={48} className="mx-auto mb-4 opacity-10" />
-                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">Team Charts & Analytics Hub</p>
-                   </div>
-                </div>
-             </div>
+            <HQDashboardView 
+              pages={pages} 
+              accounts={accounts} 
+              users={users} 
+            />
           )}
 
           {currentTab === 'setup' && (
@@ -301,43 +265,43 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'team' && (
-             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <Users size={64} className="mb-4 opacity-20" />
-                <h3 className="text-xl font-bold text-slate-600">Team Management</h3>
-                <p className="text-sm">Coming soon in Phase 2 Expansion...</p>
-             </div>
+            <PlaceholderView 
+              title="Team Management" 
+              icon={Users} 
+              description="Coming soon in Phase 2 Expansion..." 
+            />
           )}
 
           {currentTab === 'reports' && (
-             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <BarChart3 size={64} className="mb-4 opacity-20" />
-                <h3 className="text-xl font-bold text-slate-600">Reports & Analytics</h3>
-                <p className="text-sm">Comprehensive performance metrics coming soon...</p>
-             </div>
+            <PlaceholderView 
+              title="Reports & Analytics" 
+              icon={BarChart3} 
+              description="Comprehensive performance metrics coming soon..." 
+            />
           )}
 
           {currentTab === 'settings' && (
-             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <Building2 size={64} className="mb-4 opacity-20" />
-                <h3 className="text-xl font-bold text-slate-600">Company Settings</h3>
-                <p className="text-sm">Global organization configuration coming soon...</p>
-             </div>
+            <PlaceholderView 
+              title="Company Settings" 
+              icon={Building2} 
+              description="Global organization configuration coming soon..." 
+            />
           )}
 
           {currentTab === 'audit' && (
-             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <HistoryIcon size={64} className="mb-4 opacity-20" />
-                <h3 className="text-xl font-bold text-slate-600">Activity Audit</h3>
-                <p className="text-sm">Security logs and activity tracking coming soon...</p>
-             </div>
+            <PlaceholderView 
+              title="Activity Audit" 
+              icon={HistoryIcon} 
+              description="Security logs and activity tracking coming soon..." 
+            />
           )}
 
           {currentTab === 'help' && (
-             <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400">
-                <HelpCircle size={64} className="mb-4 opacity-20" />
-                <h3 className="text-xl font-bold text-slate-600">Help Center</h3>
-                <p className="text-sm">Documentation and tutorials coming soon...</p>
-             </div>
+            <PlaceholderView 
+              title="Help Center" 
+              icon={HelpCircle} 
+              description="Documentation and tutorials coming soon..." 
+            />
           )}
         </main>
         <MobileBottomNav 
