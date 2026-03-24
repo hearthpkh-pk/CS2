@@ -1,0 +1,13 @@
+{
+  "name": "fb-health-checker",
+  "version": "1.0.0",
+  "description": "Background worker for checking Facebook page status",
+  "main": "health-checker.js",
+  "scripts": {
+    "start": "node health-checker.js"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "puppeteer": "^22.6.0"
+  }
+}

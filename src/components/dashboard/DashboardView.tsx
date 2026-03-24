@@ -284,18 +284,11 @@ export const DashboardView = ({
                       <Activity className="text-slate-300 animate-pulse" size={24} />
                     </div>
                     <h4 className="font-bold text-slate-800 text-sm font-noto mb-1 truncate w-full">{page.name}</h4>
-                    <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">Waiting for smart sync...</p>
+                    <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">กำลังรออัปเดตจาก Worker...</p>
 
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onSyncPage?.(page.id, page.facebookUrl || `https://facebook.com/${page.id}`);
-                      }}
-                      className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-100 transition-all"
-                    >
-                      Sync Now
-                    </button>
+                    <div className="w-full py-2.5 bg-slate-50 text-slate-400 rounded-xl font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-100">
+                      <RefreshCw size={12} className="animate-spin" /> โหลดข้อมูลคืนนี้
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -311,18 +304,7 @@ export const DashboardView = ({
                         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-white shadow-sm shadow-emerald-200"></div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onSyncPage?.(page.id, page.facebookUrl || '');
-                          }}
-                          className="p-1.5 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-slate-100"
-                          title="Refresh Metadata"
-                        >
-                          <RefreshCw size={12} className="hover:rotate-180 transition-transform duration-500" />
-                        </button>
-                        <div className="text-right">
+                        <div className="text-right mt-1">
                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest block mb-1">Followers</span>
                           <span className="text-sm font-black text-slate-800 font-inter tracking-tight">
                             {page.facebookData.followers?.toLocaleString() || '---'}
@@ -340,11 +322,11 @@ export const DashboardView = ({
 
                     <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Live Status</span>
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                        <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">Auto-Synced</span>
                       </div>
                       <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                        {page.facebookData.lastSyncAt ? `Sync ${new Date(page.facebookData.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Not synced'}
+                        {page.facebookData.lastSyncAt ? `อัปเดตล่าสุด ${new Date(page.facebookData.lastSyncAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced'}
                       </span>
                     </div>
                   </>
