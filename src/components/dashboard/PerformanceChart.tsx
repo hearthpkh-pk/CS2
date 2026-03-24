@@ -1,22 +1,25 @@
-'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
+import { Lightbulb, Activity } from 'lucide-react';
 
 interface PerformanceChartProps {
   data: { date: string; value: number }[];
   label: string;
   color: string;
   gradientId: string;
-  unit?: string;
   type?: 'daily' | 'monthly';
-  displayValue?: number; // Added displayValue prop
-  growth?: number; // Added to preserve analytical depth after card deletion
+  primaryValue?: number;
+  primaryLabel?: string;
+  secondaryValue?: number;
+  secondaryLabel?: string;
 }
 
 const shortThaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 const fullThaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
-export const PerformanceChart = ({ data, label, color, gradientId, unit = '', type = 'daily', displayValue, growth }: PerformanceChartProps) => {
+export const PerformanceChart = ({ 
+  data, label, color, gradientId, type = 'daily',
+  primaryValue, primaryLabel, secondaryValue, secondaryLabel
+}: PerformanceChartProps) => {
   if (!data || data.length === 0) {
     return (
       <div className="h-64 flex flex-col items-center justify-center text-slate-300 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-100 font-noto">
@@ -24,6 +27,8 @@ export const PerformanceChart = ({ data, label, color, gradientId, unit = '', ty
       </div>
     );
   }
+
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const width = 800;
   const height = 240;
@@ -72,26 +77,12 @@ export const PerformanceChart = ({ data, label, color, gradientId, unit = '', ty
   };
 
   const avgVal = data.reduce((acc, d) => acc + d.value, 0) / data.length;
-  const latestValue = displayValue !== undefined ? displayValue : data[data.length - 1].value;
 
   return (
     <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm transition-all hover:shadow-md h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6 md:mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
         <div>
-          <h3 className="text-base font-medium text-slate-800 font-outfit uppercase tracking-wide">{label}</h3>
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Statistical performance over time</p>
-        </div>
-        <div className="flex flex-col items-end">
-          <div className="flex items-baseline gap-2">
-            <div className="text-xl md:text-2xl font-semibold text-slate-800 font-inter">
-              {latestValue.toLocaleString()}{unit && <span className="text-xs text-slate-400 font-normal ml-1">{unit}</span>}
-            </div>
-            {growth !== undefined && !isNaN(growth) && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${growth >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                {growth > 0 ? '+' : ''}{growth}%
-              </span>
-            )}
-          </div>
+          <h3 className="text-base font-bold text-slate-800 font-noto tracking-wide">{label}</h3>
         </div>
       </div>
       
@@ -118,40 +109,51 @@ export const PerformanceChart = ({ data, label, color, gradientId, unit = '', ty
 
           {/* Interactive Points */}
           {points.map((p, i) => (
-            <g key={i} className="group/dot cursor-crosshair">
-              <rect x={p.x - 20} y={0} width="40" height={height} fill="transparent" />
-              <circle cx={p.x} cy={p.y} r="6" fill="#ffffff" stroke={color} strokeWidth="3" className="opacity-40 group-hover/dot:opacity-0 transition-opacity" />
-              <circle cx={p.x} cy={p.y} r="6" fill="#ffffff" stroke={color} strokeWidth="3" className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-200 shadow-lg shadow-black/20" />
-              
-              <g className="opacity-0 group-hover/dot:opacity-100 transition-all duration-300 pointer-events-none translate-y-2 group-hover/dot:translate-y-0">
-                 {/* Super-Sized Tooltip for Mobile/Vertical Clarity */}
-                 <rect 
-                    x={p.x - 120} 
-                    y={p.y - 170} 
-                    width="240" 
-                    height="140" 
-                    rx="32" 
-                    fill="#0a192f" 
-                    className="shadow-2xl shadow-black/50"
-                 />
-                 
-                 {/* Date/Month */}
-                 <text x={p.x} y={p.y - 135} textAnchor="middle" fill="#94a3b8" fontSize="12" fontWeight="bold" className="font-noto uppercase tracking-[0.25em]">{formatChartDate(p.date)}</text>
-                 
-                 {/* Main Value */}
-                 <text x={p.x} y={p.y - 95} textAnchor="middle" fill="#ffffff" fontSize="32" fontWeight="black" className="font-inter tracking-tighter">{Math.floor(p.value).toLocaleString()}</text>
-                 
-                 {/* Average comparison line */}
-                 <rect x={p.x - 90} y={p.y - 78} width="180" height="1" fill="#1e293b" />
-                 
-                 {/* Comparison Logic */}
-                 <text x={p.x} y={p.y - 42} textAnchor="middle" fill={p.value >= avgVal ? "#10b981" : "#f59e0b"} fontSize="11" fontWeight="bold" className="font-outfit uppercase tracking-[0.15em]">
-                    {p.value >= avgVal ? `+${((p.value/avgVal - 1)*100).toFixed(0)}% สูงกว่าค่าเฉลี่ย` : `${((1 - p.value/avgVal)*100).toFixed(0)}% ต่ำกว่าค่าเฉลี่ย`}
-                 </text>
-              </g>
+            <g key={i}>
+              <rect x={p.x - 20} y={0} width="40" height={height} fill="transparent" cursor="crosshair"
+                onMouseEnter={() => setHoverIndex(i)}
+                onMouseLeave={() => setHoverIndex(null)}
+              />
+              <circle cx={p.x} cy={p.y} r="6" fill="#ffffff" stroke={color} strokeWidth="3" 
+                className={`transition-all duration-300 pointer-events-none ${hoverIndex === i ? 'opacity-0' : 'opacity-40'}`} 
+              />
+              <circle cx={p.x} cy={p.y} r="6" fill="#ffffff" stroke={color} strokeWidth="3" 
+                style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                className={`transition-all duration-300 pointer-events-none shadow-lg shadow-black/20 ${hoverIndex === i ? 'opacity-100 scale-125' : 'opacity-0 scale-100'}`} 
+              />
             </g>
           ))}
         </svg>
+      </div>
+
+      {/* Strategic Insight Block (Hover Data) */}
+      <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5 font-noto">
+            {hoverIndex !== null ? 'ข้อมูลที่เลือก' : 'สถิติล่าสุด'} • {formatChartDate(hoverIndex !== null ? data[hoverIndex].date : data[data.length - 1].date)}
+          </span>
+          <span className="text-xl font-bold font-inter text-slate-800 tracking-tight transition-all duration-300">
+            {Math.floor(hoverIndex !== null ? data[hoverIndex].value : data[data.length - 1].value).toLocaleString()}
+          </span>
+        </div>
+        
+        <div className="text-right flex flex-col items-end">
+                   <span className={`text-[10px] font-bold uppercase tracking-widest block mb-0.5 ${
+                     (hoverIndex !== null ? data[hoverIndex].value : data[data.length - 1].value) >= avgVal 
+                       ? 'text-emerald-500' 
+                       : 'text-amber-500'
+                   }`}>
+                     {(hoverIndex !== null ? data[hoverIndex].value : data[data.length - 1].value) >= avgVal ? 'สูงกว่าค่าเฉลี่ย' : 'ต่ำกว่าค่าเฉลี่ย'}
+                   </span>
+                   <span className={`text-sm font-bold font-outfit transition-all duration-300 ${
+                     (hoverIndex !== null ? data[hoverIndex].value : data[data.length - 1].value) >= avgVal 
+                       ? 'text-emerald-500' 
+                       : 'text-amber-500'
+                   }`}>
+                     {(hoverIndex !== null ? data[hoverIndex].value : data[data.length - 1].value) >= avgVal ? '+' : ''}
+             {Math.abs((((hoverIndex !== null ? data[hoverIndex].value : data[data.length - 1].value) / avgVal) - 1) * 100).toFixed(1)}%
+           </span>
+        </div>
       </div>
     </div>
   );

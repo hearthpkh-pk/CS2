@@ -153,14 +153,14 @@ export const LearningEditorDrawer: React.FC<LearningEditorDrawerProps> = ({
              
              <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 px-1">Video Link (Youtube/Vimeo)</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 px-1">Video Link (Youtube / Vimeo / Google Drive)</label>
                   <input 
                     required
                     type="url" 
                     value={formData.videoUrl}
                     onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
                     className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 ring-blue-100 transition-all outline-none"
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    placeholder="https://drive.google.com/file/d/... หรือ https://youtu.be/..."
                   />
                   <p className="text-[9px] text-slate-400 mt-2 italic px-1 font-medium">* ระบบจะทำการฝัง (Embed) วิดีโอให้โดยอัตโนมัติ</p>
                 </div>

@@ -33,7 +33,7 @@ function cn(...inputs: ClassValue[]) {
 export default function CreatorApp() {
   const [currentUser, setCurrentUser] = useState<User>(initialUsers[0]); // Default to Super Admin for dev
   const [users, setUsers] = useState<User[]>(initialUsers);
-  const [currentTab, setCurrentTab] = useState('setup');
+  const [currentTab, setCurrentTab] = useState('dashboard');
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [pages, setPages] = useState<Page[]>([]);
   const [accounts, setAccounts] = useState<FBAccount[]>([]);

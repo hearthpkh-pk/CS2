@@ -4,10 +4,11 @@ import React, { useMemo } from 'react';
 import { Users, Eye, Filter, Calendar, Activity, RefreshCw } from 'lucide-react';
 import { Page, DailyLog, User } from '@/types';
 import { PerformanceChart } from './PerformanceChart';
-import { ComparisonLineChart } from './ComparisonLineChart';
 import { ActivePagesSection } from './ActivePagesSection';
 import { ExecutiveQuotaBrief } from './ExecutiveQuotaBrief';
+import { PerformanceMatrixTable } from './PerformanceMatrixTable';
 import { buildFakeDatabase } from '@/data/mockDashboardData';
+import { aggregateDashboardMetrics } from '@/services/dashboardMetricsService';
 
 interface Props {
   pages: Page[];
@@ -39,99 +40,14 @@ export const DashboardView = ({
   const { fakePages, fakeLogs } = useMemo(() => buildFakeDatabase(selectedYear), [selectedYear]);
   
   const workingPages = isDemoMode ? fakePages : pages;
-  const workingLogs = isDemoMode ? fakeLogs : logs;
   const workingAllPages = isDemoMode ? fakePages : allPages;
   const workingAllLogs = isDemoMode ? fakeLogs : allLogs;
 
-  const chartData = useMemo(() => {
-    const relevantPages = selectedPage === 'all' ? workingPages : workingPages.filter(p => p.id === selectedPage);
-    const relevantPageIds = relevantPages.map(p => p.id);
+  const payload = useMemo(() => {
+    return aggregateDashboardMetrics(workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage);
+  }, [workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage]);
 
-    let filteredLogs = workingLogs.filter(l => {
-      // Use string splitting to avoid UTC shift issues
-      const parts = l.date.split('-');
-      const lYear = parts[0];
-      const lMonth = parts[1];
-      const inYear = lYear === selectedYear;
-      const inMonth = selectedMonth === 'all' ? true : lMonth === selectedMonth;
-      return relevantPageIds.includes(l.pageId) && inYear && inMonth;
-    });
-
-    filteredLogs.sort((a, b) => a.date.localeCompare(b.date));
-
-    if (selectedMonth === 'all') {
-      // Group by Month (1-12) - Pre-populate for January START
-      const monthly: Record<string, { date: string; views: number; pageFollowers: Record<string, number>; count: number }> = {};
-      for (let i = 0; i < 12; i++) {
-        const key = `${selectedYear}-${(i + 1).toString().padStart(2, '0')}-01`;
-        monthly[key] = { date: key, views: 0, pageFollowers: {}, count: 0 };
-      }
-      filteredLogs.forEach(log => {
-        // Timezone-safe month extraction using string parts instead of Date object
-        const monthPart = log.date.split('-')[1];
-        const key = `${selectedYear}-${monthPart}-01`;
-        if (monthly[key]) {
-          monthly[key].views += Math.floor(Number(log.views));
-          // Track the maximum follower count for EACH page in this month
-          monthly[key].pageFollowers[log.pageId] = Math.max(
-            monthly[key].pageFollowers[log.pageId] || 0,
-            Math.floor(Number(log.followers))
-          );
-          monthly[key].count += 1;
-        }
-      });
-      return Object.values(monthly)
-        .filter(g => g.count > 0) // Strip out future/unreached months with no data
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .map(g => {
-          // Sum the peak followers of all pages in this month
-          const followersSum = Object.values(g.pageFollowers).reduce((acc, val) => acc + val, 0);
-          return {
-            date: g.date,
-            views: g.views,
-            followers: followersSum
-          };
-        });
-    }
-
-    // Daily grouping
-    const grouped: Record<string, { date: string; views: number; pageFollowers: Record<string, number> }> = {};
-    filteredLogs.forEach(log => {
-      if (!grouped[log.date]) grouped[log.date] = { date: log.date, views: 0, pageFollowers: {} };
-      grouped[log.date].views += Math.floor(Number(log.views));
-      // Track the maximum follower count for EACH page in this specific day (in case of multiple daily logs)
-      grouped[log.date].pageFollowers[log.pageId] = Math.max(
-        grouped[log.date].pageFollowers[log.pageId] || 0,
-        Math.floor(Number(log.followers))
-      );
-    });
-
-    return Object.values(grouped)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map(g => {
-        // Sum the daily peak followers of all pages
-        const followersSum = Object.values(g.pageFollowers).reduce((acc, val) => acc + val, 0);
-        return {
-          date: g.date,
-          views: g.views,
-          followers: followersSum
-        };
-      });
-  }, [workingPages, workingLogs, selectedPage, selectedMonth, selectedYear]);
-
-  const totals = useMemo(() => {
-    // Derive directly from chartData — diagnostic proved this produces identical results
-    // to the ComparisonLineChart's per-page aggregation
-    const totalViews = chartData.reduce((acc, d) => acc + d.views, 0);
-    const currentFollowers = chartData.length > 0 ? chartData[chartData.length - 1].followers : 0;
-    const prevViews = Math.floor(totalViews * 0.85);
-
-    return {
-      views: Math.floor(totalViews),
-      prevViews: Math.floor(prevViews),
-      followers: Math.floor(currentFollowers)
-    };
-  }, [chartData]);
+  const { chartData, totals, matrixData, quotaData } = payload;
 
   return (
     <div className="animate-fade-in max-w-6xl mx-auto pb-10">
@@ -191,24 +107,44 @@ export const DashboardView = ({
 
       {/* Executive Quota Brief replacing old submission prompt */}
       <ExecutiveQuotaBrief 
-        pages={workingAllPages} 
-        logs={workingAllLogs} 
-        selectedYear={selectedYear} 
-        selectedMonth={selectedMonth} 
+        quotaData={quotaData} 
         currentUser={currentUser} 
         onSelectPage={setSelectedPage}
         onNavigateToTask={onNavigateToTask}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pt-4">
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
+          <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
+            <Users size={14} className="text-blue-500" /> เพดานผู้ติดตาม (Peak)
+          </span>
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.followers.toLocaleString()}</span>
+            <span className="text-xs font-medium text-slate-400 font-noto">บัญชี</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
+          <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
+            <Eye size={14} className="text-blue-500" /> ยอดวิวรวมทั้งเดือน (MTD)
+          </span>
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.views.toLocaleString()}</span>
+            <span className="text-xs font-medium text-slate-400 font-noto">ครั้ง</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
         <PerformanceChart
           data={chartData.map(d => ({ date: d.date, value: d.followers }))}
           label="การเติบโตของผู้ติดตาม"
           color="#1e40af"
           gradientId="grad-followers"
           type={selectedMonth === 'all' ? 'monthly' : 'daily'}
-          displayValue={totals.followers}
-          growth={Number(((totals.followers / Math.max(totals.followers * 0.9, 1)) * 10 - 10).toFixed(0))}
         />
         <PerformanceChart
           data={chartData.map(d => ({ date: d.date, value: d.views }))}
@@ -216,17 +152,13 @@ export const DashboardView = ({
           color="#2563eb"
           gradientId="grad-views"
           type={selectedMonth === 'all' ? 'monthly' : 'daily'}
-          displayValue={totals.views}
-          growth={Number((((totals.views - totals.prevViews) / Math.max(totals.prevViews, 1)) * 100).toFixed(0))}
         />
       </div>
 
-      <ComparisonLineChart
-        pages={workingAllPages}
-        logs={workingAllLogs}
-        selectedYear={selectedYear}
-        selectedMonth={selectedMonth}
-        selectedPage={selectedPage} 
+      <PerformanceMatrixTable 
+        matrixData={matrixData}
+        selectedPage={selectedPage}
+        onSelectPage={setSelectedPage}
       />
 
       <ActivePagesSection pages={pages} selectedPage={selectedPage} />

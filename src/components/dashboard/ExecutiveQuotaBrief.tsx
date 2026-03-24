@@ -1,76 +1,21 @@
-import React, { useMemo } from 'react';
-import { Page, DailyLog, User } from '@/types';
-import { Target, TrendingUp, AlertTriangle, ShieldCheck, ArrowRight, DollarSign, Lightbulb, PenLine } from 'lucide-react';
+import React from 'react';
+import { User } from '@/types';
+import { Target, TrendingUp, AlertTriangle, ShieldCheck, ArrowRight, DollarSign, Lightbulb, PenLine, Info } from 'lucide-react';
+import { DashboardMetricsPayload } from '@/services/dashboardMetricsService';
 
 interface Props {
-  pages: Page[];
-  logs: DailyLog[];
-  selectedYear: string;
-  selectedMonth: string;
+  quotaData: DashboardMetricsPayload['quotaData'];
   currentUser: User;
   onSelectPage: (id: string) => void;
   onNavigateToTask: () => void;
 }
 
 export const ExecutiveQuotaBrief: React.FC<Props> = ({
-  pages, logs, selectedYear, selectedMonth, currentUser, onSelectPage, onNavigateToTask
+  quotaData, currentUser, onSelectPage, onNavigateToTask
 }) => {
-  // Use a hardcoded mock policy for now. In reality, this would be fetched from super admin settings.
-  const policy = {
-    minViewTarget: 10000000,
-    penaltyAmount: 2000,
-    bonusStep1: 1000,
-    superBonusThreshold: 100000000,
-    bonusStep2: 1500,
-  };
+  const [showInfo, setShowInfo] = React.useState(false);
 
-  const { totalViews, attainment, projectedStatus, topPage, criticalPage, projectedMoney } = useMemo(() => {
-    // 1. Filter logs for the current selected month/year
-    const currentMonthLogs = logs.filter(l => {
-      const parts = l.date.split('-');
-      const lYear = parts[0];
-      const lMonth = parts[1];
-      const inYear = lYear === selectedYear;
-      const inMonth = selectedMonth === 'all' ? true : lMonth === selectedMonth;
-      return inYear && inMonth;
-    });
-
-    // 2. Aggregate total views
-    const totalViews = currentMonthLogs.reduce((acc, log) => acc + Number(log.views || 0), 0);
-    const attainment = Math.min((totalViews / policy.minViewTarget) * 100, 200); // UI cap at 200%
-
-    // 3. Determine RAG status & Financials
-    let projectedStatus: 'RED' | 'AMBER' | 'GREEN' = 'RED';
-    let projectedMoney = 0;
-
-    if (totalViews < policy.minViewTarget) {
-      projectedStatus = totalViews >= (policy.minViewTarget * 0.5) ? 'AMBER' : 'RED';
-      projectedMoney = -policy.penaltyAmount; // Penalty
-    } else {
-      projectedStatus = 'GREEN';
-      // Commission calculation
-      if (totalViews >= policy.superBonusThreshold) {
-        projectedMoney = Math.floor(totalViews / 10000000) * policy.bonusStep2;
-      } else {
-        projectedMoney = Math.floor(totalViews / 10000000) * policy.bonusStep1;
-      }
-    }
-
-    // 4. Portfolio Health (Top Performer & Critical)
-    const pageViews: Record<string, number> = {};
-    pages.forEach(p => pageViews[p.id] = 0);
-    currentMonthLogs.forEach(l => {
-      if (pageViews[l.pageId] !== undefined) {
-        pageViews[l.pageId] += Number(l.views || 0);
-      }
-    });
-
-    const sortedPages = [...pages].sort((a, b) => (pageViews[b.id] || 0) - (pageViews[a.id] || 0));
-    const topPage = sortedPages[0];
-    const criticalPage = sortedPages[sortedPages.length - 1];
-
-    return { totalViews, attainment, projectedStatus, topPage, criticalPage, projectedMoney };
-  }, [pages, logs, selectedYear, selectedMonth, policy]);
+  const { totalViews, attainment, projectedStatus, projectedMoney, topPageName, topPageId, criticalPageName, criticalPageId, policy } = quotaData;
 
   // UI Colors based on RAG Status
   const statusIcons = {
@@ -155,9 +100,10 @@ export const ExecutiveQuotaBrief: React.FC<Props> = ({
 
             <button
               onClick={onNavigateToTask}
-              className="bg-white border border-slate-200 text-slate-600 shrink-0 px-5 py-3 rounded-[1rem] text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm flex items-center justify-center gap-2"
+              title="Update views"
+              className="bg-white border border-slate-200 shrink-0 w-10 h-10 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center group"
             >
-              <PenLine size={14} className="text-slate-400" /> Update views
+              <PenLine size={16} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
             </button>
           </div>
         </div>
@@ -165,19 +111,28 @@ export const ExecutiveQuotaBrief: React.FC<Props> = ({
         {/* Right Column: Portfolio Health Summary */}
         <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200/20 flex flex-col justify-between">
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <TrendingUp size={14} className="text-blue-400" /> Portfolio Health
-            </h3>
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <TrendingUp size={14} className="text-blue-400" /> Portfolio Health
+              </h3>
+              <button 
+                onClick={() => setShowInfo(!showInfo)}
+                className={`p-1.5 rounded-lg transition-colors ${showInfo ? 'bg-blue-500/20 text-blue-400' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
+                title="เกณฑ์การวิเคราะห์"
+              >
+                <Info size={14} />
+              </button>
+            </div>
 
             <div className="space-y-5">
               {/* Top Performer */}
               <div>
                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1 block">Top Performing Asset</span>
                 <div
-                  onClick={() => topPage && onSelectPage(topPage.id)}
+                  onClick={() => topPageId && onSelectPage(topPageId)}
                   className="flex justify-between items-center group cursor-pointer bg-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors"
                 >
-                  <span className="text-sm font-bold font-noto truncate pr-2 flex-1 group-hover:text-emerald-300 transition-colors">{topPage?.name || 'N/A'}</span>
+                  <span className="text-sm font-bold font-noto truncate pr-2 flex-1 group-hover:text-emerald-300 transition-colors">{topPageName || 'N/A'}</span>
                   <ArrowRight size={14} className="text-slate-500 group-hover:text-white transition-colors" />
                 </div>
               </div>
@@ -188,21 +143,31 @@ export const ExecutiveQuotaBrief: React.FC<Props> = ({
               <div>
                 <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1 block">Critical Watchlist</span>
                 <div
-                  onClick={() => criticalPage && onSelectPage(criticalPage.id)}
+                  onClick={() => criticalPageId && onSelectPage(criticalPageId)}
                   className="flex justify-between items-center group cursor-pointer bg-red-500/5 p-3 rounded-xl border border-red-500/10 hover:bg-red-500/10 transition-colors"
                 >
-                  <span className="text-sm font-bold font-noto text-red-200 truncate pr-2 flex-1 group-hover:text-red-300 transition-colors">{criticalPage?.name || 'N/A'}</span>
+                  <span className="text-sm font-bold font-noto text-red-200 truncate pr-2 flex-1 group-hover:text-red-300 transition-colors">{criticalPageName || 'N/A'}</span>
                   <ArrowRight size={14} className="text-red-500/50 group-hover:text-red-400 transition-colors" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-white/5">
-            <span className="text-[9px] text-slate-500 font-noto leading-relaxed block">
-              ระบบสกัดข้อมูล Insight เฉพาะหน้าต่างเวลาปัจจุบัน เพื่อใช้ประกอบการตัดสินใจ (Executive Summary)
-            </span>
-          </div>
+          {showInfo && (
+            <div className="mt-8 pt-5 border-t border-white/10 animate-fade-in">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-3">เกณฑ์การประเมิน (AI Rules)</span>
+              <ul className="text-xs text-slate-300 font-noto space-y-3 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">🌟</span>
+                  <span><strong>Top Asset:</strong> ให้ความสำคัญกับ <span className="text-emerald-400">"เพจดาวรุ่ง"</span> ที่กำลังโตไว (60%) คู่กับเพจที่มีฐานคนดูเยอะอยู่แล้ว (40%)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">⚠️</span>
+                  <span><strong>Watchlist:</strong> แจ้งเตือนด่วนหากเพจ <span className="text-red-400">ยอดตกกะทันหัน</span>, ยอดลดลงเรื่อยๆ, หรือยอดวิวนิ่งสนิท</span>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
 
       </div>

@@ -22,6 +22,13 @@ export const getEmbedUrl = (url: string): string => {
     return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
   }
 
+  // Google Drive
+  // Matches: https://drive.google.com/file/d/1abc.../view?usp=sharing
+  const gdriveMatch = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+  if (gdriveMatch && gdriveMatch[1]) {
+    return `https://drive.google.com/file/d/${gdriveMatch[1]}/preview`;
+  }
+
   // If already an embed URL or other, return as is (safely)
   return url;
 };
