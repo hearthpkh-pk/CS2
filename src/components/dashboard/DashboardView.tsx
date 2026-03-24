@@ -5,6 +5,7 @@ import { Users, Eye, Filter, Calendar, Activity, RefreshCw } from 'lucide-react'
 import { Page, DailyLog, User } from '@/types';
 import { PerformanceChart } from './PerformanceChart';
 import { ComparisonLineChart } from './ComparisonLineChart';
+import { ActivePagesSection } from './ActivePagesSection';
 import { buildFakeDatabase } from '@/data/mockDashboardData';
 
 interface Props {
@@ -254,87 +255,7 @@ export const DashboardView = ({
         selectedPage={selectedPage} 
       />
 
-      {/* Active Pages (Smart Insights) */}
-      <div className="mt-12">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-primary-navy font-outfit uppercase tracking-wider">Active Pages (Smart Insights)</h3>
-            <p className="text-xs text-slate-400 font-noto mt-1 uppercase tracking-widest px-1">เรียลไทม์ข้อมูลจาก Facebook Page ของคุณ</p>
-          </div>
-          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
-            <Activity size={14} /> Smart Sync Active
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {pages
-            .filter(p => p.status === 'Active' && (selectedPage === 'all' || p.id === selectedPage))
-            .sort((a, b) => (Number(a.boxId) || 0) - (Number(b.boxId) || 0))
-            .map(page => (
-              <a
-                key={page.id}
-                href={page.facebookUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden flex flex-col min-h-[250px] cursor-pointer"
-              >
-                {!page.facebookData ? (
-                  <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 border-dashed">
-                      <Activity className="text-slate-300 animate-pulse" size={24} />
-                    </div>
-                    <h4 className="font-bold text-slate-800 text-sm font-noto mb-1 truncate w-full">{page.name}</h4>
-                    <p className="text-[10px] text-slate-400 font-noto mb-6 lowercase tracking-tight">กำลังรออัปเดตจาก Worker...</p>
-
-                    <div className="w-full py-2.5 bg-slate-50 text-slate-400 rounded-xl font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-100">
-                      <RefreshCw size={12} className="animate-spin" /> โหลดข้อมูลคืนนี้
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 group-hover:border-blue-100 transition-colors">
-                          <img
-                            src={page.facebookData.profilePic || 'https://images.unsplash.com/photo-1614850523598-92751cd01d1d?w=400&q=80'}
-                            alt={page.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-4 border-white shadow-sm shadow-emerald-200"></div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="text-right mt-1">
-                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest block mb-1">Followers</span>
-                          <span className="text-sm font-black text-slate-800 font-inter tracking-tight">
-                            {page.facebookData.followers?.toLocaleString() || '---'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4 flex-1">
-                      <h3 className="font-bold text-slate-900 text-base leading-tight group-hover:text-blue-600 transition-colors line-clamp-1">{page.name}</h3>
-                      <p className="text-[10px] text-slate-500 line-clamp-2 mt-2 font-noto italic leading-relaxed">
-                        {page.facebookData.description || 'ดึงข้อมูลจากระบบ Facebook โดยตรงเพื่อวิเคราะห์ประสิทธิภาพ'}
-                      </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                        <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">Auto-Synced</span>
-                      </div>
-                      <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                        {page.facebookData.lastSyncAt ? `อัปเดตล่าสุด ${new Date(page.facebookData.lastSyncAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced'}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </a>
-            ))}
-        </div>
-      </div>
+      <ActivePagesSection pages={pages} selectedPage={selectedPage} />
     </div>
   );
 };
