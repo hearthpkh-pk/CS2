@@ -6,6 +6,7 @@ import { Page, DailyLog, User } from '@/types';
 import { PerformanceChart } from './PerformanceChart';
 import { ComparisonLineChart } from './ComparisonLineChart';
 import { ActivePagesSection } from './ActivePagesSection';
+import { ExecutiveQuotaBrief } from './ExecutiveQuotaBrief';
 import { buildFakeDatabase } from '@/data/mockDashboardData';
 
 interface Props {
@@ -132,8 +133,6 @@ export const DashboardView = ({
     };
   }, [chartData]);
 
-  const showSubmissionPrompt = true; // Forcing true for V2 data storytelling clarity across all roles
-
   return (
     <div className="animate-fade-in max-w-6xl mx-auto pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-100 pb-6">
@@ -190,41 +189,16 @@ export const DashboardView = ({
         </div>
       </div>
 
-      {showSubmissionPrompt && (
-        <div className="mb-12 bg-slate-50 border border-slate-200/60 rounded-2xl p-6 text-slate-800 relative overflow-hidden group shadow-sm transition-all hover:shadow-md">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">ลำดับความสำคัญ</span>
-              </div>
-              <h3 className="text-base font-medium text-slate-800 font-thai-premium tracking-wide uppercase">เป้าหมายรายวัน: 40 คลิป / วัน</h3>
-
-              <div className="mt-4 flex gap-1 items-center max-w-sm">
-                {Array.from({ length: 10 }).map((_, idx) => (
-                  <div key={idx} className="h-3 flex-1 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${isDemoMode && idx < 7.5 ? 'bg-blue-600' : 'bg-white'
-                        }`}
-                    />
-                  </div>
-                ))}
-                <span className="ml-3 text-[10px] font-bold text-blue-600 font-thai-premium uppercase tracking-[0.1em]">
-                  {isDemoMode ? `ยืนยันแล้ว 75%` : 'ยังไม่มีข้อมูล'}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col items-start md:items-end md:text-right gap-3">
-              <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">สถานะรายงาน</div>
-              <button
-                onClick={onNavigateToTask}
-                className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-sm"
-              >
-                ส่งรายงานประจำเดือน
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Executive Quota Brief replacing old submission prompt */}
+      <ExecutiveQuotaBrief 
+        pages={workingAllPages} 
+        logs={workingAllLogs} 
+        selectedYear={selectedYear} 
+        selectedMonth={selectedMonth} 
+        currentUser={currentUser} 
+        onSelectPage={setSelectedPage}
+        onNavigateToTask={onNavigateToTask}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pt-4">
         <PerformanceChart
