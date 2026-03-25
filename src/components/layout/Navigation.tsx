@@ -7,7 +7,7 @@ import {
   Building2, Calendar as CalendarIcon,
   Video as VideoIcon, Settings as SettingsIcon,
   History as HistoryIcon, HelpCircle,
-  PieChart, ChevronRight, Scale, BookOpen
+  PieChart, ChevronRight, ChevronDown, Scale, BookOpen
 } from 'lucide-react';
 import { initialUsers } from '@/services/mockData';
 import { User } from '@/types';
@@ -26,6 +26,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser }: SidebarProps) => {
+  const [showDevRoleSwitcher, setShowDevRoleSwitcher] = React.useState(false);
   const menuGroups = [
     {
       title: 'Workspace',
@@ -115,31 +116,40 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
 
       {/* Role Switcher Section (Simulation) */}
       <div className="mt-auto border-t border-white/5 p-4 overflow-hidden">
-        <div className="px-2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <p className="text-[10px] font-bold text-blue-100/40 uppercase tracking-widest mb-3">Switch Role (Dev)</p>
-          <div className="space-y-1.5">
-            {initialUsers.map(user => (
-              <button
-                key={user.id}
-                onClick={() => setCurrentUser(user)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] transition-all duration-200",
-                  currentUser.id === user.id
-                    ? "bg-white/20 text-white shadow-lg border border-white/10"
-                    : "text-blue-100/40 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  user.role === 'Super Admin' ? "bg-blue-600" :
-                    user.role === 'Admin' ? "bg-blue-400" :
-                      user.role === 'Manager' ? "bg-emerald-400" : "bg-slate-400"
-                )} />
-                <span className="truncate">{user.name}</span>
-                {currentUser.id === user.id && <ChevronRight size={12} className="ml-auto" />}
-              </button>
-            ))}
-          </div>
+        <div className="px-2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <button 
+            onClick={() => setShowDevRoleSwitcher(!showDevRoleSwitcher)}
+            className="w-full flex items-center justify-between text-[10px] font-bold text-blue-100/40 uppercase tracking-widest mb-3 hover:text-white transition-colors"
+          >
+            <span>Switch Role (Dev)</span>
+            {showDevRoleSwitcher ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          </button>
+          
+          {showDevRoleSwitcher && (
+            <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-300">
+              {initialUsers.map(user => (
+                <button
+                  key={user.id}
+                  onClick={() => setCurrentUser(user)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] transition-all duration-200",
+                    currentUser.id === user.id
+                      ? "bg-white/20 text-white shadow-lg border border-white/10"
+                      : "text-blue-100/40 hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    user.role === 'Super Admin' ? "bg-blue-600" :
+                      user.role === 'Admin' ? "bg-blue-400" :
+                        user.role === 'Manager' ? "bg-emerald-400" : "bg-slate-400"
+                  )} />
+                  <span className="truncate">{user.name}</span>
+                  {currentUser.id === user.id && <ChevronRight size={12} className="ml-auto" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Current User Info */}
