@@ -13,9 +13,9 @@ interface StatCardsProps {
 const StatCards: React.FC<StatCardsProps> = ({ stats }) => {
   const statConfig = [
     { label: 'Total Personnel', value: stats.total, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Executive / Mgmt', value: stats.managers, icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Active Roster', value: stats.active, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Active Teams', value: stats.activeTeams, icon: Layers, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Management Unit', value: stats.managers, icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Active Personnel', value: stats.active, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Operational Teams', value: stats.activeTeams, icon: Layers, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
 
   return (

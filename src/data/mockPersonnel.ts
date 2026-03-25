@@ -16,7 +16,10 @@ export const initialUsers: User[] = [
     isActive: true,
     teamId: 'alpha',
     salary: 85000,
-    startDate: '2023-11-15'
+    startDate: '2023-11-15',
+    salaryHistory: [
+      { id: 'h1', newSalary: 85000, reason: 'Initial Enlistment', effectiveDate: '2023-11-15', createdAt: '2023-11-15' }
+    ]
   },
   { 
     id: '2', 
@@ -27,7 +30,10 @@ export const initialUsers: User[] = [
     isActive: true,
     teamId: 'beta',
     salary: 62000,
-    startDate: '2023-12-01'
+    startDate: '2023-12-01',
+    salaryHistory: [
+      { id: 'h2', newSalary: 62000, reason: 'Operations Lead Appointment', effectiveDate: '2023-12-01', createdAt: '2023-12-01' }
+    ]
   },
   { 
     id: '3', 

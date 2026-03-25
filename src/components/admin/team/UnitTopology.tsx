@@ -1,104 +1,187 @@
-import React from 'react';
-import { Plus, Trash2, ShieldAlert } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Trash2, ShieldCheck, Edit2, Check, X, Users, Briefcase } from 'lucide-react';
 import { Team, User, Role } from '@/types';
 import { cn } from '@/lib/utils';
+import { ROLE_THEME } from '@/constants/personnel';
 
 interface UnitTopologyProps {
   teams: Team[];
   users: User[];
   onDeleteTeam: (id: string) => void;
   onCreateTeam: (name: string) => void;
+  onUpdateTeam: (id: string, name: string) => void;
 }
 
 const UnitTopology: React.FC<UnitTopologyProps> = ({
   teams,
   users,
   onDeleteTeam,
-  onCreateTeam
+  onCreateTeam,
+  onUpdateTeam
 }) => {
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+
+  const handleStartEdit = (team: Team) => {
+    setEditingTeamId(team.id);
+    setEditName(team.name);
+  };
+
+  const handleSaveEdit = (id: string) => {
+    if (editName.trim()) {
+      onUpdateTeam(id, editName.trim());
+    }
+    setEditingTeamId(null);
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      {/* Header & Action */}
+      <div className="flex items-end justify-between border-b border-slate-100 pb-8">
         <div>
-          <h3 className="text-lg font-bold text-slate-800 font-outfit uppercase tracking-tight">Unit Topology</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em] mt-1">Manage organizational structure & leadership</p>
+          <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight">Unit Topology</h3>
+          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2 flex items-center gap-2">
+            <Briefcase size={12} className="text-blue-500" />
+            Organizational Structure & Leadership Mapping
+          </p>
         </div>
         <button 
-          onClick={() => onCreateTeam(`Alpha ${teams.length + 1}`)}
-          className="flex items-center gap-2 px-6 py-3 bg-[#002147] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-blue-900/10"
+          onClick={() => onCreateTeam(`New Unit ${teams.length + 1}`)}
+          className="group flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95"
         >
-          <Plus size={14} /> Initialize Unit
+          <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
+            <Plus size={14} />
+          </div>
+          Initialize New Unit
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {teams.map((team) => {
           const teamMembers = users.filter(u => u.teamId === team.id);
           const leader = teamMembers.find(m => m.role === Role.Manager || m.role === Role.Admin);
+          const isEditing = editingTeamId === team.id;
           
           return (
-            <div key={team.id} className="group relative bg-white border border-slate-100 rounded-2xl p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex justify-between items-start mb-10">
-                <div className="flex-1">
-                  <h4 className="text-lg font-bold text-slate-800 font-outfit uppercase tracking-tight">{team.name}</h4>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{teamMembers.length} Active personnel</span>
+            <div key={team.id} className="group relative bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1.5 transition-all duration-500 overflow-hidden">
+              {/* Decorative Background */}
+              <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/30 rounded-bl-full -z-0 group-hover:scale-125 transition-transform duration-700"></div>
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-10">
+                  <div className="flex-1 mr-4">
+                    {isEditing ? (
+                      <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
+                        <input 
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(team.id)}
+                          autoFocus
+                          className="bg-slate-50 border border-blue-200 rounded-xl px-4 py-2 text-lg font-bold text-blue-600 outline-none w-full"
+                        />
+                        <button onClick={() => handleSaveEdit(team.id)} className="p-2 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-100"><Check size={16} /></button>
+                        <button onClick={() => setEditingTeamId(null)} className="p-2 bg-slate-100 text-slate-400 rounded-xl"><X size={16} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-xl font-bold text-slate-800 font-outfit tracking-tight leading-none">{team.name}</h4>
+                        <button 
+                          onClick={() => handleStartEdit(team)}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-blue-600 transition-all"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2 mt-4">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                        {teamMembers.length} Active Personnel
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => onDeleteTeam(team.id)}
+                    className="opacity-0 group-hover:opacity-100 w-10 h-10 flex items-center justify-center rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                {/* Team Roster Avatars */}
+                <div className="mb-12">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                       <Users size={12} className="text-slate-300" /> Unit Roster
+                    </span>
+                  </div>
+                  <div className="flex -space-x-3 items-center">
+                    {teamMembers.slice(0, 6).map((member, i) => (
+                      <div 
+                        key={member.id}
+                        title={member.name}
+                        className={cn(
+                          "w-11 h-11 rounded-2xl border-4 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-md transition-transform hover:scale-125 hover:z-50 cursor-default",
+                          member.role === Role.Admin ? 'bg-slate-900' : 'bg-blue-600'
+                        )}
+                        style={{ zIndex: 10 - i }}
+                      >
+                        {member.name.charAt(0)}
+                      </div>
+                    ))}
+                    {teamMembers.length > 6 && (
+                      <div className="w-11 h-11 rounded-2xl border-4 border-white bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-400 shadow-sm z-0">
+                        +{teamMembers.length - 6}
+                      </div>
+                    )}
+                    {teamMembers.length === 0 && (
+                      <div className="text-[10px] font-medium text-slate-300 italic">No assigned personnel</div>
+                    )}
                   </div>
                 </div>
-                <button 
-                  onClick={() => onDeleteTeam(team.id)}
-                  className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-all active:scale-90"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
 
-              {/* Roster Preview */}
-              <div className="relative mb-10 h-10 flex items-center">
-                <div className="flex -space-x-3 overflow-hidden ml-1">
-                  {teamMembers.slice(0, 5).map((member, i) => (
-                    <div 
-                      key={member.id}
-                      title={member.name}
-                      style={{ zIndex: 10 - i }}
-                      className={cn(
-                        "w-9 h-9 rounded-xl border-2 border-white flex items-center justify-center text-[10px] font-bold transition-transform group-hover:scale-110 shadow-sm",
-                        member.role === Role.Admin ? 'bg-[#002147] text-white' : 'bg-blue-500 text-white'
-                      )}
-                    >
-                      {member.name.charAt(0)}
+                {/* Unit Leadership & Incentives */}
+                <div className="pt-8 border-t border-slate-50">
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Unit Commanding Officers</span>
+                    {leader && (
+                      <div className="px-2 py-1 bg-blue-50 text-[8px] font-bold text-blue-600 rounded-md uppercase tracking-tight">
+                        Incentive Eligible
+                      </div>
+                    )}
+                  </div>
+                  
+                  {leader ? (
+                    <div className="flex items-center gap-4 p-5 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 group-hover:bg-white group-hover:border-blue-100 transition-colors shadow-sm group-hover:shadow-lg group-hover:shadow-blue-500/5">
+                      <div className={cn(
+                        "w-12 h-12 rounded-2xl text-white flex items-center justify-center text-sm font-bold shadow-md",
+                        leader.role === Role.Admin ? 'bg-slate-900' : 'bg-blue-600'
+                      )}>
+                        {leader.name.charAt(0)}
+                      </div>
+                      <div>
+                        <span className="text-[13px] font-bold text-slate-800 block leading-none font-outfit mb-1.5">{leader.name}</span>
+                        <div className="flex items-center gap-2">
+                           <ShieldCheck size={10} className="text-blue-500" />
+                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{leader.role}</span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                  {teamMembers.length > 5 && (
-                    <div className="w-9 h-9 rounded-xl border-4 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 shadow-sm z-0 ring-1 ring-slate-100">
-                      +{teamMembers.length - 5}
+                  ) : (
+                    <div className="flex items-center gap-3 p-5 rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50/30">
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                        <Users size={18} />
+                      </div>
+                      <div className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                        Awaiting Leadership Assignment
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Team Leader Section */}
-              <div className="pt-8 border-t border-slate-50">
-                <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-4">Unit Commanding</div>
-                {leader ? (
-                  <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-100">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl text-white flex items-center justify-center text-xs font-bold shadow-sm",
-                      leader.role === Role.Admin ? 'bg-[#002147]' : 'bg-blue-500'
-                    )}>
-                      {leader.name.charAt(0)}
-                    </div>
-                    <div>
-                      <span className="text-sm font-bold text-slate-700 block leading-none font-outfit">{leader.name}</span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 block">{leader.role}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-amber-200 text-amber-600 rounded-lg text-[9px] font-bold uppercase tracking-widest">
-                    <ShieldAlert size={10} /> Needs Leader
-                  </div>
-                )}
               </div>
             </div>
           );

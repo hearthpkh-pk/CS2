@@ -18,7 +18,6 @@ import PersonnelDrawer from './team/PersonnelDrawer';
 
 // Logic & Data
 import { useTeamManagement } from './team/useTeamManagement';
-import { initialUsers, initialTeams } from './team/mockData';
 
 interface TeamManagementProps {
   users?: User[];
@@ -50,9 +49,10 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
     setSalaryForm,
     handleSaveUser,
     handleCreateTeam,
+    handleUpdateTeam,
     handleDeleteTeam,
     handleConfirmSalary
-  } = useTeamManagement(initialUsers, initialTeams, externalUsers, setExternalUsers, currentUser?.role);
+  } = useTeamManagement([], [], externalUsers, setExternalUsers, currentUser?.role);
 
   const tabs = [
     { id: 'directory', label: 'Personnel Registry', icon: Users },
@@ -121,6 +121,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
             roleFilter={roleFilter}
             onRoleFilterChange={setRoleFilter}
             onEdit={setEditingUser}
+            teams={teams}
           />
         )}
 
@@ -128,6 +129,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
           <UnitTopology 
             teams={teams}
             users={users}
+            onUpdateTeam={handleUpdateTeam}
             onCreateTeam={handleCreateTeam}
             onDeleteTeam={handleDeleteTeam}
           />
@@ -149,6 +151,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
         salaryForm={salaryForm}
         onSalaryFormChange={setSalaryForm}
         onConfirmSalary={handleConfirmSalary}
+        viewerRole={currentUser?.role}
       />
 
     </div>

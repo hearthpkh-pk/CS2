@@ -1,28 +1,41 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { User, Team, Role, SalaryAdjustment } from '@/types';
+import { personnelService } from '@/services/personnelService';
 
 export const useTeamManagement = (
-  initialUsers: User[], 
-  initialTeams: Team[],
+  _mockUsersStub: User[], 
+  _mockTeamsStub: Team[],
   externalUsers?: User[],
   setExternalUsers?: (users: User[]) => void,
   viewerRole?: Role
 ) => {
-  const [internalUsers, setInternalUsers] = useState<User[]>(initialUsers);
-  
-  // Logic: If viewer is Admin, hide Super Admin. 
-  const availableUsers = useMemo(() => {
-    const baseUsers = externalUsers || internalUsers;
+  // --- Centralized State Sync ---
+  const [personnelVersion, setPersonnelVersion] = useState(0);
+  const sync = () => setPersonnelVersion(v => v + 1);
+
+  const users = useMemo(() => {
+    const dataSource = externalUsers || personnelService.getAvailableUsers(viewerRole);
+    if (!viewerRole || viewerRole === Role.SuperAdmin) return dataSource;
+    
+    // Explicit RBAC filtering for external data
     if (viewerRole === Role.Admin) {
-      return baseUsers.filter(u => u.role !== Role.SuperAdmin);
+      return dataSource.filter(u => u.role !== Role.SuperAdmin);
     }
-    return baseUsers;
-  }, [externalUsers, internalUsers, viewerRole]);
+    if (viewerRole === Role.Manager) {
+      return dataSource.filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin);
+    }
+    return dataSource.filter(u => u.role === Role.Staff);
+  }, [externalUsers, viewerRole, personnelVersion]);
 
-  const users = availableUsers;
-  const setUsers = setExternalUsers || setInternalUsers;
+  const teams = useMemo(() => {
+    return personnelService.getTeams();
+  }, [personnelVersion]);
 
-  const [teams, setTeams] = useState<Team[]>(initialTeams);
+  const stats = useMemo(() => {
+    return personnelService.getPersonnelStats();
+  }, [personnelVersion]);
+
+  // --- UI State ---
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | 'All'>('All');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -33,7 +46,7 @@ export const useTeamManagement = (
     effectiveDate: new Date().toISOString().split('T')[0]
   });
 
-  // --- Calculations & Filters ---
+  // --- Search & Filter Logic ---
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,20 +56,13 @@ export const useTeamManagement = (
     });
   }, [users, searchQuery, roleFilter]);
 
-  const stats = useMemo(() => {
-    const total = users.length;
-    const managers = users.filter(u => u.role === Role.Manager || u.role === Role.Admin).length;
-    const active = users.filter(u => u.isActive).length;
-    const activeTeams = teams.length;
-    return { total, managers, active, activeTeams };
-  }, [users, teams]);
-
-  // --- Handlers ---
+  // --- Handlers (Delegated to Service) ---
   const handleSaveUser = (userData: User) => {
-    if (users.find(u => u.id === userData.id)) {
-      setUsers(users.map(u => u.id === userData.id ? userData : u));
+    if (setExternalUsers) {
+      setExternalUsers(users.map(u => u.id === userData.id ? userData : u));
     } else {
-      setUsers([...users, userData]);
+      personnelService.saveUser(userData);
+      sync();
     }
     setEditingUser(null);
   };
@@ -67,12 +73,13 @@ export const useTeamManagement = (
       name,
       createdAt: new Date().toISOString()
     };
-    setTeams([...teams, newTeam]);
+    personnelService.saveTeam(newTeam);
+    sync();
   };
 
   const handleDeleteTeam = (id: string) => {
-    setTeams(teams.filter(t => t.id !== id));
-    setUsers(users.map(u => u.teamId === id ? { ...u, teamId: undefined } : u));
+    personnelService.deleteTeam(id);
+    sync();
   };
 
   const handleConfirmSalary = () => {
@@ -92,9 +99,14 @@ export const useTeamManagement = (
       salaryHistory: [newAdjustment, ...(editingUser.salaryHistory || [])]
     };
 
-    setEditingUser(updatedUser);
+    handleSaveUser(updatedUser);
     setIsAdjustingSalary(false);
     setSalaryForm({ amount: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0] });
+  };
+
+  const handleUpdateTeam = (id: string, name: string) => {
+    personnelService.updateTeam(id, name);
+    sync();
   };
 
   return {
@@ -114,6 +126,7 @@ export const useTeamManagement = (
     setSalaryForm,
     handleSaveUser,
     handleCreateTeam,
+    handleUpdateTeam,
     handleDeleteTeam,
     handleConfirmSalary
   };

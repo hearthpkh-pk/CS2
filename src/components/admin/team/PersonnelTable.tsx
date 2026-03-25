@@ -1,7 +1,8 @@
 import React from 'react';
 import { Search, Filter, Edit3, MoreHorizontal } from 'lucide-react';
-import { User, Role } from '@/types';
+import { User, Role, Team } from '@/types';
 import { cn } from '@/lib/utils';
+import { ROLE_LABELS, ROLE_THEME, PERSONNEL_LABELS } from '@/constants/personnel';
 
 interface PersonnelTableProps {
   users: User[];
@@ -10,6 +11,7 @@ interface PersonnelTableProps {
   roleFilter: Role | 'All';
   onRoleFilterChange: (val: Role | 'All') => void;
   onEdit: (user: User) => void;
+  teams: Team[];
 }
 
 const PersonnelTable: React.FC<PersonnelTableProps> = ({
@@ -18,7 +20,8 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
   onSearchChange,
   roleFilter,
   onRoleFilterChange,
-  onEdit
+  onEdit,
+  teams
 }) => {
   return (
     <div className="space-y-6">
@@ -35,16 +38,16 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
           />
         </div>
         <div className="flex items-center gap-3 p-1 rounded-xl border border-slate-100 shadow-sm">
-          {(['All', Role.Staff, Role.Manager, Role.Admin] as const).map((role) => (
+          {(['All', ...Object.keys(ROLE_LABELS).filter(r => r !== Role.SuperAdmin)] as const).map((role) => (
             <button
               key={role}
-              onClick={() => onRoleFilterChange(role)}
+              onClick={() => onRoleFilterChange(role as any)}
               className={cn(
                 "px-5 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
                 roleFilter === role ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "text-slate-400 hover:text-blue-600"
               )}
             >
-              {role}
+              {role === 'All' ? 'All Personnel' : ROLE_LABELS[role as Role]}
             </button>
           ))}
         </div>
@@ -58,7 +61,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
               <tr className="border-b border-slate-50">
                 <th className="px-8 pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit">Personnel Record</th>
                 <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-center">System Identity</th>
-                <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit">Role / Assignment</th>
+                <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit">{PERSONNEL_LABELS.GROUP_HEADER}</th>
                 <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-right">Placement Date</th>
                 <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-center">Status</th>
                 <th className="px-8 pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-right w-16">Action</th>
@@ -75,7 +78,8 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm transition-transform group-hover:scale-110",
-                        user.role === Role.Admin ? 'bg-slate-900' : 'bg-blue-600'
+                        user.role === Role.Admin ? 'bg-slate-900' : 
+                        user.role === Role.Manager ? 'bg-indigo-600' : 'bg-blue-600'
                       )}>
                         {user.name.charAt(0)}
                       </div>
@@ -93,12 +97,15 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                   <td className="py-5">
                     <div className={cn(
                       "text-[10px] font-bold uppercase tracking-widest mb-1",
-                      user.role === Role.Admin ? 'text-slate-900' : 'text-blue-600'
+                      ROLE_THEME[user.role]?.color || 'text-slate-600'
                     )}>
-                      {user.role}
+                      {ROLE_LABELS[user.role]}
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium tracking-tight">
-                      {user.teamId ? `Unit: ${user.teamId}` : 'Unassigned'}
+                      {user.teamId ? 
+                        `${PERSONNEL_LABELS.UNIT_PREFIX} ${teams.find(t => t.id === user.teamId)?.name || user.teamId}` : 
+                        PERSONNEL_LABELS.UNASSIGNED
+                      }
                     </div>
                   </td>
                   <td className="py-5 text-right">
