@@ -21,12 +21,12 @@ const AccessMatrix: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-800 font-outfit uppercase tracking-tight">Access Control Matrix</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Defined system permissions per operational role</p>
         </div>
-        <div className="flex items-center gap-3 px-6 py-3 bg-blue-50 text-blue-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-3 px-6 py-3 border border-blue-200 text-blue-600 rounded-xl text-[10px] font-bold uppercase tracking-widest">
            <ShieldCheck size={14} /> Matrix Verified
         </div>
       </div>
 
-      <div className="bg-white rounded-[3rem] border border-slate-50 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -46,7 +46,7 @@ const AccessMatrix: React.FC = () => {
                   <td key={j} className="text-center py-6">
                     <div className="flex justify-center">
                       {hasAccess ? (
-                        <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-sm border border-emerald-100/50">
+                        <div className="w-6 h-6 rounded-lg text-emerald-500 flex items-center justify-center border border-emerald-100/50">
                           <Check size={12} strokeWidth={3} />
                         </div>
                       ) : (

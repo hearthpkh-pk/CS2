@@ -52,7 +52,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
     handleCreateTeam,
     handleDeleteTeam,
     handleConfirmSalary
-  } = useTeamManagement(initialUsers, initialTeams, externalUsers, setExternalUsers);
+  } = useTeamManagement(initialUsers, initialTeams, externalUsers, setExternalUsers, currentUser?.role);
 
   const tabs = [
     { id: 'directory', label: 'Personnel Registry', icon: Users },
@@ -67,7 +67,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
               <Database size={20} />
             </div>
             Team Management
@@ -78,16 +78,16 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-[2rem] border border-slate-50 shadow-sm">
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "p-3 rounded-2xl transition-all duration-300 relative group",
+                "p-3 rounded-xl transition-all duration-300 relative group",
                 activeTab === tab.id 
-                  ? "bg-slate-900 text-white shadow-xl shadow-slate-200" 
-                  : "text-slate-300 hover:text-slate-900"
+                  ? "bg-blue-600 text-white shadow-xl shadow-blue-100" 
+                  : "text-slate-300 hover:text-blue-600"
               )}
             >
               <tab.icon size={20} />
@@ -101,7 +101,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
           <div className="w-px h-6 bg-slate-100 mx-2"></div>
           <button 
             onClick={() => setEditingUser({ id: `user-${Date.now()}`, name: '', role: Role.Staff, username: '', isActive: true })}
-            className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+            className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
           >
             <Plus size={20} />
           </button>

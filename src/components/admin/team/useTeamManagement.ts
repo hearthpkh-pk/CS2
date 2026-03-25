@@ -5,10 +5,21 @@ export const useTeamManagement = (
   initialUsers: User[], 
   initialTeams: Team[],
   externalUsers?: User[],
-  setExternalUsers?: (users: User[]) => void
+  setExternalUsers?: (users: User[]) => void,
+  viewerRole?: Role
 ) => {
   const [internalUsers, setInternalUsers] = useState<User[]>(initialUsers);
-  const users = externalUsers || internalUsers;
+  
+  // Logic: If viewer is Admin, hide Super Admin. 
+  const availableUsers = useMemo(() => {
+    const baseUsers = externalUsers || internalUsers;
+    if (viewerRole === Role.Admin) {
+      return baseUsers.filter(u => u.role !== Role.SuperAdmin);
+    }
+    return baseUsers;
+  }, [externalUsers, internalUsers, viewerRole]);
+
+  const users = availableUsers;
   const setUsers = setExternalUsers || setInternalUsers;
 
   const [teams, setTeams] = useState<Team[]>(initialTeams);

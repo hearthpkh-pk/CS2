@@ -21,18 +21,17 @@ const StatCards: React.FC<StatCardsProps> = ({ stats }) => {
   return (
     <div className="grid grid-cols-4 gap-6">
       {statConfig.map((stat, i) => (
-        <div key={i} className="bg-white p-7 rounded-[2.5rem] border border-slate-50 shadow-sm hover:shadow-md transition-all group">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <stat.icon size={12} className={stat.color} />
-            {stat.label}
-          </p>
-          <div className="flex items-end justify-between">
-            <span className="text-3xl font-bold text-slate-800 font-inter leading-none">
-              {stat.value}
+        <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-500"></div>
+          
+          <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-2">
+            <stat.icon size={14} className={stat.color} /> {stat.label}
+          </span>
+          
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">
+              {stat.value.toLocaleString()}
             </span>
-            <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-              <stat.icon size={20} />
-            </div>
           </div>
         </div>
       ))}

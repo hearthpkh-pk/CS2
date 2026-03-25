@@ -25,7 +25,7 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
         </div>
         <button 
           onClick={() => onCreateTeam(`Alpha ${teams.length + 1}`)}
-          className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200"
+          className="flex items-center gap-2 px-6 py-3 bg-[#002147] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-blue-900/10"
         >
           <Plus size={14} /> Initialize Unit
         </button>
@@ -37,7 +37,7 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
           const leader = teamMembers.find(m => m.role === Role.Manager || m.role === Role.Admin);
           
           return (
-            <div key={team.id} className="group relative bg-white border border-slate-50 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div key={team.id} className="group relative bg-white border border-slate-100 rounded-2xl p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div className="flex justify-between items-start mb-10">
                 <div className="flex-1">
                   <h4 className="text-lg font-bold text-slate-800 font-outfit uppercase tracking-tight">{team.name}</h4>
@@ -63,8 +63,8 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
                       title={member.name}
                       style={{ zIndex: 10 - i }}
                       className={cn(
-                        "w-9 h-9 rounded-xl border-4 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-1 ring-slate-100",
-                        member.role === Role.Admin ? 'bg-slate-900' : member.role === Role.Manager ? 'bg-indigo-600' : 'bg-blue-600'
+                        "w-9 h-9 rounded-xl border-2 border-white flex items-center justify-center text-[10px] font-bold transition-transform group-hover:scale-110 shadow-sm",
+                        member.role === Role.Admin ? 'bg-[#002147] text-white' : 'bg-blue-500 text-white'
                       )}
                     >
                       {member.name.charAt(0)}
@@ -82,10 +82,10 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
               <div className="pt-8 border-t border-slate-50">
                 <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-4">Unit Commanding</div>
                 {leader ? (
-                  <div className="flex items-center gap-4 bg-slate-50/50 p-4 rounded-3xl border border-slate-50/50">
+                  <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-100">
                     <div className={cn(
-                      "w-10 h-10 rounded-2xl text-white flex items-center justify-center text-xs font-bold shadow-sm ring-4 ring-slate-50",
-                      leader.role === Role.Admin ? 'bg-slate-900' : 'bg-indigo-600'
+                      "w-10 h-10 rounded-xl text-white flex items-center justify-center text-xs font-bold shadow-sm",
+                      leader.role === Role.Admin ? 'bg-[#002147]' : 'bg-blue-500'
                     )}>
                       {leader.name.charAt(0)}
                     </div>
@@ -95,7 +95,7 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-amber-100">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-amber-200 text-amber-600 rounded-lg text-[9px] font-bold uppercase tracking-widest">
                     <ShieldAlert size={10} /> Needs Leader
                   </div>
                 )}

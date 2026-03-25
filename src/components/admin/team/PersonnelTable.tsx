@@ -34,14 +34,14 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
             className="w-full bg-white border border-slate-100 rounded-2xl pl-14 pr-6 py-4 text-sm font-medium text-slate-600 outline-none focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 transition-all shadow-sm"
           />
         </div>
-        <div className="flex items-center gap-3 bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-3 p-1 rounded-xl border border-slate-100 shadow-sm">
           {(['All', Role.Staff, Role.Manager, Role.Admin] as const).map((role) => (
             <button
               key={role}
               onClick={() => onRoleFilterChange(role)}
               className={cn(
-                "px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                roleFilter === role ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                "px-5 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                roleFilter === role ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "text-slate-400 hover:text-blue-600"
               )}
             >
               {role}
@@ -51,7 +51,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-50 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
@@ -66,12 +66,16 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-50/50">
               {users.map((user) => (
-                <tr key={user.id} className="group hover:bg-slate-50/50 transition-colors">
+                <tr 
+                  key={user.id} 
+                  onClick={() => onEdit(user)}
+                  className="group hover:bg-slate-50/30 transition-colors cursor-pointer"
+                >
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
                       <div className={cn(
-                        "w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-bold text-white shadow-sm ring-4 ring-white transition-transform group-hover:scale-110",
-                        user.role === Role.Admin ? 'bg-slate-900' : user.role === Role.Manager ? 'bg-indigo-600' : 'bg-blue-600'
+                        "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm transition-transform group-hover:scale-110",
+                        user.role === Role.Admin ? 'bg-slate-900' : 'bg-blue-600'
                       )}>
                         {user.name.charAt(0)}
                       </div>
@@ -89,7 +93,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                   <td className="py-5">
                     <div className={cn(
                       "text-[10px] font-bold uppercase tracking-widest mb-1",
-                      user.role === Role.Admin ? 'text-slate-900' : user.role === Role.Manager ? 'text-indigo-600' : 'text-blue-600'
+                      user.role === Role.Admin ? 'text-slate-900' : 'text-blue-600'
                     )}>
                       {user.role}
                     </div>
@@ -102,18 +106,18 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                   </td>
                   <td className="py-5">
                     <div className="flex justify-center">
-                      <div className={cn(
-                         "flex items-center gap-2 px-3 py-1.5 rounded-full",
-                         user.isActive ? "bg-emerald-50" : "bg-slate-100"
-                      )}>
-                        <div className={cn("w-1.5 h-1.5 rounded-full", user.isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-300")} />
-                        <span className={cn(
-                           "text-[9px] font-semibold uppercase tracking-widest",
-                           user.isActive ? "text-emerald-600" : "text-slate-400"
+                        <div className={cn(
+                           "flex items-center gap-2 px-3 py-1.5 rounded-full",
+                           user.isActive ? "bg-emerald-50" : "bg-slate-100"
                         )}>
-                          {user.isActive ? 'Active' : 'Offline'}
-                        </span>
-                      </div>
+                          <div className={cn("w-1.5 h-1.5 rounded-full", user.isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-300")} />
+                          <span className={cn(
+                             "text-[9px] font-bold uppercase tracking-widest",
+                             user.isActive ? "text-emerald-600" : "text-slate-400"
+                          )}>
+                            {user.isActive ? 'Active' : 'Offline'}
+                          </span>
+                        </div>
                     </div>
                   </td>
                   <td className="px-8 py-5 text-right">
