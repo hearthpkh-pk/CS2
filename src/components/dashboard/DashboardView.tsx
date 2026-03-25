@@ -118,7 +118,7 @@ export const DashboardView = ({
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
           <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
-            <Users size={14} className="text-blue-500" /> เพดานผู้ติดตาม (Peak)
+            <Users size={14} className="text-blue-500" /> ยอดผู้ติดตามใหม่ (New)
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.followers.toLocaleString()}</span>

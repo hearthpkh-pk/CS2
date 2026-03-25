@@ -133,13 +133,24 @@ export const LoginSection = ({ formData, setFormData }: SectionProps) => (
         </div>
         <div className="space-y-1 relative pt-2">
           <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">2FA Secret</label>
-          <input 
-            type="text"
-            value={formData.twoFactor}
-            onChange={e => setFormData({...formData, twoFactor: e.target.value})}
-            placeholder="ABCD EFGH..."
-            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-inter uppercase"
-          />
+          <div className="flex gap-2">
+            <input 
+              type="text"
+              value={formData.twoFactor}
+              onChange={e => setFormData({...formData, twoFactor: e.target.value})}
+              placeholder="ABCD EFGH..."
+              className="flex-1 min-w-0 bg-white border border-slate-200 rounded-2xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-inter uppercase"
+            />
+            <a 
+              href="https://gauth.apps.gbraad.nl/#main" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-12 h-[46px] flex items-center justify-center bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black text-slate-400 hover:text-amber-500 hover:bg-amber-50 hover:border-amber-100 transition-all shrink-0 shadow-sm active:scale-95"
+              title="Open 2FA Converter Tool"
+            >
+              2FA
+            </a>
+          </div>
         </div>
       </div>
     </div>

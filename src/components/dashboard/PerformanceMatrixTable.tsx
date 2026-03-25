@@ -150,7 +150,7 @@ export const PerformanceMatrixTable: React.FC<Props> = ({
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-slate-400 font-outfit tracking-wider mt-0.5">{page.followers.toLocaleString()} PEAK FOLLOWERS</div>
+                      <div className="text-[10px] text-slate-400 font-outfit tracking-wider mt-0.5">{page.followers.toLocaleString()} NEW FOLLOWERS</div>
                       
                       {/* Detailed Flag Alert */}
                       {page.requests && page.requests.some(r => r.status === 'Pending') && (

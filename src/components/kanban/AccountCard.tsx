@@ -151,15 +151,6 @@ export const AccountCard = ({
                   <Lock size={12} />
                 </button>
               )}
-              {/* Ownership Indicator for Admins */}
-              {currentUser.role !== 'Staff' && (
-                <div className="ml-auto flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center border border-slate-200">
-                    <span className="text-[8px] font-bold text-slate-400 uppercase">{ownerName.charAt(0)}</span>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-400 font-noto truncate max-w-[50px]">{ownerName}</span>
-                </div>
-              )}
             </>
           );
         })()}

@@ -134,7 +134,7 @@ export const aggregateDashboardMetrics = (
       const key = `${selectedYear}-${monthPart}-01`;
       if (monthly[key]) {
         monthly[key].views += Math.floor(Number(log.views));
-        monthly[key].pageFollowers[log.pageId] = Math.max(monthly[key].pageFollowers[log.pageId] || 0, Math.floor(Number(log.followers)));
+        monthly[key].pageFollowers[log.pageId] = (monthly[key].pageFollowers[log.pageId] || 0) + Math.floor(Number(log.followers));
         monthly[key].count += 1;
       }
     });
@@ -151,7 +151,7 @@ export const aggregateDashboardMetrics = (
     chartLogs.forEach(log => {
       if (!daily[log.date]) daily[log.date] = { date: log.date, views: 0, pageFollowers: {} };
       daily[log.date].views += Math.floor(Number(log.views));
-      daily[log.date].pageFollowers[log.pageId] = Math.max(daily[log.date].pageFollowers[log.pageId] || 0, Math.floor(Number(log.followers)));
+      daily[log.date].pageFollowers[log.pageId] = (daily[log.date].pageFollowers[log.pageId] || 0) + Math.floor(Number(log.followers));
     });
 
     chartData = Object.values(daily)
@@ -170,10 +170,14 @@ export const aggregateDashboardMetrics = (
   const latestDayViews = latestChartLogs.reduce((acc, log) => acc + Number(log.views || 0), 0);
   const latestDayFollowers = latestChartLogs.reduce((acc, log) => acc + Number(log.followers || 0), 0);
 
+
+  // Calculate Portfolio Followers: Sum of all daily Gains in this period
+  const totalFollowersSum = chartData.reduce((acc, d) => acc + d.followers, 0);
+
   const totals = {
     views: Math.floor(totalViews),
     prevViews: Math.floor(totalViews * 0.85), // Mock comparison
-    followers: Math.floor(currentFollowers),
+    followers: Math.floor(totalFollowersSum),
     latestDayViews: Math.floor(latestDayViews),
     latestDayFollowers: Math.floor(latestDayFollowers)
   };
@@ -187,9 +191,10 @@ export const aggregateDashboardMetrics = (
   currentMonthLogs.forEach(l => {
     if (stats[l.pageId]) {
       stats[l.pageId].views += Number(l.views || 0);
-      stats[l.pageId].followers = Math.max(stats[l.pageId].followers, Number(l.followers || 0));
+      stats[l.pageId].followers += Number(l.followers || 0);
     }
   });
+
 
   prevMonthLogs.forEach(l => {
     if (stats[l.pageId]) {
