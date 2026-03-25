@@ -159,6 +159,10 @@ export const DashboardView = ({
         matrixData={matrixData}
         selectedPage={selectedPage}
         onSelectPage={setSelectedPage}
+        onAcknowledge={(pageId, reqId) => {
+          // In a real app, this would call supabase to update the request status to 'Acknowledged'
+          alert(`Acknowledged request ${reqId} for page ${pageId}. (Mock Action)`);
+        }}
       />
 
       <ActivePagesSection pages={pages} selectedPage={selectedPage} />

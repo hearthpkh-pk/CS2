@@ -29,12 +29,37 @@ export interface CalendarEvent {
   status?: LeaveStatus;
 }
 
-export interface User {
+export interface Team {
   id: string;
   name: string;
+  description?: string;
+  createdAt?: string;
+}
+
+export interface SalaryAdjustment {
+  id: string;
+  newSalary: number;
+  reason: string; // e.g. Promotion, added JD
+  effectiveDate: string; // YYYY-MM-DD
+  createdAt: string;
+}
+
+export interface User {
+  id: string;
+  name: string; // Code Name
   role: Role;
   teamId?: string;
-  username: string;
+  username: string; // Used as display ID or secondary login
+  email?: string; // System Login Email
+  temporaryPassword?: string;
+  salary?: number; // Integer (Baht)
+  salaryHistory?: SalaryAdjustment[]; // Log of all salary changes
+  startDate?: string; // YYYY-MM-DD
+  probationDate?: string; // YYYY-MM-DD
+  bankName?: string;
+  bankAccount?: string;
+  permissions?: string[]; // Array of module keys e.g. ['dashboard', 'setup', 'hq-dashboard']
+  isActive?: boolean;
 }
 
 export interface FacebookPageMeta {
@@ -45,6 +70,17 @@ export interface FacebookPageMeta {
 }
 
 export type PageStatus = 'Active' | 'Rest' | 'Error' | 'Problem';
+
+export interface PageActionRequest {
+  id: string;
+  type: 'Flag' | 'Note' | 'Warning';
+  message: string;
+  requestedBy: string; // Links to User.id (SA/Admin)
+  status: 'Pending' | 'Acknowledged' | 'Resolved';
+  createdAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string; // Links to User.id (Staff)
+}
 
 export interface Page {
   id: string;
@@ -66,6 +102,7 @@ export interface Page {
   lastUpdated?: string; // Added as optional
   facebookUrl?: string;
   facebookData?: FacebookPageMeta;
+  requests?: PageActionRequest[];
 }
 
 export interface DailyLog {

@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
-import { ArrowUpRight, TrendingDown, Minus, ChevronRight, ShieldCheck, AlertTriangle, Activity, LayoutGrid, Eye, Users, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, TrendingDown, Minus, ChevronRight, ShieldCheck, AlertTriangle, Activity, LayoutGrid, Eye, Users, TrendingUp, BellRing, CheckCircle2 } from 'lucide-react';
 import { DashboardMetricsPayload } from '@/services/dashboardMetricsService';
 
 interface Props {
   matrixData: DashboardMetricsPayload['matrixData'];
   selectedPage: string;
   onSelectPage: (id: string) => void;
+  onAcknowledge?: (pageId: string, requestId: string) => void;
 }
 
 export const PerformanceMatrixTable: React.FC<Props> = ({
-  matrixData, selectedPage, onSelectPage
+  matrixData, selectedPage, onSelectPage, onAcknowledge
 }) => {
   const [metric, setMetric] = React.useState<'views' | 'followers'>('views');
   const [sortBy, setSortBy] = React.useState<'id' | 'desc' | 'asc'>('id');
@@ -141,8 +142,31 @@ export const PerformanceMatrixTable: React.FC<Props> = ({
                       {page.boxId || index + 1}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-slate-700 font-noto group-hover:text-blue-600 transition-colors">{page.name}</div>
-                      <div className="text-[10px] text-slate-400 font-outfit tracking-wider">{page.followers.toLocaleString()} PEAK FOLLOWERS</div>
+                      <div className="text-sm font-bold text-slate-700 font-noto group-hover:text-blue-600 transition-colors flex items-center gap-2">
+                        {page.name}
+                        {page.requests && page.requests.some(r => r.status === 'Pending') && (
+                          <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-md text-[9px] font-black uppercase tracking-widest animate-pulse">
+                            <BellRing size={10} /> HQ Action Required
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-outfit tracking-wider mt-0.5">{page.followers.toLocaleString()} PEAK FOLLOWERS</div>
+                      
+                      {/* Detailed Flag Alert */}
+                      {page.requests && page.requests.some(r => r.status === 'Pending') && (
+                        <div className="mt-2 bg-red-50 border border-red-100 rounded-lg p-2.5 flex items-start gap-2 max-w-sm" onClick={(e) => e.stopPropagation()}>
+                           <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                           <div className="flex-1">
+                             <p className="text-[11px] font-medium text-red-800 leading-snug">{page.requests.find(r => r.status === 'Pending')?.message}</p>
+                             <button 
+                               onClick={() => onAcknowledge && onAcknowledge(page.id, page.requests!.find(r => r.status === 'Pending')!.id)}
+                               className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-red-600 hover:text-white bg-red-100 hover:bg-red-500 px-3 py-1 rounded-md transition-colors"
+                             >
+                                <CheckCircle2 size={12} /> ยืนยันรับทราบและจะดำเนินการแก้ไข
+                             </button>
+                           </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>

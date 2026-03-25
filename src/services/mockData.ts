@@ -1,37 +1,142 @@
 import { Page, FBAccount, User, Role, LeaveRequest, CalendarEvent, DailyLog } from '../types';
 
 export const initialUsers: User[] = [
-  { id: 'u1', name: 'Super Admin', role: Role.SuperAdmin, username: 'admin' },
-  { id: 'u2', name: 'Admin A', role: Role.Admin, teamId: 'team1', username: 'admin_a' },
-  { id: 'u3', name: 'Manager B', role: Role.Manager, teamId: 'team1', username: 'manager_b' },
-  { id: 'u4', name: 'Staff C1', role: Role.Staff, teamId: 'team1', username: 'staff_c1' },
-  { id: 'u5', name: 'Staff C2', role: Role.Staff, teamId: 'team1', username: 'staff_c2' },
+  // Super Admins (2)
+  { id: 'u-sa1', name: 'Super Admin Alpha', role: Role.SuperAdmin, username: 'sa_alpha' },
+  { id: 'u-sa2', name: 'Super Admin Beta', role: Role.SuperAdmin, username: 'sa_beta' },
+  
+  // Admins (2)
+  { id: 'u-adm1', name: 'Admin Ops 1', role: Role.Admin, username: 'admin1' },
+  { id: 'u-adm2', name: 'Admin Ops 2', role: Role.Admin, username: 'admin2' },
+
+  // Managers (2)
+  { id: 'u-mgr-a', name: 'Manager Team A', role: Role.Manager, teamId: 'team-a', username: 'mgr_a' },
+  { id: 'u-mgr-b', name: 'Manager Team B', role: Role.Manager, teamId: 'team-b', username: 'mgr_b' },
+
+  // Staff Team A (6)
+  { id: 'u-staff-a1', name: 'Staff A1', role: Role.Staff, teamId: 'team-a', username: 'sta1' },
+  { id: 'u-staff-a2', name: 'Staff A2', role: Role.Staff, teamId: 'team-a', username: 'sta2' },
+  { id: 'u-staff-a3', name: 'Staff A3', role: Role.Staff, teamId: 'team-a', username: 'sta3' },
+  { id: 'u-staff-a4', name: 'Staff A4', role: Role.Staff, teamId: 'team-a', username: 'sta4' },
+  { id: 'u-staff-a5', name: 'Staff A5', role: Role.Staff, teamId: 'team-a', username: 'sta5' },
+  { id: 'u-staff-a6', name: 'Staff A6', role: Role.Staff, teamId: 'team-a', username: 'sta6' },
+
+  // Staff Team B (5)
+  { id: 'u-staff-b1', name: 'Staff B1', role: Role.Staff, teamId: 'team-b', username: 'stb1' },
+  { id: 'u-staff-b2', name: 'Staff B2', role: Role.Staff, teamId: 'team-b', username: 'stb2' },
+  { id: 'u-staff-b3', name: 'Staff B3', role: Role.Staff, teamId: 'team-b', username: 'stb3' },
+  { id: 'u-staff-b4', name: 'Staff B4', role: Role.Staff, teamId: 'team-b', username: 'stb4' },
+  { id: 'u-staff-b5', name: 'Staff B5', role: Role.Staff, teamId: 'team-b', username: 'stb5' },
 ];
 
 export const initialAccounts: FBAccount[] = [
   { id: 'acc-1', boxId: 1, name: 'สมชาย คมกริบ', uid: '100012345678', status: 'Live', ownerId: 'u-staff-a1', teamId: 'team-a', password: 'password123', twoFactor: 'ABCD 1234 EFGH 5678' },
   { id: 'acc-2', boxId: 2, name: 'Wichai Manee', uid: '100098765432', status: 'Check', ownerId: 'u-staff-a2', teamId: 'team-a' },
-  { id: 'acc-3', boxId: 3, name: 'Somsak Backup', uid: '100055554444', status: 'Die', ownerId: 'u-staff-a1', teamId: 'team-a' },
-  { id: 'acc-admin-1', boxId: 0, name: 'Main Admin FB', uid: '100088889999', status: 'Admin', ownerId: 'u-admin', teamId: 'team-a' },
+  { id: 'acc-3', boxId: 3, name: 'Somsak Backup', uid: '100055554444', status: 'Die', ownerId: 'u-staff-b1', teamId: 'team-b' },
+  { id: 'acc-admin-1', boxId: 0, name: 'Main Admin FB', uid: '100088889999', status: 'Admin', ownerId: 'u-adm1' },
 ];
 
 export const initialPages: Page[] = [
   { 
-    id: '4', 
+    id: 'p1', 
     name: 'ข่าวช่วยชาวบ้าน - News', 
+    category: 'ข่าว', 
+    status: 'Active', 
+    boxId: 1, 
+    ownerId: 'u-staff-a1', 
+    teamId: 'team-a',
+    facebookUrl: 'https://www.facebook.com/profile.php?id=6156035931587',
+    facebookData: {
+      profilePic: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400&q=80',
+      description: 'ข่าวช่วยชาวบ้าน เราช่วยเหลือสังคม',
+      followers: 450000,
+      lastSyncAt: new Date().toISOString()
+    }
+  },
+  { 
+    id: 'p2', 
+    name: 'สถานการณ์รายวัน (Daily)', 
     category: 'ข่าว', 
     status: 'Active', 
     boxId: 1, 
     ownerId: 'u-staff-a2', 
     teamId: 'team-a',
-    facebookUrl: 'https://www.facebook.com/profile.php?id=6156035931587',
-    facebookData: {
-      profilePic: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=400&q=80',
-      description: 'ข่าวช่วยชาวบ้าน เราช่วยเหลือสังคม พร้อมร่วมช่วยเหลืออย่างจริงใจ ที่นี่ที่เดียวจริง',
-      followers: 450000,
-      lastSyncAt: new Date().toISOString()
-    }
+    // Example of a page with an active warning/request flag from an Admin
+    requests: [
+      {
+        id: 'req-1',
+        type: 'Warning',
+        message: 'ยอดวิวร่วงหนัก 2 สัปดาห์ติด หาสาเหตุและปรับรูปแบบด่วน',
+        requestedBy: 'u-sa1',
+        status: 'Pending',
+        createdAt: new Date().toISOString()
+      }
+    ]
   },
+  { 
+    id: 'p3', 
+    name: 'บันเทิงไทย ฮาฮา', 
+    category: 'รายการ', 
+    status: 'Rest', 
+    boxId: 2, 
+    ownerId: 'u-staff-b1', 
+    teamId: 'team-b',
+  },
+  { 
+    id: 'p4', 
+    name: 'เรื่องเล่าชาวเน็ต', 
+    category: 'รายการ', 
+    status: 'Problem', 
+    boxId: 2, 
+    ownerId: 'u-staff-b2', 
+    teamId: 'team-b',
+    requests: [
+      {
+        id: 'req-2',
+        type: 'Flag',
+        message: 'เพจโดนปิดการมองเห็น ให้พักการลงคลิปไปก่อน 3 วัน',
+        requestedBy: 'u-adm1',
+        status: 'Pending',
+        createdAt: new Date().toISOString()
+      }
+    ]
+  },
+  { 
+    id: 'p5', 
+    name: 'คลิปตลกสุดจัดปลัดบอก', 
+    category: 'รายการ', 
+    status: 'Active', 
+    boxId: 3, 
+    ownerId: 'u-staff-b3', 
+    teamId: 'team-b',
+  },
+  { 
+    id: 'p6', 
+    name: 'โปรเจกต์พิเศษ (Manager A)', 
+    category: 'รายการ', 
+    status: 'Active', 
+    boxId: 1, 
+    ownerId: 'u-mgr-a', 
+    teamId: 'team-a',
+  },
+  { 
+    id: 'p7', 
+    name: 'เพจของ Admin 1', 
+    category: 'ข่าว', 
+    status: 'Active', 
+    boxId: 1, 
+    ownerId: 'u-adm1',
+  },
+  // Add some generic pages for the rest of the staff
+  ...Array.from({ length: 10 }).map((_, i) => ({
+    id: `p-gen-${i}`,
+    name: `เพจคอนเทนต์ทั่วไป ${i + 1}`,
+    category: i % 2 === 0 ? 'ข่าว' : 'รายการ',
+    status: i % 4 === 0 ? 'Rest' : 'Active' as any,
+    boxId: 1,
+    ownerId: i < 6 ? `u-staff-a${i + 1}` : `u-staff-b${i - 5}`,
+    teamId: i < 6 ? 'team-a' : 'team-b',
+  }))
 ];
 
 export const generateMockLogs = (pages: Page[]): DailyLog[] => {
@@ -43,15 +148,27 @@ export const generateMockLogs = (pages: Page[]): DailyLog[] => {
     const dateStr = d.toISOString().split('T')[0];
 
     pages.forEach(p => {
-      const baseFollowers = 10000 + parseInt(p.id) * 5000;
-      const baseViews = 5000 + parseInt(p.id) * 2000;
+      // Dynamic generation based on page attributes to simulate Rising Stars / Zombies
+      const multiplier = p.id === 'p1' ? 8000 : p.id === 'p5' ? 12000 : 2000;
+      let baseFollowers = 5000 + (parseInt(p.id.replace(/\D/g, '') || '1') * 1000);
+      let baseViews = multiplier;
+
+      // Make p2 drop drastically recently
+      if (p.id === 'p2' && i < 14) {
+        baseViews = 500;
+      }
+      // Make p5 surge recently (Rising Star)
+      if (p.id === 'p5' && i < 5) {
+        baseViews = 35000;
+      }
+
       logs.push({
         id: `log-${p.id}-${dateStr}`,
         pageId: p.id,
-        staffId: p.ownerId || 'u1', // Default to Super Admin for mock
+        staffId: p.ownerId || 'u-sa1',
         date: dateStr,
-        followers: baseFollowers + ((90 - i) * 150) + Math.floor(Math.random() * 500),
-        views: baseViews + Math.floor(Math.random() * 5000),
+        followers: baseFollowers + ((90 - i) * 50) + Math.floor(Math.random() * 100),
+        views: baseViews + Math.floor(Math.random() * (multiplier * 0.2)), // 20% variance
         source: 'API',
         createdAt: new Date().toISOString()
       });
@@ -63,8 +180,8 @@ export const generateMockLogs = (pages: Page[]): DailyLog[] => {
 export const initialLeaveRequests: LeaveRequest[] = [
   {
     id: 'l1',
-    staffId: 'u4',
-    staffName: 'Staff C1',
+    staffId: 'u-staff-a1',
+    staffName: 'Staff A1',
     startDate: '2026-03-25T00:00:00.000Z',
     endDate: '2026-03-26T00:00:00.000Z',
     type: 'Sick',

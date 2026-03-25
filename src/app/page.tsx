@@ -17,6 +17,7 @@ import { LearningCenterView } from '@/components/workspace/LearningCenterView';
 import { PolicyCenterView } from '@/components/workspace/PolicyCenterView';
 import { PolicySettingsView } from '@/components/admin/PolicySettingsView';
 import { HQDashboardView } from '@/components/admin/HQDashboardView';
+import { TeamManagementView } from '@/components/admin/TeamManagementView';
 import { PlaceholderView } from '@/components/ui/PlaceholderView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
@@ -241,6 +242,8 @@ export default function CreatorApp() {
               pages={pages} 
               accounts={accounts} 
               users={users} 
+              logs={logs}
+              currentUser={currentUser}
             />
           )}
 
@@ -266,13 +269,19 @@ export default function CreatorApp() {
             />
           )}
 
-          {currentTab === 'team' && (
-            <PlaceholderView 
-              title="Team Management" 
-              icon={Users} 
-              description="Coming soon in Phase 2 Expansion..." 
+          {currentTab === 'team' && (currentUser.role === 'Super Admin' || currentUser.role === 'Admin') ? (
+            <TeamManagementView
+              users={users}
+              setUsers={setUsers}
+              currentUser={currentUser}
             />
-          )}
+          ) : currentTab === 'team' ? (
+            <PlaceholderView 
+              title="Access Denied" 
+              icon={Users} 
+              description="You do not have permission to view Team Management." 
+            />
+          ) : null}
 
           {currentTab === 'reports' && (
             <PlaceholderView 

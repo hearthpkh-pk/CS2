@@ -1,4 +1,4 @@
-import { Page, DailyLog } from '@/types';
+import { Page, DailyLog, PageActionRequest } from '@/types';
 
 // TODO: Migrate to Supabase from LocalStorage/Mock
 // In Production, this entire service should be replaced by a direct call to a Supabase RPC or SQL View.
@@ -29,6 +29,7 @@ export interface DashboardMetricsPayload {
     tier: 'T1' | 'T2' | 'T3';
     shareOfMaxViews: number;
     shareOfMaxFollowers: number;
+    requests?: PageActionRequest[];
   }>;
 
   // Data for Executive Quota Brief
@@ -240,7 +241,8 @@ export const aggregateDashboardMetrics = (
       followersWeeklyGrowth,
       tier,
       shareOfMaxViews: (views / maxViews) * 100,
-      shareOfMaxFollowers: (followers / maxFollowers) * 100
+      shareOfMaxFollowers: (followers / maxFollowers) * 100,
+      requests: p.requests
     };
   }).sort((a, b) => b.views - a.views);
 
