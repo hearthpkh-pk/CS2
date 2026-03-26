@@ -42,6 +42,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
       title: 'Organization',
       items: [
         { id: 'hq-dashboard', icon: PieChart, label: 'แดชบอร์ดรายงานรวม', roles: ['Manager', 'Admin', 'Super Admin'] },
+        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: ['Super Admin'] },
         { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: ['Admin', 'Super Admin'] },
       ]
     },
@@ -49,7 +50,6 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
       title: 'Enterprise',
       items: [
         { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: ['Super Admin'] },
-        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: ['Admin', 'Super Admin'] },
         { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: ['Super Admin'] },
         { id: 'rules', icon: Scale, label: 'กฎระเบียบบริษัท', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
       ]
@@ -117,14 +117,14 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
       {/* Role Switcher Section (Simulation) */}
       <div className="mt-auto border-t border-white/5 p-4 overflow-hidden">
         <div className="px-2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button 
+          <button
             onClick={() => setShowDevRoleSwitcher(!showDevRoleSwitcher)}
             className="w-full flex items-center justify-between text-[10px] font-bold text-blue-100/40 uppercase tracking-widest mb-3 hover:text-white transition-colors"
           >
             <span>Switch Role (Dev)</span>
             {showDevRoleSwitcher ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           </button>
-          
+
           {showDevRoleSwitcher && (
             <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-300">
               {initialUsers.map(user => (

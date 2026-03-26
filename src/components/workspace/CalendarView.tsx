@@ -147,8 +147,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
 
                   {leave && (
                     <div className={cn(
-                      "mt-1 px-1.5 py-0.5 rounded-lg text-[8px] font-bold flex items-center gap-1",
-                      leave.status === 'Approved' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                      "mt-1 px-1.5 py-0.5 rounded-lg text-[8px] font-bold flex items-center gap-1 border",
+                      leave.status === 'Approved' ? "border-emerald-100 text-emerald-600" : "border-blue-100 text-blue-600"
                     )}>
                        {leave.status === 'Approved' ? <CheckCircle2 size={10} /> : <Clock size={10} />}
                        {leave.type}
@@ -209,8 +209,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
                     <p className="text-[10px] text-slate-400">{req.startDate.split('T')[0]}</p>
                   </div>
                   <span className={cn(
-                    "text-[8px] font-black px-2 py-0.5 rounded-lg uppercase",
-                    req.status === 'Approved' ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600"
+                    "text-[8px] font-black px-2 py-0.5 border rounded-lg uppercase",
+                    req.status === 'Approved' ? "border-emerald-100 text-emerald-600" : "border-blue-100 text-blue-600"
                   )}>
                     {req.status}
                   </span>

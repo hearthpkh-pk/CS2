@@ -22,8 +22,8 @@ export const dataService = {
     }
 
     // RBAC Scoping
-    if (!user || user.role === 'Super Admin') return pages;
-    if (user.role === 'Admin' || user.role === 'Manager') {
+    if (!user || user.role === 'Super Admin' || user.role === 'Admin') return pages;
+    if (user.role === 'Manager') {
       return pages.filter(p => p.teamId === user.teamId || p.ownerId === user.id);
     }
     // Staff
@@ -64,8 +64,8 @@ export const dataService = {
     }
 
     // RBAC Scoping
-    if (!user || user.role === 'Super Admin') return accounts;
-    if (user.role === 'Admin' || user.role === 'Manager') {
+    if (!user || user.role === 'Super Admin' || user.role === 'Admin') return accounts;
+    if (user.role === 'Manager') {
       return accounts.filter(a => a.teamId === user.teamId || a.ownerId === user.id);
     }
     // Staff

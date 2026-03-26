@@ -16,12 +16,14 @@ import { DailyTaskView } from '@/components/workspace/DailyTaskView';
 import { LearningCenterView } from '@/components/workspace/LearningCenterView';
 import { PolicyCenterView } from '@/components/workspace/PolicyCenterView';
 import { PolicySettingsView } from '@/components/admin/PolicySettingsView';
-import { HQDashboardView } from '@/components/admin/HQDashboardView';
+import { HQDashboardView } from '@/features/hq-dashboard/components/HQDashboardView';
+import { ReportsView } from '@/features/reports/components/ReportsView';
 import { TeamManagementView } from '@/components/admin/TeamManagementView';
 import { PlaceholderView } from '@/components/ui/PlaceholderView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
 import { initialUsers, initialPages } from '@/services/mockData';
+import { PayrollView } from '@/features/payroll/components/PayrollView';
 import { Page, DailyLog, FBAccount, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -223,9 +225,24 @@ export default function CreatorApp() {
           {currentTab === 'rules' && (
             <PolicyCenterView />
           )}
-
           {currentTab === 'payroll' && currentUser.role === 'Super Admin' && (
-            <PolicySettingsView currentUser={currentUser} />
+            <div className="space-y-4">
+              <PayrollView 
+                currentUser={currentUser}
+                policy={{
+                  minViewTarget: 5000000,
+                  penaltyAmount: 500,
+                  bonusStep1: 1000,
+                  superBonusThreshold: 10000000,
+                  bonusStep2: 3000,
+                  requiredPagesPerDay: 4,
+                  clipsPerPageInLog: 4
+                }}
+              />
+              <div className="pt-10 border-t border-slate-100">
+                <PolicySettingsView currentUser={currentUser} />
+              </div>
+            </div>
           )}
 
           {currentTab === 'transactions' && (
@@ -239,11 +256,16 @@ export default function CreatorApp() {
 
           {currentTab === 'hq-dashboard' && (
             <HQDashboardView 
-              pages={pages} 
-              accounts={accounts} 
-              users={users} 
-              logs={logs}
               currentUser={currentUser}
+              policy={{
+                minViewTarget: 5000000,
+                penaltyAmount: 500,
+                bonusStep1: 1000,
+                superBonusThreshold: 10000000,
+                bonusStep2: 3000,
+                requiredPagesPerDay: 4,
+                clipsPerPageInLog: 4
+              }}
             />
           )}
 
@@ -283,11 +305,18 @@ export default function CreatorApp() {
             />
           ) : null}
 
-          {currentTab === 'reports' && (
-            <PlaceholderView 
-              title="Reports & Analytics" 
-              icon={BarChart3} 
-              description="Comprehensive performance metrics coming soon..." 
+          {currentTab === 'analytics' && currentUser.role === 'Super Admin' && (
+            <ReportsView 
+              currentUser={currentUser}
+              policy={{
+                minViewTarget: 5000000,
+                penaltyAmount: 500,
+                bonusStep1: 1000,
+                superBonusThreshold: 10000000,
+                bonusStep2: 3000,
+                requiredPagesPerDay: 4,
+                clipsPerPageInLog: 4
+              }}
             />
           )}
 

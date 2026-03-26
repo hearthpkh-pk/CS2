@@ -49,6 +49,7 @@ export interface User {
   name: string; // Code Name
   role: Role;
   teamId?: string;
+  brand?: string; // Advertising brand assigned to this user
   username: string; // Used as display ID or secondary login
   email?: string; // System Login Email
   temporaryPassword?: string;
@@ -117,6 +118,8 @@ export interface DailyLog {
   statusAtTime?: string; // Captured status on that day
   isManual?: boolean;    // True if entered by staff
   source?: 'API' | 'CSV' | 'Manual';
+  clipsCount?: number;    // Number of clips submitted
+  submittedAt?: string;  // Timestmap of final submission
   createdAt: string;
 }
 

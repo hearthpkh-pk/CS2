@@ -229,8 +229,8 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
            <div className="p-8 pb-10">
               <div className="flex items-center gap-3 mb-4">
                  <div className={cn(
-                   "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
-                   selectedVideo.category === 'Mandatory' ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                   "px-2 py-0.5 border rounded-full text-[8px] font-black uppercase tracking-widest",
+                   selectedVideo.category === 'Mandatory' ? "border-red-200 text-red-500" : "border-blue-200 text-blue-500"
                  )}>
                    {selectedVideo.category}
                  </div>
@@ -334,7 +334,7 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
                {video.tags.length > 0 && (
                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {video.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="px-2 py-0.5 bg-slate-50 text-slate-400 rounded-md text-[8px] font-black uppercase tracking-widest">
+                      <span key={tag} className="px-2 py-0.5 border border-slate-100 text-slate-400 rounded-md text-[8px] font-black uppercase tracking-widest">
                         {tag}
                       </span>
                     ))}
