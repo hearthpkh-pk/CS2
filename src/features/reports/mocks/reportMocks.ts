@@ -11,7 +11,8 @@ export interface DailyReport {
   views: number;
   pagesCount: number;
   isPinned: boolean;
-  team: string;
+  department: string; // แผนก: รายการ, หนัง, ข่าว
+  group: string; // กลุ่มงาน: แบรนด์ 1 - 4
   tags: string[];
   
   // Performance Audit Metrics
@@ -26,9 +27,11 @@ export interface DailyReport {
   issueFrequency: number;
   avgRepairTime: number;
   isClosed: boolean;
+  yearlyViews: number[]; // 12 months array
 }
 
-const teams = ['Core Ops', 'Creative Force', 'Strategic Alpha', 'Growth Beta'];
+const departments = ['รายการ', 'หนัง', 'ข่าว'];
+const groups = ['แบรนด์ 1', 'แบรนด์ 2', 'แบรนด์ 3', 'แบรนด์ 4'];
 const availableTags = ['Top Performer', 'New Hire', 'Night Shift', 'Weekend Crew'];
 const brandsList = ['Nike', 'Apple', 'Disney', 'Coca Cola', 'Pepsi', 'Adidas', 'Netflix', 'None'];
 
@@ -37,7 +40,8 @@ export const mockReports: DailyReport[] = Array.from({ length: 20 }).map((_, i) 
   const pagesCount = 10 + (i % 11);
   const totalRequired = Math.floor(pagesCount * 0.6);
   const userName = `Operator ${String.fromCharCode(65 + (i % 26))}${i + 1}`;
-  const team = teams[i % teams.length];
+  const department = departments[i % departments.length];
+  const group = groups[i % groups.length];
   const tags = i % 5 === 0 ? [availableTags[i % availableTags.length]] : [];
   
   return {
@@ -52,11 +56,12 @@ export const mockReports: DailyReport[] = Array.from({ length: 20 }).map((_, i) 
     status: isComplete ? 'Complete' : 'Pending',
     views: Math.floor(Math.random() * 5000000) + 1000000,
     pagesCount,
-    isPinned: i < 3, // Pin the first 3 by default for demo
-    team,
+    isPinned: i < 3,
+    department,
+    group,
     tags,
 
-    // Randomized performance data for audit demo
+    // Randomized performance data
     monthlyViews: Math.floor(Math.random() * 80000000) + 20000000,
     attainmentRate: 85 + Math.floor(Math.random() * 25),
     efficiency: 7.5 + (Math.random() * 2.3),
@@ -67,6 +72,7 @@ export const mockReports: DailyReport[] = Array.from({ length: 20 }).map((_, i) 
     avgClipsPerDay: 4 + Math.random() * 6,
     issueFrequency: Math.random() * 0.2,
     avgRepairTime: 0.5 + Math.random() * 3,
-    isClosed: Math.random() > 0.8
+    isClosed: Math.random() > 0.8,
+    yearlyViews: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 80000000) + 10000000)
   };
 });

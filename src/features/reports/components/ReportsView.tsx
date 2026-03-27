@@ -15,7 +15,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
   const [reports] = useState<DailyReport[]>(reportService.getDailyStatus());
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [viewMode, setViewMode] = useState<'report' | 'stats'>('report');
-  const [filterMode, setFilterMode] = useState<'all' | 'brand' | 'team' | 'tag'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'brand' | 'department' | 'tag'>('all');
   const [activeFilterValue, setActiveFilterValue] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set(reports.filter((r: DailyReport) => r.isPinned).map((r: DailyReport) => r.id)));
@@ -29,7 +29,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
   };
 
   // Logic for generating unique options
-  const uniqueTeams = Array.from(new Set(reports.map(r => r.team)));
+  const uniqueDepartments = Array.from(new Set(reports.map(r => r.department)));
   const uniqueBrands = Array.from(new Set(reports.map(r => r.brand).filter(b => b !== 'None')));
   const uniqueTags = Array.from(new Set(reports.flatMap(r => r.tags || [])));
 
@@ -47,13 +47,13 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
     
     // Category Filter
     if (filterMode === 'all') return true;
-    if (filterMode === 'team') return activeFilterValue ? r.team === activeFilterValue : true;
+    if (filterMode === 'department') return activeFilterValue ? r.department === activeFilterValue : true;
     if (filterMode === 'brand') return activeFilterValue ? r.brand === activeFilterValue : r.brand !== 'None';
     if (filterMode === 'tag') return activeFilterValue ? r.tags?.includes(activeFilterValue) : r.tags && r.tags.length > 0;
     return true;
   });
 
-  const selectFilter = (mode: 'all' | 'brand' | 'team' | 'tag', value: string | null = null) => {
+  const selectFilter = (mode: 'all' | 'brand' | 'department' | 'tag', value: string | null = null) => {
     if (filterMode === mode && !value) {
       setFilterMode('all');
       setActiveFilterValue(null);
@@ -115,8 +115,8 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
             {/* Precision KPI Summary Grid - HQ Control Center Style */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                {[
-                 { id: 'all', label: 'Total Personnel', icon: Users, value: reports.length, unit: 'operators' },
-                 { id: 'team', label: 'Operational Teams', icon: Activity, value: uniqueTeams.length, unit: 'groups' },
+                 { id: 'all', label: 'Global Personnel', icon: Users, value: reports.length, unit: 'operators' },
+                 { id: 'department', label: 'Operational Units', icon: Activity, value: uniqueDepartments.length, unit: 'departments' },
                  { id: 'brand', label: 'Client Brands', icon: Share2, value: uniqueBrands.length, unit: 'assets' },
                  { id: 'tag', label: 'Priority Groups', icon: Target, value: uniqueTags.length, unit: 'focus areas' }
                ].map((card) => (
@@ -151,9 +151,9 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
             {/* Drill-down Sub-Filter (Pills) */}
             {(filterMode !== 'all') && (
               <div className="flex flex-wrap items-center gap-2 mb-8 animate-in slide-in-from-top-2 duration-300 bg-slate-50/50 p-2 rounded-2xl border border-slate-50">
-                 {(filterMode === 'team' ? uniqueTeams : filterMode === 'brand' ? uniqueBrands : uniqueTags).map(val => (
+                 {(filterMode === 'department' ? uniqueDepartments : filterMode === 'brand' ? uniqueBrands : uniqueTags).map((val, idx) => (
                     <button
-                      key={val}
+                      key={`${filterMode}-${val}-${idx}`}
                       onClick={() => setActiveFilterValue(activeFilterValue === val ? null : val)}
                       className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all border ${
                         activeFilterValue === val 
@@ -213,9 +213,9 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                                 {pinnedIds.has(report.id) && <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter">Pinned</span>}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest border border-slate-100 px-1.5 py-0.5 rounded-lg">{report.team}</span>
-                                {report.tags && report.tags.map((tag: string) => (
-                                  <span key={tag} className="text-[9px] text-emerald-500 font-bold border border-emerald-100 px-1.5 py-0.5 rounded-lg uppercase tracking-widest">{tag}</span>
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest border border-slate-100 px-1.5 py-0.5 rounded-lg">{report.department} • {report.group}</span>
+                                {report.tags && report.tags.map((tag: string, tIdx: number) => (
+                                  <span key={`${tag}-${tIdx}`} className="text-[9px] text-emerald-500 font-bold border border-emerald-100 px-1.5 py-0.5 rounded-lg uppercase tracking-widest">{tag}</span>
                                 ))}
                               </div>
                             </div>
