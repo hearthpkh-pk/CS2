@@ -13,6 +13,19 @@ export interface DailyReport {
   isPinned: boolean;
   team: string;
   tags: string[];
+  
+  // Performance Audit Metrics
+  monthlyViews: number;
+  attainmentRate: number;
+  efficiency: number;
+  workDays: number;
+  offDays: number;
+  newAssetsMonth: number;
+  bannedAssetsMonth: number;
+  avgClipsPerDay: number;
+  issueFrequency: number;
+  avgRepairTime: number;
+  isClosed: boolean;
 }
 
 const teams = ['Core Ops', 'Creative Force', 'Strategic Alpha', 'Growth Beta'];
@@ -41,6 +54,19 @@ export const mockReports: DailyReport[] = Array.from({ length: 20 }).map((_, i) 
     pagesCount,
     isPinned: i < 3, // Pin the first 3 by default for demo
     team,
-    tags
+    tags,
+
+    // Randomized performance data for audit demo
+    monthlyViews: Math.floor(Math.random() * 80000000) + 20000000,
+    attainmentRate: 85 + Math.floor(Math.random() * 25),
+    efficiency: 7.5 + (Math.random() * 2.3),
+    workDays: 20 + Math.floor(Math.random() * 6),
+    offDays: Math.floor(Math.random() * 4),
+    newAssetsMonth: Math.floor(Math.random() * 5),
+    bannedAssetsMonth: Math.floor(Math.random() * 2),
+    avgClipsPerDay: 4 + Math.random() * 6,
+    issueFrequency: Math.random() * 0.2,
+    avgRepairTime: 0.5 + Math.random() * 3,
+    isClosed: Math.random() > 0.8
   };
 });
