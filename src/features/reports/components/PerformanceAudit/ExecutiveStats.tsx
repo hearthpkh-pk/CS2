@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { BarChart2, TrendingUp, Users, Target, Info, ChevronRight, Activity, Search, LayoutList, Filter, MoreVertical, Maximize2 } from 'lucide-react';
+import { BarChart2, TrendingUp, Users, Target, Info, ChevronRight, Activity, Search, LayoutList, Filter, MoreVertical, Maximize2, Calendar, Box, HardDrive, ArrowUpRight } from 'lucide-react';
 import { DailyReport } from '../../mocks/reportMocks';
 import { cn } from '@/lib/utils';
 
@@ -41,10 +41,10 @@ export const ExecutiveStats = ({ reports }: { reports: DailyReport[] }) => {
     reports.find(r => r.id === selectedId), 
   [reports, selectedId]);
 
-  // Chart Logic
+  // Main Chart Logic
   const { aggregatePath, selectedPath, maxVal } = useMemo(() => {
     const allVals = [...aggregateViews];
-    if (selectedReport) allVals.push(...selectedReport.yearlyViews);
+    if (selectedReport && selectedReport.yearlyViews) allVals.push(...selectedReport.yearlyViews);
     const max = Math.max(...allVals, 1000000) * 1.25;
 
     const scaleX = (chartWidth - padding * 2) / 11;
@@ -76,117 +76,100 @@ export const ExecutiveStats = ({ reports }: { reports: DailyReport[] }) => {
     filteredByToggles.filter(r => r.userName.toLowerCase().includes(searchTerm.toLowerCase())),
   [filteredByToggles, searchTerm]);
 
+  // Mini Chart Helper
+  const MiniTrace = ({ data = [], color, label, icon: Icon, unit }: { data?: number[], color: string, label: string, icon: any, unit: string }) => {
+    const traceData = data || [];
+    const max = Math.max(...traceData, 1);
+    return (
+      <div className="bg-white rounded-3xl border border-slate-100 p-6 flex flex-col gap-4 group/mini hover:border-slate-200 transition-all shadow-sm">
+        <div className="flex justify-between items-start">
+           <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-xl border border-slate-50 shadow-sm", `text-${color}-500`)}>
+                 <Icon size={16} />
+              </div>
+              <div className="space-y-0.5">
+                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">{label}</p>
+                 <p className="text-sm font-bold text-slate-700 font-inter">{data[11]} <span className="text-[10px] text-slate-400 font-medium lowercase">{unit}</span></p>
+              </div>
+           </div>
+           {data[11] > data[10] && <div className="p-1 bg-emerald-50 text-emerald-500 rounded-lg"><ArrowUpRight size={12} /></div>}
+        </div>
+        <div className="h-10 flex items-end gap-1">
+           {traceData.map((v, i) => (
+             <div 
+               key={i} 
+               className={cn("flex-1 transition-all duration-500 rounded-sm", v === 0 ? "bg-slate-50 h-1" : `bg-${color}-400/20 group-hover/mini:bg-${color}-400`)}
+               style={{ height: v === 0 ? '4px' : `${(v / max) * 100}%` }}
+             />
+           ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="animate-in fade-in duration-1000 space-y-8 pb-32 max-w-[1600px] mx-auto p-4 md:p-0">
       
-      {/* 1. UNIFIED ANALYTICAL BOARD (Filters + Chart) */}
+      {/* 1. PRIMARY PERSPECTIVE BOARD */}
       <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm relative overflow-hidden group transition-all duration-700">
-         
-         {/* Command Toolbar - Integrated Header */}
          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-12">
             <div className="space-y-1">
-               <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] mb-1">
-                  <span>Performance Analysis</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                  <span>12-Month Matrix</span>
+               <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.25em] mb-1">
+                  <span>Executive Perspective</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+                  <span>12-Month Performance Index</span>
                </div>
                <h3 className="text-xl font-semibold text-slate-800 font-outfit tracking-tight">
-                  {selectedReport ? `Personnel Trace: ${selectedReport.userName}` : 'Global Performance Consensus'}
+                  {selectedReport ? `Personnel Deep Trace: ${selectedReport.userName}` : 'Global Performance Consensus'}
                </h3>
             </div>
             
-            {/* Functional Controls Layer */}
-            <div className="flex flex-wrap items-center gap-3 bg-slate-50/50 p-1.5 rounded-2xl border border-slate-100">
-               {/* Dept Toggles */}
+            <div className="flex flex-wrap items-center gap-3 bg-slate-50/50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
                <div className="flex items-center bg-white p-1 rounded-xl shadow-sm border border-slate-100">
-                  <button 
-                    onClick={() => setActiveDept('all')}
-                    className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeDept === 'all' ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-600")}
-                  >All Depts</button>
+                  <button onClick={() => setActiveDept('all')} className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeDept === 'all' ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-600")}>All Depts</button>
                   {DEPARTMENTS.map(dept => (
-                    <button 
-                      key={dept}
-                      onClick={() => setActiveDept(dept)}
-                      className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeDept === dept ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-600 font-prompt")}
-                    >{dept}</button>
+                    <button key={dept} onClick={() => setActiveDept(dept)} className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all font-prompt", activeDept === dept ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-600")}>{dept}</button>
                   ))}
                </div>
 
-               {/* Group Toggles */}
                <div className="flex items-center bg-white p-1 rounded-xl shadow-sm border border-slate-100">
-                  <button 
-                    onClick={() => setActiveGroup('all')}
-                    className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeGroup === 'all' ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-slate-600")}
-                  >Groups</button>
+                  <button onClick={() => setActiveGroup('all')} className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeGroup === 'all' ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-slate-600")}>Groups</button>
                   {GROUPS.map(group => (
-                    <button 
-                      key={group}
-                      onClick={() => setActiveGroup(group)}
-                      className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all", activeGroup === group ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-slate-600 font-prompt")}
-                    >{group}</button>
+                    <button key={group} onClick={() => setActiveGroup(group)} className={cn("px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all font-prompt", activeGroup === group ? "bg-emerald-500 text-white" : "text-slate-400 hover:text-slate-600")}>{group}</button>
                   ))}
                </div>
                
                {selectedId && (
-                 <button onClick={() => setSelectedId(null)} className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all active:scale-95 border border-rose-100">
-                    <Maximize2 size={14} strokeWidth={2.5} />
+                 <button onClick={() => setSelectedId(null)} className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all active:scale-95 border border-rose-100">
+                    <Maximize2 size={14} strokeWidth={3} />
                  </button>
                )}
             </div>
          </div>
 
-         {/* Chart Visualization Core */}
+         {/* Main Chart SVG */}
          <div className="h-[380px] w-full relative py-2">
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-full overflow-visible">
-               {/* Subtle Y-Grid */}
                {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
                  <React.Fragment key={i}>
                     <line x1={padding} x2={chartWidth - padding} y1={padding + (chartHeight - padding * 2) * p} y2={padding + (chartHeight - padding * 2) * p} stroke="#f1f5f9" strokeWidth="1" />
-                    <text x={padding - 15} y={chartHeight - padding - (chartHeight - padding * 2) * p} textAnchor="end" alignmentBaseline="middle" className="text-[10px] font-medium fill-slate-400 font-inter opacity-60">
-                       {((maxVal * p) / 1000000).toFixed(0)}M
-                    </text>
+                    <text x={padding - 15} y={chartHeight - padding - (chartHeight - padding * 2) * p} textAnchor="end" alignmentBaseline="middle" className="text-[10px] font-medium fill-slate-400 font-inter opacity-60">{((maxVal * p) / 1000000).toFixed(0)}M</text>
                  </React.Fragment>
                ))}
-
-               {/* X-Axis Timeline */}
                {MONTHS.map((m, i) => (
-                 <text key={m} x={padding + i * ((chartWidth - padding * 2) / 11)} y={chartHeight - padding + 30} textAnchor="middle" className="text-[10px] font-semibold fill-slate-400 uppercase tracking-widest opacity-60">
-                   {m}
-                 </text>
+                 <text key={m} x={padding + i * ((chartWidth - padding * 2) / 11)} y={chartHeight - padding + 30} textAnchor="middle" className="text-[10px] font-semibold fill-slate-400 uppercase tracking-widest opacity-60">{m}</text>
                ))}
-
-               {/* Paths */}
-               <path 
-                 d={aggregatePath} 
-                 fill="none" 
-                 stroke="#3b82f6" 
-                 strokeWidth="4" 
-                 className={cn("transition-all duration-1000", selectedId ? "opacity-10 stroke-slate-200" : "opacity-100")} 
-                 strokeLinecap="round" 
-                 strokeLinejoin="round" 
-               />
-               
-               {selectedPath && (
-                 <path 
-                   d={selectedPath} 
-                   fill="none" 
-                   stroke="#10b981" 
-                   strokeWidth="5" 
-                   className="animate-in fade-in duration-1000 slide-in-from-bottom-5" 
-                   strokeLinecap="round" 
-                   strokeLinejoin="round" 
-                 />
-               )}
+               <path d={aggregatePath} fill="none" stroke="#3b82f6" strokeWidth="4" className={cn("transition-all duration-1000", selectedId ? "opacity-10 stroke-slate-200" : "opacity-100")} strokeLinecap="round" strokeLinejoin="round" />
+               {selectedPath && <path d={selectedPath} fill="none" stroke="#10b981" strokeWidth="5" className="animate-in fade-in duration-1000 slide-in-from-bottom-5" strokeLinecap="round" strokeLinejoin="round" />}
             </svg>
             
-            {/* Visual Indicators Layer */}
             <div className="absolute top-0 right-4 flex gap-8">
-               <div className="flex flex-col text-right">
-                  <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Segment AVG</span>
+               <div className="text-right">
+                  <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Focus AVG</span>
                   <p className="text-xl font-bold text-slate-700 font-inter tracking-tighter">{(aggregateViews[11]/1000000).toFixed(1)}M</p>
                </div>
                {selectedReport && (
-                 <div className="flex flex-col text-right animate-in slide-in-from-top-2">
+                 <div className="text-right animate-in slide-in-from-top-2">
                     <span className="text-[9px] font-semibold text-emerald-500 uppercase tracking-wider mb-0.5">Individual Peak</span>
                     <p className="text-xl font-bold text-emerald-600 font-inter tracking-tighter">{(Math.max(...selectedReport.yearlyViews)/1000000).toFixed(1)}M</p>
                  </div>
@@ -195,27 +178,47 @@ export const ExecutiveStats = ({ reports }: { reports: DailyReport[] }) => {
          </div>
       </div>
 
-      {/* 2. PERFORMANCE DRILL-DOWN MATRIX (Comprehensive Search + List) */}
+      {/* 2. SELECTED PERSONNEL DEEP INSIGHTS (NEW SECTION) */}
+      {selectedReport && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-bottom-6 duration-700">
+           <MiniTrace 
+             data={selectedReport.yearlyLeaves} 
+             color="rose" 
+             label="Attendance Trace" 
+             icon={Calendar} 
+             unit="off days" 
+           />
+           <MiniTrace 
+             data={selectedReport.yearlyActivePages} 
+             color="blue" 
+             label="Asset Lifecycle" 
+             icon={Box} 
+             unit="active pages" 
+           />
+           <MiniTrace 
+             data={selectedReport.yearlyPosts} 
+             color="emerald" 
+             label="Output Velocity" 
+             icon={HardDrive} 
+             unit="total posts" 
+           />
+        </div>
+      )}
+
+      {/* 3. PERFORMANCE DRILL-DOWN MATRIX */}
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden transition-all hover:border-slate-200">
          <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-               <LayoutList size={14} className="text-slate-400" strokeWidth={1.5} /> Performance Drill-down Matrix
+               <LayoutList size={14} className="text-slate-400" strokeWidth={1.5} /> Personnel Performance Matrix
             </h3>
-            
             <div className="relative w-full md:w-80">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
-               <input 
-                 type="text" 
-                 placeholder="Search personnel..." 
-                 value={searchTerm}
-                 onChange={(e) => setSearchTerm(e.target.value)}
-                 className="w-full bg-slate-50 border border-transparent rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-600 focus:outline-none focus:bg-white focus:border-slate-200 transition-all font-prompt"
-               />
+               <input type="text" placeholder="Search personnel..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-50 border border-transparent rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-600 focus:outline-none focus:bg-white focus:border-slate-200 transition-all font-prompt" />
             </div>
          </div>
 
          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left">
                <thead>
                   <tr className="bg-slate-50/50">
                      <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Team Member</th>
@@ -223,25 +226,15 @@ export const ExecutiveStats = ({ reports }: { reports: DailyReport[] }) => {
                      <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Group</th>
                      <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Avg Views</th>
                      <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Trace</th>
-                     <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">Focus</th>
+                     <th className="px-8 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest text-right">Focus</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-50">
-                  {filteredOperatorsList.map((r, idx) => {
+                  {filteredOperatorsList.map((r) => {
                     const avg = r.yearlyViews.reduce((a,b)=>a+b,0) / 12;
-                    const lastMonth = r.yearlyViews[11];
-                    const prevMonth = r.yearlyViews[10];
-                    const diff = ((lastMonth - prevMonth) / prevMonth) * 100;
-                    
+                    const diff = ((r.yearlyViews[11] - r.yearlyViews[10]) / r.yearlyViews[10]) * 100;
                     return (
-                      <tr 
-                        key={r.id}
-                        onClick={() => setSelectedId(selectedId === r.id ? null : r.id)}
-                        className={cn(
-                          "hover:bg-slate-50 transition-colors group cursor-pointer",
-                          selectedId === r.id && "bg-slate-50/80"
-                        )}
-                      >
+                      <tr key={r.id} onClick={() => setSelectedId(selectedId === r.id ? null : r.id)} className={cn("hover:bg-slate-50 transition-colors group cursor-pointer", selectedId === r.id && "bg-slate-50/80")}>
                          <td className="px-8 py-4">
                             <p className="text-sm font-medium text-slate-700 font-prompt">{r.userName}</p>
                             <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">NODE_{r.id}</p>
@@ -249,28 +242,16 @@ export const ExecutiveStats = ({ reports }: { reports: DailyReport[] }) => {
                          <td className="px-8 py-4">
                             <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest font-prompt">{r.department}</span>
                          </td>
-                         <td className="px-8 py-4">
-                            <span className="text-[10px] font-medium text-slate-400 font-prompt">{r.group}</span>
-                         </td>
+                         <td className="px-8 py-4 font-prompt text-[10px] text-slate-400">{r.group}</td>
+                         <td className="px-8 py-4 text-right font-inter text-sm font-bold text-slate-700">{(avg/1000000).toFixed(1)}M</td>
                          <td className="px-8 py-4 text-right">
-                            <p className="text-sm font-bold text-slate-700 font-outfit">{(avg/1000000).toFixed(1)}M</p>
-                         </td>
-                         <td className="px-8 py-4 text-right">
-                            <div className={cn(
-                               "inline-flex items-center gap-1 font-bold text-[10px]",
-                               diff >= 0 ? "text-emerald-500" : "text-rose-500"
-                            )}>
-                               <TrendingUp size={10} className={cn(diff < 0 && "rotate-180")} />
-                               {diff.toFixed(1)}%
+                            <div className={cn("inline-flex items-center gap-1 font-bold text-[10px]", diff >= 0 ? "text-emerald-500" : "text-rose-500")}>
+                               <TrendingUp size={10} className={cn(diff < 0 && "rotate-180")} />{diff.toFixed(1)}%
                             </div>
                          </td>
                          <td className="px-8 py-4 text-right">
-                            <button className={cn(
-                              "px-3 py-1.5 text-[10px] font-bold transition-all flex items-center gap-2 ml-auto uppercase tracking-widest",
-                              selectedId === r.id ? "text-emerald-600" : "text-slate-400 hover:text-slate-800"
-                            )}>
-                               {selectedId === r.id ? 'Active' : 'Trace'}
-                               <ChevronRight size={14} className={cn("transition-transform", selectedId === r.id && "rotate-90")} />
+                            <button className={cn("px-3 py-1.5 text-[10px] font-bold transition-all flex items-center gap-2 ml-auto uppercase tracking-widest", selectedId === r.id ? "text-emerald-600" : "text-slate-400 hover:text-slate-800")}>
+                               {selectedId === r.id ? 'Active' : 'Trace'}<ChevronRight size={14} className={cn("transition-transform", selectedId === r.id && "rotate-90")} />
                             </button>
                          </td>
                       </tr>

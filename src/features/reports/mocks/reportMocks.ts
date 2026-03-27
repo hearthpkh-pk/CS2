@@ -28,6 +28,9 @@ export interface DailyReport {
   avgRepairTime: number;
   isClosed: boolean;
   yearlyViews: number[]; // 12 months array
+  yearlyLeaves: number[]; // 12 months array for vacation days
+  yearlyActivePages: number[]; // 12 months array for active page count
+  yearlyPosts: number[]; // 12 months array for total posts
 }
 
 const departments = ['รายการ', 'หนัง', 'ข่าว'];
@@ -73,6 +76,9 @@ export const mockReports: DailyReport[] = Array.from({ length: 20 }).map((_, i) 
     issueFrequency: Math.random() * 0.2,
     avgRepairTime: 0.5 + Math.random() * 3,
     isClosed: Math.random() > 0.8,
-    yearlyViews: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 80000000) + 10000000)
+    yearlyViews: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 80000000) + 10000000),
+    yearlyLeaves: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 3)), // 0-2 days per month
+    yearlyActivePages: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 8) + 5), // 5-12 active pages
+    yearlyPosts: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 150) + 50) // 50-200 posts per month
   };
 });
