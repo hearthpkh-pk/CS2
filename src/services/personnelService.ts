@@ -1,84 +1,103 @@
-import { initialUsers, initialTeams } from '@/data/mockPersonnel';
+import { initialUsers, initialTeams } from '@/data/mockUsers';
 import { User, Team, Role } from '@/types';
 
-/**
- * personnelService.ts
- * 
- * A singleton service that maintains the personnel state in memory.
- * This simulates a persistent backend for development.
- */
+const STORAGE_KEYS = {
+  USERS: 'cs_personnel_users',
+  TEAMS: 'cs_personnel_teams'
+};
 
-let usersTable: User[] = [...initialUsers];
-let teamsTable: Team[] = [...initialTeams];
+const getStoredUsers = (): User[] => {
+  if (typeof window === 'undefined') return initialUsers;
+  const saved = localStorage.getItem(STORAGE_KEYS.USERS);
+  if (!saved) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(initialUsers));
+    return initialUsers;
+  }
+  return JSON.parse(saved);
+};
+
+const getStoredTeams = (): Team[] => {
+  if (typeof window === 'undefined') return initialTeams;
+  const saved = localStorage.getItem(STORAGE_KEYS.TEAMS);
+  if (!saved) {
+    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(initialTeams));
+    return initialTeams;
+  }
+  return JSON.parse(saved);
+};
 
 export const personnelService = {
   // --- Data Access ---
-  getUsers: () => usersTable,
-  getTeams: () => teamsTable,
+  getUsers: () => getStoredUsers(),
+  getTeams: () => getStoredTeams(),
 
   // --- Persistence Logic ---
   saveUser: (user: User) => {
-    const exists = usersTable.find(u => u.id === user.id);
-    if (exists) {
-      usersTable = usersTable.map(u => u.id === user.id ? user : u);
+    const users = getStoredUsers();
+    const exists = users.findIndex(u => u.id === user.id);
+    if (exists >= 0) {
+      users[exists] = user;
     } else {
-      usersTable = [...usersTable, user];
+      users.push(user);
     }
-    return usersTable;
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return users;
   },
 
   deleteUser: (userId: string) => {
-    usersTable = usersTable.filter(u => u.id !== userId);
-    return usersTable;
+    const users = getStoredUsers().filter(u => u.id !== userId);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return users;
   },
 
   saveTeam: (team: Team) => {
-    const exists = teamsTable.find(t => t.id === team.id);
-    if (exists) {
-      teamsTable = teamsTable.map(t => t.id === team.id ? team : t);
+    const teams = getStoredTeams();
+    const exists = teams.findIndex(t => t.id === team.id);
+    if (exists >= 0) {
+      teams[exists] = team;
     } else {
-      teamsTable = [...teamsTable, team];
+      teams.push(team);
     }
-    return teamsTable;
+    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
+    return teams;
   },
 
   updateTeam: (id: string, name: string) => {
-    teamsTable = teamsTable.map(t => t.id === id ? { ...t, name } : t);
-    return teamsTable;
+    const teams = getStoredTeams().map(t => t.id === id ? { ...t, name } : t);
+    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
+    return teams;
   },
 
   deleteTeam: (teamId: string) => {
-    teamsTable = teamsTable.filter(t => t.id !== teamId);
-    // Unassign users from this team
-    usersTable = usersTable.map(u => u.teamId === teamId ? { ...u, teamId: undefined } : u);
-    return { teams: teamsTable, users: usersTable };
+    const teams = getStoredTeams().filter(t => t.id !== teamId);
+    const users = getStoredUsers().map(u => u.teamId === teamId ? { ...u, teamId: undefined } : u);
+    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return { teams, users };
   },
 
   // --- Aggregation Logic (Shared Brain) ---
   getPersonnelStats: () => {
-    const total = usersTable.length;
-    const managers = usersTable.filter(u => u.role === Role.Manager || u.role === Role.Admin).length;
-    const active = usersTable.filter(u => u.isActive).length;
-    const activeTeams = teamsTable.length;
+    const users = getStoredUsers();
+    const teams = getStoredTeams();
+    const total = users.length;
+    const managers = users.filter(u => u.role === Role.Manager || u.role === Role.Admin).length;
+    const active = users.filter(u => u.isActive).length;
+    const activeTeams = teams.length;
     return { total, managers, active, activeTeams };
   },
 
   getAvailableUsers: (viewerRole?: Role) => {
-    if (!viewerRole) return usersTable;
-    
-    if (viewerRole === Role.SuperAdmin) return usersTable;
+    const users = getStoredUsers();
+    if (!viewerRole) return users;
+    if (viewerRole === Role.SuperAdmin || viewerRole === Role.Developer) return users;
     
     if (viewerRole === Role.Admin) {
-      // Admins cannot see Super Admins
-      return usersTable.filter(u => u.role !== Role.SuperAdmin);
+      return users.filter(u => u.role !== Role.SuperAdmin);
     }
-    
     if (viewerRole === Role.Manager) {
-      // Managers cannot see Admins or Super Admins
-      return usersTable.filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin);
+      return users.filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin);
     }
-    
-    // Staff see no one or only themselves (depending on future need)
-    return usersTable.filter(u => u.role === Role.Staff);
+    return users.filter(u => u.role === Role.Staff);
   }
 };

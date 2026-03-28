@@ -1,4 +1,4 @@
-import { Page, DailyLog, FBAccount, User } from "../types";
+import { Page, DailyLog, FBAccount, User, Role } from "../types";
 import { initialPages, generateMockLogs, initialAccounts, initialUsers } from "./mockData";
 
 const STORAGE_KEYS = {
@@ -22,8 +22,10 @@ export const dataService = {
     }
 
     // RBAC Scoping
-    if (!user || user.role === 'Super Admin' || user.role === 'Admin') return pages;
-    if (user.role === 'Manager') {
+    if (!user) return [];
+    if (user.role === Role.Developer) return [];
+    if (user.role === Role.SuperAdmin || user.role === Role.Admin) return pages;
+    if (user.role === Role.Manager) {
       return pages.filter(p => p.teamId === user.teamId || p.ownerId === user.id);
     }
     // Staff
@@ -64,8 +66,10 @@ export const dataService = {
     }
 
     // RBAC Scoping
-    if (!user || user.role === 'Super Admin' || user.role === 'Admin') return accounts;
-    if (user.role === 'Manager') {
+    if (!user) return [];
+    if (user.role === Role.Developer) return [];
+    if (user.role === Role.SuperAdmin || user.role === Role.Admin) return accounts;
+    if (user.role === Role.Manager) {
       return accounts.filter(a => a.teamId === user.teamId || a.ownerId === user.id);
     }
     // Staff

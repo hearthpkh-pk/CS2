@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { BarChart2, TrendingUp, Users, Target, Info, ChevronRight, Activity, Search, LayoutList, Filter, MoreVertical, Maximize2, Calendar, Box, HardDrive, ArrowUpRight } from 'lucide-react';
-import { DailyReport } from '../../mocks/reportMocks';
+import { DailyReport } from '@/types';
 import { cn } from '@/lib/utils';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

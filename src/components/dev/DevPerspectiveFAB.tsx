@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Shield, UserCog, Users, ShieldCheck, User as UserIcon, ChevronUp, RefreshCw, Activity, ChevronRight, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Role, User } from '@/types';
-import { MOCK_USERS } from '@/data/mockUsers';
+import { personnelService } from '@/services/personnelService';
 import { cn } from '@/lib/utils';
 
 export const DevPerspectiveFAB = () => {
@@ -56,7 +56,7 @@ export const DevPerspectiveFAB = () => {
               <p className="text-[11px] text-slate-400 font-medium">Select identity to impersonate</p>
             </div>
             <div className="space-y-1.5 max-h-[320px] overflow-y-auto no-scrollbar">
-              {MOCK_USERS.filter(u => u.role === hoveredRole).map((u) => (
+              {personnelService.getUsers().filter(u => u.role === hoveredRole).map((u) => (
                 <button
                   key={u.id}
                   onClick={() => handleSwitch(u)}

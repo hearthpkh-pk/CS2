@@ -105,67 +105,95 @@ export const DashboardView = ({
         </div>
       </div>
 
-      {/* Executive Quota Brief replacing old submission prompt */}
-      <ExecutiveQuotaBrief 
-        quotaData={quotaData} 
-        currentUser={currentUser} 
-        onSelectPage={setSelectedPage}
-        onNavigateToTask={onNavigateToTask}
-      />
-
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
-          <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
-            <Users size={14} className="text-blue-500" /> ยอดผู้ติดตามใหม่ (New)
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.followers.toLocaleString()}</span>
-            <span className="text-xs font-medium text-slate-400 font-noto">บัญชี</span>
-          </div>
+      {currentUser.role === 'Developer' ? (
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 p-20 text-center shadow-sm relative overflow-hidden group min-h-[500px] flex items-center justify-center">
+           <div className="absolute top-0 left-0 w-full h-1.5 bg-[#054ab3]"></div>
+           <div className="max-w-md mx-auto space-y-10 animate-in fade-in zoom-in-95 duration-1000">
+              <div className="relative">
+                 <div className="w-32 h-32 bg-blue-50 rounded-[3rem] flex items-center justify-center mx-auto ring-12 ring-blue-50/30 group-hover:scale-110 transition-transform duration-700">
+                    <RefreshCw size={50} className="text-[#054ab3]" />
+                 </div>
+              </div>
+              <div className="space-y-4">
+                 <h3 className="text-3xl font-bold text-slate-800 font-outfit tracking-tight">Perspective Sandbox</h3>
+                 <p className="text-slate-400 font-medium text-[14px] leading-relaxed">
+                    Logged in as <span className="text-[#054ab3] font-bold">System Developer</span>. <br/>
+                    Business data is currently isolated for architectural integrity.
+                 </p>
+              </div>
+              <div className="p-6 bg-slate-50/80 rounded-[2rem] border border-slate-100/50 backdrop-blur-sm">
+                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em] leading-loose">
+                    Use the <span className="text-[#054ab3]">Dev Perspective Tool (FAB)</span> <br/>
+                    to impersonate a team member and view their live environment.
+                 </p>
+              </div>
+           </div>
         </div>
+      ) : (
+        <>
+          {/* Executive Quota Brief replacing old submission prompt */}
+          <ExecutiveQuotaBrief 
+            quotaData={quotaData} 
+            currentUser={currentUser} 
+            onSelectPage={setSelectedPage}
+            onNavigateToTask={onNavigateToTask}
+          />
 
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
-          <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
-            <Eye size={14} className="text-blue-500" /> ยอดวิวรวมทั้งเดือน (MTD)
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.views.toLocaleString()}</span>
-            <span className="text-xs font-medium text-slate-400 font-noto">ครั้ง</span>
+          {/* KPI Cards Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
+              <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
+              <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
+                <Users size={14} className="text-blue-500" /> ยอดผู้ติดตามใหม่ (New)
+              </span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.followers.toLocaleString()}</span>
+                <span className="text-xs font-medium text-slate-400 font-noto">บัญชี</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col relative overflow-hidden group">
+              <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
+              <span className="text-[10px] font-bold text-slate-400 font-noto uppercase tracking-widest flex items-center gap-2 mb-1.5">
+                <Eye size={14} className="text-blue-500" /> ยอดวิวรวมทั้งเดือน (MTD)
+              </span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">{totals.views.toLocaleString()}</span>
+                <span className="text-xs font-medium text-slate-400 font-noto">ครั้ง</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        <PerformanceChart
-          data={chartData.map(d => ({ date: d.date, value: d.followers }))}
-          label="การเติบโตของผู้ติดตาม"
-          color="#1e40af"
-          gradientId="grad-followers"
-          type={selectedMonth === 'all' ? 'monthly' : 'daily'}
-        />
-        <PerformanceChart
-          data={chartData.map(d => ({ date: d.date, value: d.views }))}
-          label="ประสิทธิภาพการรับชม"
-          color="#2563eb"
-          gradientId="grad-views"
-          type={selectedMonth === 'all' ? 'monthly' : 'daily'}
-        />
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <PerformanceChart
+              data={chartData.map(d => ({ date: d.date, value: d.followers }))}
+              label="การเติบโตของผู้ติดตาม"
+              color="#1e40af"
+              gradientId="grad-followers"
+              type={selectedMonth === 'all' ? 'monthly' : 'daily'}
+            />
+            <PerformanceChart
+              data={chartData.map(d => ({ date: d.date, value: d.views }))}
+              label="ประสิทธิภาพการรับชม"
+              color="#2563eb"
+              gradientId="grad-views"
+              type={selectedMonth === 'all' ? 'monthly' : 'daily'}
+            />
+          </div>
 
-      <PerformanceMatrixTable 
-        matrixData={matrixData}
-        selectedPage={selectedPage}
-        onSelectPage={setSelectedPage}
-        onAcknowledge={(pageId, reqId) => {
-          // In a real app, this would call supabase to update the request status to 'Acknowledged'
-          alert(`Acknowledged request ${reqId} for page ${pageId}. (Mock Action)`);
-        }}
-      />
+          <PerformanceMatrixTable 
+            matrixData={matrixData}
+            selectedPage={selectedPage}
+            onSelectPage={setSelectedPage}
+            onAcknowledge={(pageId, reqId) => {
+              // In a real app, this would call supabase to update the request status to 'Acknowledged'
+              alert(`Acknowledged request ${reqId} for page ${pageId}. (Mock Action)`);
+            }}
+          />
 
-      <ActivePagesSection pages={pages} selectedPage={selectedPage} />
+          <ActivePagesSection pages={pages} selectedPage={selectedPage} />
+        </>
+      )}
     </div>
   );
 };

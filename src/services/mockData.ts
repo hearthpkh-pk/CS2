@@ -1,33 +1,7 @@
 import { Page, FBAccount, User, Role, LeaveRequest, CalendarEvent, DailyLog } from '../types';
 
-export const initialUsers: User[] = [
-  // Super Admins (2)
-  { id: 'u-sa1', name: 'Super Admin Alpha', role: Role.SuperAdmin, username: 'sa_alpha' },
-  { id: 'u-sa2', name: 'Super Admin Beta', role: Role.SuperAdmin, username: 'sa_beta' },
-  
-  // Admins (2)
-  { id: 'u-adm1', name: 'Admin Ops 1', role: Role.Admin, username: 'admin1' },
-  { id: 'u-adm2', name: 'Admin Ops 2', role: Role.Admin, username: 'admin2' },
-
-  // Managers (2)
-  { id: 'u-mgr-a', name: 'Manager Team A', role: Role.Manager, teamId: 'team-a', username: 'mgr_a' },
-  { id: 'u-mgr-b', name: 'Manager Team B', role: Role.Manager, teamId: 'team-b', username: 'mgr_b' },
-
-  // Staff Team A (6)
-  { id: 'u-staff-a1', name: 'Staff A1', role: Role.Staff, teamId: 'team-a', username: 'sta1' },
-  { id: 'u-staff-a2', name: 'Staff A2', role: Role.Staff, teamId: 'team-a', username: 'sta2' },
-  { id: 'u-staff-a3', name: 'Staff A3', role: Role.Staff, teamId: 'team-a', username: 'sta3' },
-  { id: 'u-staff-a4', name: 'Staff A4', role: Role.Staff, teamId: 'team-a', username: 'sta4' },
-  { id: 'u-staff-a5', name: 'Staff A5', role: Role.Staff, teamId: 'team-a', username: 'sta5' },
-  { id: 'u-staff-a6', name: 'Staff A6', role: Role.Staff, teamId: 'team-a', username: 'sta6' },
-
-  // Staff Team B (5)
-  { id: 'u-staff-b1', name: 'Staff B1', role: Role.Staff, teamId: 'team-b', username: 'stb1' },
-  { id: 'u-staff-b2', name: 'Staff B2', role: Role.Staff, teamId: 'team-b', username: 'stb2' },
-  { id: 'u-staff-b3', name: 'Staff B3', role: Role.Staff, teamId: 'team-b', username: 'stb3' },
-  { id: 'u-staff-b4', name: 'Staff B4', role: Role.Staff, teamId: 'team-b', username: 'stb4' },
-  { id: 'u-staff-b5', name: 'Staff B5', role: Role.Staff, teamId: 'team-b', username: 'stb5' },
-];
+import { initialUsers } from '../data/mockUsers';
+export { initialUsers };
 
 export const initialAccounts: FBAccount[] = [
   { id: 'acc-1', boxId: 1, name: 'สมชาย คมกริบ', uid: '100012345678', status: 'Live', ownerId: 'u-staff-a1', teamId: 'team-a', password: 'password123', twoFactor: 'ABCD 1234 EFGH 5678' },

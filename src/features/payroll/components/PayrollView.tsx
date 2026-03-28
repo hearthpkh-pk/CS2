@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { User, PolicyConfiguration, Role } from '@/types';
-import { reportsService } from '@/features/reports/services/reportsService';
-import { historicalReportsLogs } from '@/features/reports/mocks/reportsMocks';
+import { reportService } from '@/features/reports/services/reportService';
+import { historicalReportsLogs } from '@/features/reports/mocks/reportMocks';
 import { allMockUsers, mockDashboardPages } from '@/features/hq-dashboard/mocks/dashboardMocks';
 import { 
   DollarSign, Download, Gem, ArrowUpRight, ArrowDownRight
@@ -22,7 +22,7 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   const payrollData = useMemo(() => {
-    return reportsService.getMonthlyReport(
+    return reportService.getMonthlyReport(
       currentUser,
       allMockUsers,
       mockDashboardPages,

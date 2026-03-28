@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Target, Clock, Activity, Share2, ChevronRight, ArrowRight, Box, Search, Users, FileText, BarChart2 } from 'lucide-react';
-import { DailyReport, mockReports } from '../mocks/reportMocks';
+import { DailyReport } from '@/types';
 import { reportService } from '../services/reportService';
 import { ExecutiveStats } from './PerformanceAudit/ExecutiveStats';
 
@@ -12,7 +12,7 @@ interface ReportsViewProps {
 }
 
 export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
-  const [reports] = useState<DailyReport[]>(reportService.getDailyStatus());
+  const [reports] = useState<DailyReport[]>(reportService.getDailyStatus(currentUser));
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [viewMode, setViewMode] = useState<'report' | 'stats'>('report');
   const [filterMode, setFilterMode] = useState<'all' | 'brand' | 'department' | 'tag'>('all');
@@ -110,7 +110,27 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
           </div>
         </div>
 
-        {viewMode === 'report' ? (
+        {currentUser.role === 'Developer' ? (
+          <div className="bg-white rounded-[3rem] border border-slate-100 p-16 text-center shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+             <div className="max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto ring-8 ring-blue-50/50 group-hover:rotate-12 transition-transform duration-500">
+                   <BarChart2 size={40} className="text-blue-500" />
+                </div>
+                <div className="space-y-3">
+                   <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight">System Developer Console</h3>
+                   <p className="text-slate-400 font-medium text-[13px] leading-relaxed">
+                      คุณกำลังอยู่ในโหมด <span className="text-blue-600 font-bold">Root Architecture</span> ข้อมูลรายงานทางธุรกิจของผู้อื่นจะถูกจำกัดไว้เพื่อความเป็นส่วนตัว
+                   </p>
+                </div>
+                <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100/50">
+                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                      โปรดใช้ปุ่ม <span className="text-blue-500">FAB (Developer Tool)</span> มุมขวาล่าง <br/> เพื่อสวมสิทธิ์เป็นผู้ใช้งานที่ต้องการตรวจสอบข้อมูลครับ
+                   </p>
+                </div>
+             </div>
+          </div>
+        ) : viewMode === 'report' ? (
           <>
             {/* Precision KPI Summary Grid - HQ Control Center Style */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

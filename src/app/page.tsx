@@ -26,10 +26,11 @@ import { getFacebookPageData } from '@/utils/facebookUtils';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { personnelService } from '@/services/personnelService';
 
 export default function CreatorApp() {
   const { user: currentUser, isAuthenticated } = useAuth();
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [pages, setPages] = useState<Page[]>([]);
@@ -48,8 +49,15 @@ export default function CreatorApp() {
       setPages(dataService.getPages(currentUser));
       setAccounts(dataService.getAccounts(currentUser));
       setLogs(dataService.getLogs());
+      setUsers(personnelService.getAvailableUsers(currentUser.role));
     }
   }, [currentUser]);
+
+  const handleUpdateUsers = (newUsers: User[]) => {
+    // Specifically persist to the mock DB service
+    newUsers.forEach(u => personnelService.saveUser(u));
+    setUsers(newUsers);
+  };
 
   if (!isAuthenticated || !currentUser) {
     return <LoginPage />;
@@ -277,7 +285,7 @@ export default function CreatorApp() {
           {currentTab === 'team' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Admin || currentUser.role === Role.Developer) ? (
             <TeamManagementView
               users={users}
-              setUsers={setUsers}
+              setUsers={handleUpdateUsers}
               currentUser={currentUser}
             />
           ) : currentTab === 'team' ? (

@@ -58,6 +58,8 @@ export interface User {
   salaryHistory?: SalaryAdjustment[]; // Log of all salary changes
   startDate?: string; // YYYY-MM-DD
   probationDate?: string; // YYYY-MM-DD
+  department?: string; // แผนก: รายการ, หนัง, ข่าว
+  group?: string; // กลุ่มงาน: แบรนด์ 1 - 4
   bankName?: string;
   bankAccount?: string;
   permissions?: string[]; // Array of module keys e.g. ['dashboard', 'setup', 'hq-dashboard']
@@ -189,4 +191,96 @@ export interface LearningProgress {
   status: 'Started' | 'Completed';
   lastWatchedAt: string;
   percentComplete: number;
+}
+
+export interface DailyReport {
+  id: string;
+  userId: string;
+  userName: string;
+  date: string;
+  brand: string;
+  postCount: number;
+  totalPostsRequired: number;
+  submissionTime: string;
+  status: 'Complete' | 'Pending' | 'Missing';
+  views: number;
+  pagesCount: number;
+  isPinned: boolean;
+  department: string;
+  group: string;
+  tags: string[];
+  
+  // Performance Audit Metrics
+  monthlyViews: number;
+  attainmentRate: number;
+  efficiency: number;
+  workDays: number;
+  offDays: number;
+  newAssetsMonth: number;
+  bannedAssetsMonth: number;
+  avgClipsPerDay: number;
+  issueFrequency: number;
+  avgRepairTime: number;
+  isClosed: boolean;
+  yearlyViews: number[];
+  yearlyLeaves: number[];
+  yearlyActivePages: number[];
+  yearlyPosts: number[];
+}
+
+export interface FinancialMetric {
+  userId: string;
+  userName: string;
+  baseSalary: number;
+  totalViews: number;
+  bonus: number;
+  penalty: number;
+  netPay: number;
+  attainmentPercentage: number;
+}
+
+export interface GrowthMetric {
+  label: string;
+  currentValue: number;
+  previousValue: number;
+  growthPercentage: number;
+}
+
+// --- Company Configuration ---
+export interface Brand {
+  id: string;
+  name: string;
+  icon?: string;
+  isActive: boolean;
+}
+
+export interface CompanyRule {
+  id: string;
+  title: string;
+  content: string;
+  category: 'General' | 'Finance' | 'Safety' | 'Compliance' | 'Other';
+  lastUpdated: string;
+}
+
+export interface CompanyConfig {
+  name: string;
+  logo?: string;
+  brands: Brand[];
+  rules: CompanyRule[];
+  performancePolicy: PolicyConfiguration;
+}
+
+export interface ReportsData {
+  period: string;
+  financials: FinancialMetric[];
+  growth: {
+    views: GrowthMetric;
+    followers: GrowthMetric;
+    assets: GrowthMetric;
+  };
+  teamBreakdown: {
+    teamName: string;
+    totalViews: number;
+    avgAttainment: number;
+  }[];
 }
