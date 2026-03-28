@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar, MobileHeader, MobileBottomNav } from '@/components/layout/Navigation';
 import { 
-  Plus, Users, LayoutDashboard, FilePlus, 
-  Settings, CreditCard, Activity, BarChart3, 
-  Building2, History as HistoryIcon, HelpCircle,
-  PieChart
+  Users, Building2, History as HistoryIcon, HelpCircle
 } from 'lucide-react';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { TransactionsView } from '@/components/forms/TransactionsView';
@@ -24,17 +21,14 @@ import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
 import { initialUsers, initialPages } from '@/services/mockData';
 import { PayrollView } from '@/features/payroll/components/PayrollView';
-import { Page, DailyLog, FBAccount, User } from '@/types';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { Page, DailyLog, FBAccount, Role, User } from '@/types';
 import { getFacebookPageData } from '@/utils/facebookUtils';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { LoginPage } from '@/features/auth/LoginPage';
 
 export default function CreatorApp() {
-  const [currentUser, setCurrentUser] = useState<User>(initialUsers[0]); // Default to Super Admin for dev
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
@@ -43,17 +37,23 @@ export default function CreatorApp() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Filters State (Stored here for Dashboard)
+  // Filters State
   const [selectedPage, setSelectedPage] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   // Load Initial Data - Reactive to currentUser
   useEffect(() => {
-    setPages(dataService.getPages(currentUser));
-    setAccounts(dataService.getAccounts(currentUser));
-    setLogs(dataService.getLogs());
+    if (currentUser) {
+      setPages(dataService.getPages(currentUser));
+      setAccounts(dataService.getAccounts(currentUser));
+      setLogs(dataService.getLogs());
+    }
   }, [currentUser]);
+
+  if (!isAuthenticated || !currentUser) {
+    return <LoginPage />;
+  }
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -63,16 +63,12 @@ export default function CreatorApp() {
   // --- Handlers ---
   const handleSaveLogs = (newLogs: DailyLog[]) => {
     dataService.saveLogs(newLogs);
-    setLogs(dataService.getLogs()); // Refresh from storage
+    setLogs(dataService.getLogs());
     showToast('บันทึกข้อมูลเรียบร้อย');
   };
 
   const handleAddPage = (pageData: Omit<Page, 'id'>) => {
-    const newPage: Page = {
-      ...pageData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
+    const newPage: Page = { ...pageData, id: Date.now().toString(), createdAt: new Date().toISOString() };
     dataService.savePage(newPage);
     setPages(dataService.getPages());
     showToast('เพิ่มเพจสำเร็จ');
@@ -110,11 +106,7 @@ export default function CreatorApp() {
   };
 
   const handleAddAccount = (accData: Omit<FBAccount, 'id'>) => {
-    const newAcc: FBAccount = {
-      ...accData,
-      id: `acc-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
+    const newAcc: FBAccount = { ...accData, id: `acc-${Date.now()}`, createdAt: new Date().toISOString() };
     dataService.saveAccount(newAcc);
     setAccounts(dataService.getAccounts());
     showToast('เพิ่มบัญชีสำเร็จ');
@@ -153,10 +145,8 @@ export default function CreatorApp() {
   const handleClearTrash = () => {
     const deletedPages = pages.filter(p => p.isDeleted);
     const deletedAccounts = accounts.filter(a => a.isDeleted);
-
     deletedPages.forEach(p => dataService.deletePage(p.id));
     deletedAccounts.forEach(a => dataService.deleteAccount(a.id));
-
     setPages(dataService.getPages());
     setAccounts(dataService.getAccounts());
     showToast('ล้างถังขยะเรียบร้อย');
@@ -174,6 +164,16 @@ export default function CreatorApp() {
     }
   };
 
+  const policyConfig = {
+    minViewTarget: 5000000,
+    penaltyAmount: 500,
+    bonusStep1: 1000,
+    superBonusThreshold: 10000000,
+    bonusStep2: 3000,
+    requiredPagesPerDay: 4,
+    clipsPerPageInLog: 4
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
@@ -181,8 +181,6 @@ export default function CreatorApp() {
       <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
       />
 
       <div className={cn(
@@ -191,7 +189,7 @@ export default function CreatorApp() {
       )}>
         <MobileHeader />
 
-        <main className="flex-1 p-4 md:p-6 text-slate-900">
+        <main className="flex-1 p-4 md:p-6 text-slate-900 font-noto overflow-x-hidden">
           {currentTab === 'dashboard' && (
             <DashboardView
               pages={pages}
@@ -215,8 +213,8 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'daily-task' && (
-              <DailyTaskView currentUser={currentUser} pages={initialPages} />
-            )}
+            <DailyTaskView currentUser={currentUser} pages={initialPages} />
+          )}
 
           {currentTab === 'learning' && (
             <LearningCenterView currentUser={currentUser} />
@@ -225,21 +223,14 @@ export default function CreatorApp() {
           {currentTab === 'rules' && (
             <PolicyCenterView />
           )}
-          {currentTab === 'payroll' && currentUser.role === 'Super Admin' && (
-            <div className="space-y-4">
+
+          {currentTab === 'payroll' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Developer) && (
+            <div className="space-y-10 animate-fade-in">
               <PayrollView 
                 currentUser={currentUser}
-                policy={{
-                  minViewTarget: 5000000,
-                  penaltyAmount: 500,
-                  bonusStep1: 1000,
-                  superBonusThreshold: 10000000,
-                  bonusStep2: 3000,
-                  requiredPagesPerDay: 4,
-                  clipsPerPageInLog: 4
-                }}
+                policy={policyConfig}
               />
-              <div className="pt-10 border-t border-slate-100">
+              <div className="pt-10 border-t border-slate-200">
                 <PolicySettingsView currentUser={currentUser} />
               </div>
             </div>
@@ -257,15 +248,7 @@ export default function CreatorApp() {
           {currentTab === 'hq-dashboard' && (
             <HQDashboardView 
               currentUser={currentUser}
-              policy={{
-                minViewTarget: 5000000,
-                penaltyAmount: 500,
-                bonusStep1: 1000,
-                superBonusThreshold: 10000000,
-                bonusStep2: 3000,
-                requiredPagesPerDay: 4,
-                clipsPerPageInLog: 4
-              }}
+              policy={policyConfig}
             />
           )}
 
@@ -291,7 +274,7 @@ export default function CreatorApp() {
             />
           )}
 
-          {currentTab === 'team' && (currentUser.role === 'Super Admin' || currentUser.role === 'Admin') ? (
+          {currentTab === 'team' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Admin || currentUser.role === Role.Developer) ? (
             <TeamManagementView
               users={users}
               setUsers={setUsers}
@@ -305,18 +288,10 @@ export default function CreatorApp() {
             />
           ) : null}
 
-          {currentTab === 'analytics' && currentUser.role === 'Super Admin' && (
+          {currentTab === 'analytics' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Developer) && (
             <ReportsView 
               currentUser={currentUser}
-              policy={{
-                minViewTarget: 5000000,
-                penaltyAmount: 500,
-                bonusStep1: 1000,
-                superBonusThreshold: 10000000,
-                bonusStep2: 3000,
-                requiredPagesPerDay: 4,
-                clipsPerPageInLog: 4
-              }}
+              policy={policyConfig}
             />
           )}
 
@@ -344,10 +319,10 @@ export default function CreatorApp() {
             />
           )}
         </main>
+
         <MobileBottomNav 
           currentTab={currentTab} 
           setCurrentTab={setCurrentTab} 
-          currentUser={currentUser}
         />
       </div>
     </div>

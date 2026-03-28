@@ -2,7 +2,8 @@ export enum Role {
   Staff = 'Staff',
   Manager = 'Manager',
   Admin = 'Admin',
-  SuperAdmin = 'Super Admin'
+  SuperAdmin = 'Super Admin',
+  Developer = 'Developer'
 }
 
 export type LeaveType = 'Sick' | 'Vacation' | 'Personal' | 'Business';

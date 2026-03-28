@@ -9,10 +9,11 @@ import {
   History as HistoryIcon, HelpCircle,
   PieChart, ChevronRight, ChevronDown, Scale, BookOpen
 } from 'lucide-react';
-import { initialUsers } from '@/services/mockData';
-import { User } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { Role } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { POCLogo } from '@/components/brand/POCLogo';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,45 +22,46 @@ function cn(...inputs: ClassValue[]) {
 interface SidebarProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
-  currentUser: User;
-  setCurrentUser: (user: User) => void;
 }
 
-export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser }: SidebarProps) => {
-  const [showDevRoleSwitcher, setShowDevRoleSwitcher] = React.useState(false);
+export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
+  const { user: currentUser, logout } = useAuth();
+
+  if (!currentUser) return null;
+
   const menuGroups = [
     {
       title: 'Workspace',
       items: [
-        { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'calendar', icon: CalendarIcon, label: 'ปฏิทินงาน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'daily-task', icon: VideoIcon, label: 'ส่งงานรายวัน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'setup', icon: SettingsIcon, label: 'จัดการเพจและบัญชี', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'calendar', icon: CalendarIcon, label: 'ปฏิทินงาน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'daily-task', icon: VideoIcon, label: 'ส่งงานรายวัน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'setup', icon: SettingsIcon, label: 'จัดการเพจและบัญชี', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
       ]
     },
     {
       title: 'Organization',
       items: [
-        { id: 'hq-dashboard', icon: PieChart, label: 'แดชบอร์ดรายงานรวม', roles: ['Manager', 'Admin', 'Super Admin'] },
-        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: ['Super Admin'] },
-        { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: ['Admin', 'Super Admin'] },
+        { id: 'hq-dashboard', icon: PieChart, label: 'แดชบอร์ดรายงานรวม', roles: [Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: [Role.SuperAdmin, Role.Developer] },
+        { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
       ]
     },
     {
       title: 'Enterprise',
       items: [
-        { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: ['Super Admin'] },
-        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: ['Super Admin'] },
-        { id: 'rules', icon: Scale, label: 'กฎระเบียบบริษัท', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: [Role.SuperAdmin, Role.Developer] },
+        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: [Role.SuperAdmin, Role.Developer] },
+        { id: 'rules', icon: Scale, label: 'กฎระเบียบบริษัท', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
       ]
     },
     {
       title: 'System',
       items: [
-        { id: 'learning', icon: BookOpen, label: 'ศูนย์การเรียนรู้', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: ['Admin', 'Super Admin'] },
-        { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
+        { id: 'learning', icon: BookOpen, label: 'ศูนย์การเรียนรู้', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
       ]
     }
   ];
@@ -68,12 +70,12 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
     <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-50 text-white shadow-2xl transition-all duration-500 ease-in-out">
       <div className="p-6 mb-6 overflow-hidden">
         <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
-          <div className="p-2.5 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-transform flex-shrink-0">
-            <Activity size={24} className="text-sidebar-bg" />
+          <div className="transition-transform duration-500 group-hover:rotate-3">
+             <POCLogo size={40} />
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
-            <h1 className="text-xl font-bold tracking-tight font-outfit uppercase text-white">CreatorSpace</h1>
-            <p className="text-[9px] text-blue-100/60 font-bold tracking-[0.25em] font-noto -mt-0.5 uppercase">Enterprise Matrix</p>
+            <h1 className="text-xl font-bold tracking-tight font-outfit uppercase text-white">Editor</h1>
+            <p className="text-[9px] text-blue-100/60 font-medium tracking-[0.25em] font-noto -mt-0.5 uppercase">Command Center</p>
           </div>
         </div>
       </div>
@@ -85,7 +87,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
 
           return (
             <div key={gIdx} className="space-y-1">
-              <p className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[10px] font-bold text-blue-100/30 uppercase tracking-[0.2em] px-5 mb-2 h-4 overflow-hidden">
+              <p className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[10px] font-medium text-blue-100/30 uppercase tracking-[0.2em] px-5 mb-2 h-4 overflow-hidden">
                 {group.title}
               </p>
               {visibleItems.map(item => (
@@ -93,9 +95,9 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
                   key={item.id}
                   onClick={() => setCurrentTab(item.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 px-5 py-3.5 rounded-l-3xl font-semibold transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
+                    "w-full flex items-center gap-4 px-5 py-3.5 rounded-l-3xl font-medium transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
                     currentTab === item.id
-                      ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)]'
+                      ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)] font-bold'
                       : 'text-blue-100/70 hover:text-white hover:bg-white/10'
                   )}
                 >
@@ -114,58 +116,30 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
         })}
       </nav>
 
-      {/* Role Switcher Section (Simulation) */}
       <div className="mt-auto border-t border-white/5 p-4 overflow-hidden">
-        <div className="px-2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={() => setShowDevRoleSwitcher(!showDevRoleSwitcher)}
-            className="w-full flex items-center justify-between text-[10px] font-bold text-blue-100/40 uppercase tracking-widest mb-3 hover:text-white transition-colors"
-          >
-            <span>Switch Role (Dev)</span>
-            {showDevRoleSwitcher ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-          </button>
-
-          {showDevRoleSwitcher && (
-            <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-300">
-              {initialUsers.map(user => (
-                <button
-                  key={user.id}
-                  onClick={() => setCurrentUser(user)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] transition-all duration-200",
-                    currentUser.id === user.id
-                      ? "bg-white/20 text-white shadow-lg border border-white/10"
-                      : "text-blue-100/40 hover:bg-white/5 hover:text-white"
-                  )}
-                >
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    user.role === 'Super Admin' ? "bg-blue-600" :
-                      user.role === 'Admin' ? "bg-blue-400" :
-                        user.role === 'Manager' ? "bg-emerald-400" : "bg-slate-400"
-                  )} />
-                  <span className="truncate">{user.name}</span>
-                  {currentUser.id === user.id && <ChevronRight size={12} className="ml-auto" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Current User Info */}
-        <div className="flex items-center gap-4 px-2 py-4">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/10">
-            <span className="text-sm font-bold text-white uppercase">{currentUser.name.charAt(0)}</span>
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
-            <p className="text-sm font-bold text-white truncate">{currentUser.name}</p>
-            <p className="text-[10px] text-blue-100/60 font-medium truncate uppercase tracking-wider">{currentUser.role}</p>
-          </div>
+        <div className="flex items-center justify-between px-2 py-4">
+           <div className="flex items-center gap-4 text-white">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-lg">
+                <span className="text-sm font-bold uppercase">{currentUser.name.charAt(0)}</span>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
+                <p className="text-sm font-bold truncate">{currentUser.name}</p>
+                <p className="text-[10px] text-blue-100/60 font-medium truncate uppercase tracking-wider">{currentUser.role.replace('_', ' ')}</p>
+              </div>
+           </div>
+           
+           <button 
+             onClick={logout}
+             className="opacity-0 group-hover:opacity-100 p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded-lg transition-all"
+             title="Logout"
+           >
+              <Plus size={20} className="rotate-45" />
+           </button>
         </div>
       </div>
 
-      <div className="p-8 border-t border-white/5 opacity-40 overflow-hidden">
-        <p className="text-[10px] font-noto text-blue-100/60 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v1.2.0 • Enterprise Edition</p>
+      <div className="p-8 border-t border-white/5 opacity-30 overflow-hidden">
+        <p className="text-[10px] font-noto tracking-widest text-blue-100/60 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v2.3.2 • EDITOR MATRIX</p>
       </div>
     </aside>
   );
@@ -173,19 +147,21 @@ export const Sidebar = ({ currentTab, setCurrentTab, currentUser, setCurrentUser
 
 export const MobileHeader = () => (
   <header className="md:hidden bg-sidebar-bg p-5 sticky top-0 z-30 flex items-center gap-3 text-white border-b border-white/5">
-    <div className="p-1.5 bg-white rounded-lg shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-      <Activity size={18} className="text-sidebar-bg" />
-    </div>
-    <h1 className="text-lg font-bold font-outfit uppercase tracking-tight">CreatorSpace</h1>
+    <POCLogo size={32} />
+    <h1 className="text-lg font-bold font-outfit uppercase tracking-tight">Editor</h1>
   </header>
 );
 
-export const MobileBottomNav = ({ currentTab, setCurrentTab, currentUser }: Omit<SidebarProps, 'setCurrentUser'>) => {
+export const MobileBottomNav = ({ currentTab, setCurrentTab }: Omit<SidebarProps, ''>) => {
+  const { user: currentUser } = useAuth();
+  
+  if (!currentUser) return null;
+
   const menuItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ด', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'transactions', icon: FilePlus, label: 'บันทึก', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'setup', icon: SettingsIcon, label: 'จัดการ', roles: ['Staff', 'Manager', 'Admin', 'Super Admin'] },
-    { id: 'team', icon: Users, label: 'ทีม', roles: ['Admin', 'Super Admin'] },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ด', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+    { id: 'transactions', icon: FilePlus, label: 'บันทึก', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+    { id: 'setup', icon: SettingsIcon, label: 'จัดการ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+    { id: 'team', icon: Users, label: 'ทีม', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
   ];
 
   const visibleItems = menuItems.filter(item => item.roles.includes(currentUser.role));
