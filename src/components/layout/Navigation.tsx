@@ -14,6 +14,7 @@ import { Role } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { POCLogo } from '@/components/brand/POCLogo';
+import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -66,15 +67,22 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
     }
   ];
 
+  const { getActiveAnnouncements } = useCompanyConfig();
+  const activeAnnouncements = getActiveAnnouncements(currentUser);
+  const hasAnnouncements = activeAnnouncements.length > 0;
+
   return (
-    <aside className="hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-50 text-white shadow-2xl transition-all duration-500 ease-in-out">
+    <aside className={cn(
+      "hidden md:flex flex-col w-20 hover:w-72 group bg-sidebar-bg fixed h-full z-50 text-white shadow-2xl transition-all duration-500 ease-in-out",
+      hasAnnouncements ? "top-9 h-[calc(100%-2.25rem)]" : "top-0 h-full"
+    )}>
       <div className="p-6 mb-6 overflow-hidden">
         <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
           <div className="transition-transform duration-500 group-hover:rotate-3">
              <POCLogo size={40} />
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
-            <h1 className="text-xl font-bold tracking-tight font-outfit uppercase text-white">Editor</h1>
+            <h1 className="text-xl font-semibold tracking-tight font-outfit uppercase text-white">Editor</h1>
             <p className="text-[9px] text-blue-100/60 font-medium tracking-[0.25em] font-noto -mt-0.5 uppercase">Command Center</p>
           </div>
         </div>

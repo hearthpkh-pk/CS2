@@ -161,14 +161,21 @@ export interface DailySubmission {
   createdAt: string;
 }
 
+export interface GroupPolicy {
+  groupId: string; // e.g., 'News', 'Movies', 'Shows'
+  minPagesPerDay: number;
+  minClipsPerPage: number;
+}
+
 export interface PolicyConfiguration {
   minViewTarget: number;
   penaltyAmount: number;
   bonusStep1: number;
   superBonusThreshold: number;
   bonusStep2: number;
-  requiredPagesPerDay: number;
-  clipsPerPageInLog: number;
+  requiredPagesPerDay: number; // Global default
+  clipsPerPageInLog: number;    // Global default
+  groupPolicies?: GroupPolicy[]; // Overrides for specific groups
 }
 
 export interface VideoTutorial {
@@ -262,11 +269,34 @@ export interface CompanyRule {
   lastUpdated: string;
 }
 
+export interface GroupDefinition {
+  id: string; // e.g., 'news', 'movies'
+  name: string; // e.g., 'ข่าว', 'หนัง'
+  policy: GroupPolicy;
+  description?: string;
+}
+
+export interface Announcement {
+  id: string;
+  message: string;
+  type: 'info' | 'warning' | 'critical';
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  targetRoles?: Role[];
+  targetGroups?: string[];
+  targetTeams?: string[];
+  targetUsers?: string[]; // user IDs
+}
+
 export interface CompanyConfig {
+  id: string;
   name: string;
   logo?: string;
   brands: Brand[];
   rules: CompanyRule[];
+  groups: GroupDefinition[]; // Managed groups
+  announcements: Announcement[]; // Global broadcaster
   performancePolicy: PolicyConfiguration;
 }
 

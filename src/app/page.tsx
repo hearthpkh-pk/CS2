@@ -11,14 +11,15 @@ import { SetupView } from '@/components/forms/SetupView';
 import { CalendarView } from '@/components/workspace/CalendarView';
 import { DailyTaskView } from '@/components/workspace/DailyTaskView';
 import { LearningCenterView } from '@/components/workspace/LearningCenterView';
-import { PolicyCenterView } from '@/components/workspace/PolicyCenterView';
-import { PolicySettingsView } from '@/components/admin/PolicySettingsView';
 import { HQDashboardView } from '@/features/hq-dashboard/components/HQDashboardView';
 import { ReportsView } from '@/features/reports/components/ReportsView';
 import { TeamManagementView } from '@/components/admin/TeamManagementView';
+import { CompanySettingsView } from '@/features/company/components/CompanySettingsView';
+import { PolicyCenterView } from '@/features/company/components/PolicyCenterView';
 import { PlaceholderView } from '@/components/ui/PlaceholderView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
+import { configService } from '@/services/configService';
 import { initialUsers, initialPages } from '@/services/mockData';
 import { PayrollView } from '@/features/payroll/components/PayrollView';
 import { Page, DailyLog, FBAccount, Role, User } from '@/types';
@@ -42,6 +43,8 @@ export default function CreatorApp() {
   const [selectedPage, setSelectedPage] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+
+  const policyConfig = configService.getConfig().performancePolicy;
 
   // Load Initial Data - Reactive to currentUser
   useEffect(() => {
@@ -172,16 +175,6 @@ export default function CreatorApp() {
     }
   };
 
-  const policyConfig = {
-    minViewTarget: 5000000,
-    penaltyAmount: 500,
-    bonusStep1: 1000,
-    superBonusThreshold: 10000000,
-    bonusStep2: 3000,
-    requiredPagesPerDay: 4,
-    clipsPerPageInLog: 4
-  };
-
   return (
     <div className="flex min-h-screen bg-slate-50 font-prompt">
       {toast && <Toast message={toast} />}
@@ -229,7 +222,7 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'rules' && (
-            <PolicyCenterView />
+            <PolicyCenterView currentUser={currentUser} />
           )}
 
           {currentTab === 'payroll' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Developer) && (
@@ -238,9 +231,6 @@ export default function CreatorApp() {
                 currentUser={currentUser}
                 policy={policyConfig}
               />
-              <div className="pt-10 border-t border-slate-200">
-                <PolicySettingsView currentUser={currentUser} />
-              </div>
             </div>
           )}
 
@@ -304,11 +294,7 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'settings' && (
-            <PlaceholderView 
-              title="Company Settings" 
-              icon={Building2} 
-              description="Global organization configuration coming soon..." 
-            />
+            <CompanySettingsView currentUser={currentUser} />
           )}
 
           {currentTab === 'audit' && (
