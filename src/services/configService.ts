@@ -3,89 +3,103 @@ import { Brand, CompanyConfig, CompanyRule, Announcement, GroupDefinition, Role 
 const STORAGE_KEY = 'cs_company_config';
 
 const DEFAULT_BRANDS: Brand[] = [
-  { id: 'b1', name: 'Nike', isActive: true },
-  { id: 'b2', name: 'Apple', isActive: true },
-  { id: 'b3', name: 'Disney', isActive: true },
-  { id: 'b4', name: 'Coca Cola', isActive: true },
-  { id: 'b5', name: 'Pepsi', isActive: true },
-  { id: 'b6', name: 'Adidas', isActive: true },
-  { id: 'b7', name: 'Netflix', isActive: true },
+  { id: "brand-1774793169256", name: "USE99", isActive: true },
+  { id: "brand-1774793206352", name: "IF888", isActive: true },
+  { id: "brand-1774793218627", name: "UFA257", isActive: true },
+  { id: "brand-1774793221874", name: "ZEED777", isActive: true }
 ];
 
 const DEFAULT_RULES: CompanyRule[] = [
   {
-    id: 'rule-responsibilities',
-    title: 'หน้าที่รับผิดชอบ (Responsibilities)',
-    content: `- หาฟุตเทจ ตัดต่อคลิปสั้น (Reels/Shorts) ความยาว 1-5 นาที\n- แทรกแบนเนอร์โฆษณาลงคลิปตามรูปแบบที่กำหนด\n- โพสต์ลงเพจ Facebook / Social Media ที่ได้รับมอบหมาย (ดูแลขั้นต่ำ 10 เพจ)`,
-    category: 'Operation',
-    order: 1,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: new Date().toISOString()
+    id: "rule-general",
+    title: "กฎระเบียบทั่วไป (General Rules)",
+    content: "พนักงานทุกคนต้องปฏิบัติตามกฎระเบียบอย่างเคร่งครัด เพื่อรักษามาตรฐานการทำงานและวัฒนธรรมองค์กรที่ดี\n\n- วันทำงานคือวันจันทร์ - อาทิตย์ (หากไม่มีการแจ้งล่วงหน้า)\n- การลางานต้องแจ้งล่วงหน้าอย่างน้อย 24 ชั่วโมงผ่านระบบปฏิทิน\n- ห้ามนำข้อมูลลูกค้าหรือข้อมูลเพจไปเผยแพร่ภายนอกโดยไม่ได้รับอนุญาต",
+    category: "General" as any,
+    lastUpdated: "2026-03-28T09:48:37.136Z",
+    order: 1
   },
   {
-    id: 'rule-penalties',
-    title: 'กฎการหักเงิน (Penalties)',
-    content: `หากยอดวิวรวม (Views) ของพนักงานในเดือนนั้น ไม่ถึงเกณฑ์ขั้นต่ำ (10,000,000 Views) จะมีมาตรการหักเงินเดือน -2,000 THB\n\nหมายเหตุ: การหักเงินจะหักจากฐานเงินเดือนก่อนคำนวณค่าคอมมิชชัน`,
-    category: 'Safety',
+    id: "rule-responsibilities",
+    title: "หน้าที่รับผิดชอบ (Responsibilities)",
+    content: "- หาฟุตเทจ ตัดต่อคลิปสั้น (Reels/Shorts) ความยาว 1-5 นาที\n- แทรกแบนเนอร์โฆษณาลงคลิปตามรูปแบบที่กำหนด\n- โพสต์ลงเพจ Facebook / Social Media ที่ได้รับมอบหมาย (ดูแลขั้นต่ำ 10 เพจ)",
+    category: "Operation" as any,
     order: 2,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: new Date().toISOString()
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin],
+    lastUpdated: "2026-03-29T07:59:40.349Z"
   },
   {
-    id: 'rule-commission',
-    title: 'โครงสร้างค่าคอมมิชชัน (Commission)',
-    content: `- Tier 1 (Standard): 1,000 THB ต่อยอดวิวทุก 10,000,000 Views\n- Tier 2 (Super Bonus): 1,500 THB ต่อยอดวิวทุก 10,000,000 Views (เมื่อครบ 100M)`,
-    category: 'Finance',
-    order: 3,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: new Date().toISOString()
-  },
-  {
-    id: 'rule-submissions',
-    title: 'กฎระเบียบการส่งงาน (Submissions)',
-    content: `พนักงานต้องส่งงานผ่านระบบ "ส่งคลิปงานรายวัน" ทุกวันทำงาน\n\n- จำนวนขั้นต่ำ: 10 เพจ / วัน\n- จำนวนคลิป: 4 คลิป / เพจ (รวม 40 คลิป/วัน)\n\n⚠️ หากส่งไม่ครบถ้วนตามกำหนด ระบบจะถือว่าขาดงาน (Absent)`,
-    category: 'Compliance',
+    id: "rule-submissions",
+    title: "กฎระเบียบการส่งงาน (Submissions)",
+    content: "พนักงานต้องส่งงานผ่านระบบ \"ส่งคลิปงานรายวัน\" ทุกวันทำงาน\n\n- จำนวนขั้นต่ำ: 10 เพจ / วัน\n- จำนวนคลิป: 4 คลิป / เพจ (รวม 40 คลิป/วัน)\n\n⚠️ หากส่งไม่ครบถ้วนตามกำหนด ระบบจะถือว่าขาดงาน (Absent)",
+    category: "Compliance" as any,
     order: 4,
     targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: new Date().toISOString()
+    lastUpdated: "2026-03-29T08:13:00.637Z"
+  },
+  {
+    id: "rule-commission",
+    title: "โครงสร้างค่าคอมมิชชัน (Commission)",
+    content: "- Tier 1 (Standard): 1,000 THB ต่อยอดวิวทุก 10,000,000 Views\n- Tier 2 (Super Bonus): 1,500 THB ต่อยอดวิวทุก 10,000,000 Views (เมื่อครบ 100M)",
+    category: "Finance" as any,
+    order: 4,
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
+    lastUpdated: "2026-03-29T08:13:00.637Z"
+  },
+  {
+    id: "rule-penalties",
+    title: "กฎการหักเงิน (Penalties)",
+    content: "หากยอดวิวรวม (Views) ของพนักงานในเดือนนั้น ไม่ถึงเกณฑ์ขั้นต่ำ (10,000,000 Views) จะมีมาตรการหักเงินเดือน -2,000 THB\n\n- หยุดงานหักตามค่าแรง เช่น 12,000 หยุดหัก 400\n\n- ส่งงานไม่ครบ 40 คลิปต่อวันหัก 20 บาท/คลิป\n\n- ส่งลิงก์ซ้ำหัก 50 บาท/คลิป\n\nหากขาดงานจะถูกหักเป็น 2 แรง",
+    category: "Safety" as any,
+    order: 5,
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
+    lastUpdated: "2026-03-29T08:13:00.637Z"
+  },
+  {
+    id: "rule-culture",
+    title: "วัฒนธรรมองค์กร (Culture)",
+    content: "เราเน้นการทำงานที่รับผิดชอบตนเองเป็นหลัก (High Responsibility) และการวัดผลด้วยความสำเร็จ (Result-Oriented)\n\nCore Values: Honesty, Transparency, Prosperity",
+    category: "General" as any,
+    lastUpdated: "2026-03-28T09:48:37.136Z",
+    order: 6
   }
 ];
 
 const DEFAULT_CONFIG: CompanyConfig = {
-  id: 'company-editor',
-  name: 'Editor Platform',
-  brands: [
-    { id: 'b1', name: 'Nike', isActive: true },
-    { id: 'b2', name: 'Apple', isActive: true },
-    { id: 'b3', name: 'Samsung', isActive: true }
-  ],
+  id: "company-editor",
+  name: "Editor Platform HQ",
+  brands: DEFAULT_BRANDS,
   rules: DEFAULT_RULES,
   groups: [
-    { id: 'news', name: 'กลุ่มข่าวสาร', description: 'กลุ่มเน้นงานปริมาณข่าวสารรายวัน', policy: { groupId: 'news', minPagesPerDay: 5, minClipsPerPage: 8 } },
-    { id: 'movies', name: 'กลุ่มหนัง', description: 'กลุ่มงานคุณภาพภาพยนตร์', isDefault: true, policy: { groupId: 'movies', minPagesPerDay: 10, minClipsPerPage: 4 } },
-    { id: 'shows', name: 'กลุ่มรายการ', description: 'กลุ่มวาไรตี้และรายการทีวี', policy: { groupId: 'shows', minPagesPerDay: 10, minClipsPerPage: 4 } }
+    { id: "news", name: "กลุ่มข่าวสาร", description: "กลุ่มเน้นงานปริมาณข่าวสารรายวัน", policy: { groupId: "news", minPagesPerDay: 5, minClipsPerPage: 8 }, isDefault: false },
+    { id: "movies", name: "กลุ่มหนัง", description: "กลุ่มงานคุณภาพภาพยนตร์", policy: { groupId: "movies", minPagesPerDay: 10, minClipsPerPage: 4 }, isDefault: false },
+    { id: "shows", name: "กลุ่มรายการ", description: "กลุ่มวาไรตี้และรายการทีวี", policy: { groupId: "shows", minPagesPerDay: 10, minClipsPerPage: 4 }, isDefault: true }
   ],
   announcements: [
     {
-      id: 'announcement-1',
-      message: 'ยินดีต้อนรับสู่ระบบ Editor v2.0 - ตรวจสอบกฏระเบียบใหม่ได้ที่หน้า Company Policy',
-      type: 'info',
+      id: "ann-1774791920928",
+      message: "ฟหกฟดฟดฟหด",
+      type: "warning",
       isActive: true,
-      startDate: new Date().toISOString()
+      startDate: "2026-03-28T17:00:00.000Z",
+      endDate: "2026-03-30T17:00:00.000Z",
+      targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin],
+      targetGroups: ["news", "shows", "movies"],
+      targetTeams: [],
+      targetUsers: []
     }
   ],
   performancePolicy: {
     minViewTarget: 5000000,
-    penaltyAmount: 500,
+    penaltyAmount: 2000,
     bonusStep1: 1000,
-    superBonusThreshold: 10000000,
-    bonusStep2: 3000,
-    requiredPagesPerDay: 10,
+    superBonusThreshold: 100000000,
+    bonusStep2: 1500,
+    requiredPagesPerDay: 4,
     clipsPerPageInLog: 4,
     groupPolicies: [
-      { groupId: 'News', minPagesPerDay: 5, minClipsPerPage: 8 },
-      { groupId: 'Movies', minPagesPerDay: 10, minClipsPerPage: 4 },
-      { groupId: 'Shows', minPagesPerDay: 10, minClipsPerPage: 4 }
+      { groupId: "news", minPagesPerDay: 5, minClipsPerPage: 8 },
+      { groupId: "movies", minPagesPerDay: 10, minClipsPerPage: 4 },
+      { groupId: "shows", minPagesPerDay: 10, minClipsPerPage: 4 }
     ]
   }
 };

@@ -150,31 +150,39 @@ export const CommissionCalculator = ({ settings }: CommissionCalculatorProps) =>
                {/* STEPPED BONUS EXAMPLES */}
                {(() => {
                   const firstMilestone = Math.floor(minTargetM / 10 + 1) * 10;
-                  return [firstMilestone, firstMilestone + 10].map((tier) => (
-                     <div key={tier} className={cn(
-                        "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors duration-300",
-                        views >= tier && views < tier + 10 && !isSuperBonus ? "bg-slate-50" : ""
-                     )}>
-                        <span className={cn(
-                           "text-[11px] font-semibold uppercase tracking-wide",
-                           views >= tier && views < tier + 10 && !isSuperBonus ? "text-[#0a192f]" : "text-slate-600"
+                  const milestones = [firstMilestone, firstMilestone + 10];
+                  
+                  return milestones.map((tier) => {
+                     const isTierActive = views >= tier && views < tier + 10 && views < superThresholdM;
+                     const tierRate = tier >= superThresholdM ? step2Rate : step1Rate;
+                     const tierBonus = (tier / 10) * tierRate;
+
+                     return (
+                        <div key={tier} className={cn(
+                           "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors duration-300",
+                           isTierActive ? "bg-slate-50" : ""
                         )}>
-                           {"≥ "}{tier}M Views
-                        </span>
-                        <span className={cn(
-                           "font-inter text-[12px] font-bold tabular-nums",
-                           views >= tier && views < tier + 10 && !isSuperBonus ? "text-emerald-600" : "text-slate-400"
-                        )}>
-                           +{(Math.floor(tier / 10) * step1Rate).toLocaleString()} THB
-                        </span>
-                     </div>
-                  ));
+                           <span className={cn(
+                              "text-[11px] font-semibold uppercase tracking-wide",
+                              isTierActive ? "text-[#0a192f]" : "text-slate-600"
+                           )}>
+                              {"≥ "}{tier}M Views
+                           </span>
+                           <span className={cn(
+                              "font-inter text-[12px] font-bold tabular-nums",
+                              isTierActive ? "text-emerald-600" : "text-slate-400"
+                           )}>
+                              +{tierBonus.toLocaleString()} THB
+                           </span>
+                        </div>
+                     );
+                  });
                })()}
 
                {/* PROGRESSIVE RULE */}
                <div className="px-5 py-2 bg-slate-50/30">
                   <p className="text-[9px] text-slate-400 uppercase tracking-widest">
-                     * เพิ่มโบนัส +{step1Rate.toLocaleString()} ทุกๆ 10M ถัดไปจนถึง {superThresholdM}M
+                     * เพิ่มโบนัส +{step1Rate.toLocaleString()} ทุกๆ 10M ถัดไปจนถึง {superThresholdM}M (หรือตามเงื่อนไขที่ตั้งไว้)
                   </p>
                </div>
 
