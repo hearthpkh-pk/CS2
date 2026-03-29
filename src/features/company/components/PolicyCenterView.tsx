@@ -40,9 +40,10 @@ import { RuleContentRenderer } from './RuleContentRenderer';
 
 interface PolicyCenterViewProps {
    currentUser: User;
+   onNavigate?: (tab: string, subTab?: string) => void;
 }
 
-export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser }) => {
+export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser, onNavigate }) => {
    const { config, getPolicyForUser, refreshConfig } = useCompanyConfig();
    const userPolicy = getPolicyForUser(currentUser);
    const userGroup = config.groups.find(g => g.id === currentUser.group);
@@ -143,10 +144,13 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
 
                   {isAdminOrDev && (
                      <div className="flex items-center gap-2">
-                        
                         <button
                            onClick={() => {
-                               handleToggleEdit();
+                               if (activeRuleId === 'rule-commission' && onNavigate) {
+                                  onNavigate('settings', 'policy');
+                               } else {
+                                  handleToggleEdit();
+                               }
                            }}
                            className={cn(
                               "w-11 h-11 flex items-center justify-center rounded-2xl transition-all border shadow-sm",
@@ -180,6 +184,11 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
                      <div key={rule.id} className="relative group">
                         <button
                            onClick={() => {
+                              if (rule.id === 'rule-commission' && isEditMode && onNavigate) {
+                                 setIsEditMode(false);
+                                 onNavigate('settings', 'policy');
+                                 return;
+                              }
                               setActiveRuleId(rule.id);
                               if (isEditMode) setEditForm({ ...rule });
                            }}

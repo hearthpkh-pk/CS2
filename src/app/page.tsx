@@ -38,6 +38,7 @@ export default function CreatorApp() {
   const [accounts, setAccounts] = useState<FBAccount[]>([]);
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<string | undefined>(undefined);
 
   // Filters State
   const [selectedPage, setSelectedPage] = useState('all');
@@ -206,6 +207,7 @@ export default function CreatorApp() {
               onNavigateToTask={() => setCurrentTab('daily-task')}
               currentUser={currentUser}
               onSyncPage={handleSyncPage}
+              policy={policyConfig}
             />
           )}
 
@@ -222,7 +224,13 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'rules' && (
-            <PolicyCenterView currentUser={currentUser} />
+            <PolicyCenterView 
+              currentUser={currentUser} 
+              onNavigate={(tab, subTab) => {
+                setSettingsInitialTab(subTab);
+                setCurrentTab(tab);
+              }}
+            />
           )}
 
           {currentTab === 'payroll' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Developer) && (
@@ -294,7 +302,10 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'settings' && (
-            <CompanySettingsView currentUser={currentUser} />
+            <CompanySettingsView 
+              currentUser={currentUser} 
+              initialTab={settingsInitialTab as any}
+            />
           )}
 
           {currentTab === 'audit' && (

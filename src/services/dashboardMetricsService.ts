@@ -57,11 +57,12 @@ export const aggregateDashboardMetrics = (
   logs: DailyLog[],
   selectedYear: string,
   selectedMonth: string,
-  selectedPageId: string = 'all'
+  selectedPageId: string = 'all',
+  customPolicy?: DashboardMetricsPayload['quotaData']['policy']
 ): DashboardMetricsPayload => {
   
-  // --- 1. CONFIGURATION (TODO: Fetch from Supabase settings table) ---
-  const policy = {
+  // --- 1. CONFIGURATION ---
+  const policy = customPolicy || {
     minViewTarget: 10000000,
     penaltyAmount: 2000,
     bonusStep1: 1000,
@@ -257,15 +258,21 @@ export const aggregateDashboardMetrics = (
   let projectedStatus: 'RED' | 'AMBER' | 'GREEN' = 'RED';
   let projectedMoney = 0;
 
+  const currentMilestoneM = Math.floor(portfolioTotalViews / 10000000);
+  
   if (portfolioTotalViews < policy.minViewTarget) {
     projectedStatus = portfolioTotalViews >= (policy.minViewTarget * 0.5) ? 'AMBER' : 'RED';
     projectedMoney = -policy.penaltyAmount;
   } else {
     projectedStatus = 'GREEN';
-    if (portfolioTotalViews >= policy.superBonusThreshold) {
-      projectedMoney = Math.floor(portfolioTotalViews / 10000000) * policy.bonusStep2;
+    
+    // Milestone-Gate Logic: Bonus starts only for 10M-milestones ABOVE Target
+    const minTargetM = policy.minViewTarget / 1000000;
+    if (currentMilestoneM * 10 > minTargetM) {
+      const rate = portfolioTotalViews >= policy.superBonusThreshold ? policy.bonusStep2 : policy.bonusStep1;
+      projectedMoney = currentMilestoneM * rate;
     } else {
-      projectedMoney = Math.floor(portfolioTotalViews / 10000000) * policy.bonusStep1;
+      projectedMoney = 0;
     }
   }
 

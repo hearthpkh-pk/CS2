@@ -31,12 +31,20 @@ import { GroupManager } from './settings/GroupManager';
 
 interface CompanySettingsViewProps {
   currentUser: User;
+  initialTab?: 'brands' | 'policy' | 'announcements' | 'groups';
 }
 
-export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ currentUser }) => {
+export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ currentUser, initialTab }) => {
   const { config, updatePerformancePolicy, refreshConfig } = useCompanyConfig();
-  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups'>('announcements');
+  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups'>(initialTab || 'announcements');
   const [isSaved, setIsSaved] = useState(false);
+
+  // Sync initialTab when it changes from props
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const [newBrand, setNewBrand] = useState('');
   const [isAddingBrand, setIsAddingBrand] = useState(false);

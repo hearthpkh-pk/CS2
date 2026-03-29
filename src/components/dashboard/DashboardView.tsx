@@ -24,6 +24,13 @@ interface Props {
   onSyncPage?: (id: string, url: string) => void;
   allPages: Page[]; 
   allLogs: DailyLog[]; 
+  policy: {
+    minViewTarget: number;
+    penaltyAmount: number;
+    bonusStep1: number;
+    superBonusThreshold: number;
+    bonusStep2: number;
+  };
 }
 
 const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -32,7 +39,7 @@ export const DashboardView = ({
   pages, logs, selectedPage, setSelectedPage,
   selectedMonth, setSelectedMonth, selectedYear, setSelectedYear,
   onNavigateToTask, currentUser, onSyncPage,
-  allPages, allLogs
+  allPages, allLogs, policy
 }: Props) => {
   const [isDemoMode, setIsDemoMode] = React.useState(false);
 
@@ -44,8 +51,8 @@ export const DashboardView = ({
   const workingAllLogs = isDemoMode ? fakeLogs : allLogs;
 
   const payload = useMemo(() => {
-    return aggregateDashboardMetrics(workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage);
-  }, [workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage]);
+    return aggregateDashboardMetrics(workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage, policy);
+  }, [workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage, policy]);
 
   const { chartData, totals, matrixData, quotaData } = payload;
 
