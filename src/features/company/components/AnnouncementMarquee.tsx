@@ -39,7 +39,7 @@ export const AnnouncementMarquee: React.FC<AnnouncementMarqueeProps> = ({ curren
           "w-2 h-2 rounded-full animate-pulse",
           hasCritical ? "bg-white" : hasWarning ? "bg-amber-200" : "bg-blue-200"
         )} />
-        <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest whitespace-nowrap">Official Broadcaster</span>
+        <span className="text-[10px] font-semibold text-white/70 uppercase tracking-widest whitespace-nowrap">Official Broadcaster</span>
       </div>
 
       <div className="flex-1 overflow-hidden">

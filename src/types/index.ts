@@ -265,7 +265,10 @@ export interface CompanyRule {
   id: string;
   title: string;
   content: string;
-  category: 'General' | 'Finance' | 'Safety' | 'Compliance' | 'Other';
+  category: 'General' | 'Finance' | 'Safety' | 'Compliance' | 'Operation' | 'Other';
+  order: number;
+  targetRoles?: Role[];
+  targetGroups?: string[];
   lastUpdated: string;
 }
 

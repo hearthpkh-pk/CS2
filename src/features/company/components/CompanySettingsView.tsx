@@ -63,9 +63,11 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
     if (!newRule.title || !newRule.content) return;
     const rule: CompanyRule = { 
       id: editingRuleId || `rule-${Date.now()}`, 
-      title: newRule.title, 
-      content: newRule.content, 
-      category: newRule.category as any,
+      title: newRule.title || '', 
+      content: newRule.content || '', 
+      category: (newRule.category as any) || 'General',
+      order: newRule.order || (config.rules.length + 1),
+      targetRoles: newRule.targetRoles,
       lastUpdated: new Date().toISOString() 
     };
     configService.saveRule(rule);
@@ -243,16 +245,17 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
                         onChange={(e) => setNewRule({...newRule, title: e.target.value})}
                         className="bg-white border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-bold"
                       />
-                      <select 
-                        value={newRule.category}
-                        onChange={(e) => setNewRule({...newRule, category: e.target.value as any})}
-                        className="bg-white border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-bold"
-                      >
-                        <option value="General">General</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Safety">Safety</option>
-                        <option value="Compliance">Compliance</option>
-                      </select>
+                        <select 
+                          value={newRule.category}
+                          onChange={(e) => setNewRule({...newRule, category: e.target.value as any})}
+                          className="bg-white border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-bold"
+                        >
+                          <option value="Operation">Operation</option>
+                          <option value="Finance">Finance</option>
+                          <option value="Safety">Safety</option>
+                          <option value="Compliance">Compliance</option>
+                          <option value="General">General</option>
+                        </select>
                     </div>
                     <textarea 
                       placeholder="Policy Content & Details (Use - for bullets)..."
@@ -277,7 +280,8 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
                               <span className={cn(
                                 "px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter",
                                 rule.category === 'Finance' ? "bg-emerald-50 text-emerald-600" : 
-                                rule.category === 'Safety' ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
+                                rule.category === 'Safety' ? "bg-rose-50 text-rose-600" : 
+                                rule.category === 'Operation' ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-600"
                               )}>
                                 {rule.category}
                               </span>

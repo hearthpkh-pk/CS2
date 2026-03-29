@@ -1,4 +1,4 @@
-import { Brand, CompanyConfig, CompanyRule, Announcement, GroupDefinition } from '../types';
+import { Brand, CompanyConfig, CompanyRule, Announcement, GroupDefinition, Role } from '../types';
 
 const STORAGE_KEY = 'cs_company_config';
 
@@ -14,10 +14,12 @@ const DEFAULT_BRANDS: Brand[] = [
 
 const DEFAULT_RULES: CompanyRule[] = [
   {
-    id: 'rule-general',
-    title: 'กฎระเบียบทั่วไป (General Rules)',
-    content: `พนักงานทุกคนต้องปฏิบัติตามกฎระเบียบอย่างเคร่งครัด เพื่อรักษามาตรฐานการทำงานและวัฒนธรรมองค์กรที่ดี\n\n- วันทำงานคือวันจันทร์ - อาทิตย์ (หากไม่มีการแจ้งล่วงหน้า)\n- การลางานต้องแจ้งล่วงหน้าอย่างน้อย 24 ชั่วโมงผ่านระบบปฏิทิน\n- ห้ามนำข้อมูลลูกค้าหรือข้อมูลเพจไปเผยแพร่ภายนอกโดยไม่ได้รับอนุญาต`,
-    category: 'General',
+    id: 'rule-responsibilities',
+    title: 'หน้าที่รับผิดชอบ (Responsibilities)',
+    content: `- หาฟุตเทจ ตัดต่อคลิปสั้น (Reels/Shorts) ความยาว 1-5 นาที\n- แทรกแบนเนอร์โฆษณาลงคลิปตามรูปแบบที่กำหนด\n- โพสต์ลงเพจ Facebook / Social Media ที่ได้รับมอบหมาย (ดูแลขั้นต่ำ 10 เพจ)`,
+    category: 'Operation',
+    order: 1,
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
     lastUpdated: new Date().toISOString()
   },
   {
@@ -25,6 +27,8 @@ const DEFAULT_RULES: CompanyRule[] = [
     title: 'กฎการหักเงิน (Penalties)',
     content: `หากยอดวิวรวม (Views) ของพนักงานในเดือนนั้น ไม่ถึงเกณฑ์ขั้นต่ำ (10,000,000 Views) จะมีมาตรการหักเงินเดือน -2,000 THB\n\nหมายเหตุ: การหักเงินจะหักจากฐานเงินเดือนก่อนคำนวณค่าคอมมิชชัน`,
     category: 'Safety',
+    order: 2,
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
     lastUpdated: new Date().toISOString()
   },
   {
@@ -32,6 +36,8 @@ const DEFAULT_RULES: CompanyRule[] = [
     title: 'โครงสร้างค่าคอมมิชชัน (Commission)',
     content: `- Tier 1 (Standard): 1,000 THB ต่อยอดวิวทุก 10,000,000 Views\n- Tier 2 (Super Bonus): 1,500 THB ต่อยอดวิวทุก 10,000,000 Views (เมื่อครบ 100M)`,
     category: 'Finance',
+    order: 3,
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
     lastUpdated: new Date().toISOString()
   },
   {
@@ -39,13 +45,8 @@ const DEFAULT_RULES: CompanyRule[] = [
     title: 'กฎระเบียบการส่งงาน (Submissions)',
     content: `พนักงานต้องส่งงานผ่านระบบ "ส่งคลิปงานรายวัน" ทุกวันทำงาน\n\n- จำนวนขั้นต่ำ: 10 เพจ / วัน\n- จำนวนคลิป: 4 คลิป / เพจ (รวม 40 คลิป/วัน)\n\n⚠️ หากส่งไม่ครบถ้วนตามกำหนด ระบบจะถือว่าขาดงาน (Absent)`,
     category: 'Compliance',
-    lastUpdated: new Date().toISOString()
-  },
-  {
-    id: 'rule-culture',
-    title: 'วัฒนธรรมองค์กร (Culture)',
-    content: `เราเน้นการทำงานที่รับผิดชอบตนเองเป็นหลัก (High Responsibility) และการวัดผลด้วยความสำเร็จ (Result-Oriented)\n\nCore Values: Honesty, Transparency, Prosperity`,
-    category: 'General',
+    order: 4,
+    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
     lastUpdated: new Date().toISOString()
   }
 ];
@@ -95,14 +96,28 @@ const loadConfig = (): CompanyConfig => {
   if (!stored) return DEFAULT_CONFIG;
   try {
     const parsed = JSON.parse(stored);
-    // Migration: Deep merge with DEFAULT_CONFIG to ensure all new schema fields exist
+    
+    // Migration: Merge rules and filter out deprecated ones (Work Format, Training)
+    const deprecatedIds = ['rule-work-format', 'rule-training'];
+    const currentRules = (parsed.rules || []).filter((r: CompanyRule) => !deprecatedIds.includes(r.id));
+    
+    const mergedRules = [...currentRules];
+    DEFAULT_RULES.forEach(defaultRule => {
+      const idx = mergedRules.findIndex(r => r.id === defaultRule.id);
+      if (idx < 0) {
+        mergedRules.push(defaultRule);
+      } else if (!mergedRules[idx].order || !mergedRules[idx].targetRoles) {
+        // Force refresh if missing new properties
+        mergedRules[idx] = defaultRule;
+      }
+    });
+
     return {
       ...DEFAULT_CONFIG,
       ...parsed,
-      // Migration: Ensure arrays are restored from defaults if empty or missing
+      rules: mergedRules,
       groups: (parsed.groups && parsed.groups.length > 0) ? parsed.groups : DEFAULT_CONFIG.groups,
       announcements: (parsed.announcements && parsed.announcements.length > 0) ? parsed.announcements : DEFAULT_CONFIG.announcements,
-      rules: (parsed.rules && parsed.rules.length > 0) ? parsed.rules : DEFAULT_CONFIG.rules,
       brands: (parsed.brands && parsed.brands.length > 0) ? parsed.brands : DEFAULT_CONFIG.brands,
       performancePolicy: {
         ...DEFAULT_CONFIG.performancePolicy,
@@ -183,5 +198,19 @@ export const configService = {
   deleteAnnouncement(id: string): CompanyConfig {
     const config = this.getConfig();
     return this.updateConfig({ ...config, announcements: config.announcements.filter(a => a.id !== id) });
+  },
+
+  reorderRules(ruleIds: string[]): CompanyConfig {
+    const config = this.getConfig();
+    const updatedRules = config.rules.map(rule => {
+      const newOrder = ruleIds.indexOf(rule.id);
+      return { ...rule, order: newOrder >= 0 ? newOrder + 1 : 999 };
+    });
+    return this.updateConfig({ ...config, rules: updatedRules.sort((a, b) => a.order - b.order) });
+  },
+
+  resetConfig(): CompanyConfig {
+    localStorage.removeItem(STORAGE_KEY);
+    return DEFAULT_CONFIG;
   }
 };

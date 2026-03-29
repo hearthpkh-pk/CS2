@@ -105,7 +105,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
                   className={cn(
                     "w-full flex items-center gap-4 px-5 py-3.5 rounded-l-3xl font-medium transition-all duration-300 relative group/item overflow-visible text-[13px] font-noto",
                     currentTab === item.id
-                      ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)] font-bold'
+                      ? 'bg-[#fefefe] text-sidebar-bg shadow-[-4px_0_10_rgba(0,0,0,0.02)] font-semibold'
                       : 'text-blue-100/70 hover:text-white hover:bg-white/10'
                   )}
                 >
@@ -128,10 +128,10 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
         <div className="flex items-center justify-between px-2 py-4">
            <div className="flex items-center gap-4 text-white">
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-lg">
-                <span className="text-sm font-bold uppercase">{currentUser.name.charAt(0)}</span>
+                <span className="text-sm font-semibold uppercase">{currentUser.name.charAt(0)}</span>
               </div>
               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
-                <p className="text-sm font-bold truncate">{currentUser.name}</p>
+                <p className="text-sm font-semibold truncate">{currentUser.name}</p>
                 <p className="text-[10px] text-blue-100/60 font-medium truncate uppercase tracking-wider">{currentUser.role.replace('_', ' ')}</p>
               </div>
            </div>
@@ -156,7 +156,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
 export const MobileHeader = () => (
   <header className="md:hidden bg-sidebar-bg p-5 sticky top-0 z-30 flex items-center gap-3 text-white border-b border-white/5">
     <POCLogo size={32} />
-    <h1 className="text-lg font-bold font-outfit uppercase tracking-tight">Editor</h1>
+    <h1 className="text-lg font-semibold font-outfit uppercase tracking-tight">Editor</h1>
   </header>
 );
 
@@ -186,7 +186,7 @@ export const MobileBottomNav = ({ currentTab, setCurrentTab }: Omit<SidebarProps
           )}
         >
           <item.icon size={20} className={cn("mb-1 transition-transform", currentTab === item.id && "scale-110")} />
-          <span className="text-[9px] font-bold font-noto uppercase tracking-wider">{item.label}</span>
+          <span className="text-[9px] font-semibold font-noto uppercase tracking-wider">{item.label}</span>
         </button>
       ))}
     </nav>
