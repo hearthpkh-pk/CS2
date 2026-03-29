@@ -116,7 +116,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
       setEditForm({ ...editForm, targetRoles: updated });
    };
 
-   // COMMISSION CALCULATOR SUB-COMPONENT - REFINED UX & NO BOLD/BACKGROUNDS
+   // COMMISSION CALCULATOR SUB-COMPONENT - REFINED UX (Compact, Motivation-Oriented Matrix)
    const CommissionCalculator = () => {
       const [views, setViews] = useState(10);
       const [isAnimating, setIsAnimating] = useState(false);
@@ -137,146 +137,191 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
       const isPenalty = views < 10;
 
       return (
-         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700 max-w-full lg:max-w-3xl">
-            {/* INPUT SECTION - SCALED DOWN */}
-            <div className="rounded-[2rem] border border-slate-100 p-6 md:p-8 space-y-6 bg-transparent hover:border-blue-400/20 transition-all group">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+         <div className="flex flex-col space-y-5 animate-in fade-in duration-500 max-w-2xl font-noto mx-auto w-full">
+            
+            {/* INPUT SECTION & PROJECTED RETURN */}
+            <div className="rounded-3xl border border-slate-200 p-6 flex flex-col space-y-5 transition-all hover:border-slate-300 bg-white shadow-sm">
+               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                     <Calculator size={16} className="text-blue-500" strokeWidth={1.5} />
-                     <h4 className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em] leading-none">
-                        Investment & Growth Simulator
+                     <Calculator size={16} className="text-[#0a192f]" />
+                     <h4 className="font-outfit text-xs font-semibold text-[#0a192f] uppercase tracking-widest leading-none">
+                        Commission Simulator
                      </h4>
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-1.5 border border-slate-50 rounded-xl">
-                     <Target size={12} className="text-slate-300" />
-                     <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest leading-none">
-                        Target: 10M / Month
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-full bg-slate-50">
+                     <Target size={12} className="text-slate-500" />
+                     <span className="font-outfit text-[9px] font-bold text-slate-600 uppercase tracking-widest leading-none">
+                        Base Target: 10M
                      </span>
                   </div>
                </div>
 
-               <div className="space-y-8">
-                  <div className="space-y-4">
-                     <div className="flex justify-between items-end px-1">
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-                           ยอดวิวสะสม (ล้านวิว)
+               <div className="flex flex-col space-y-5">
+                  <div className="flex justify-between items-end">
+                     <span className="font-outfit text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
+                        Total Views (Millions)
+                     </span>
+                     <div className="flex items-baseline gap-1">
+                        <span className={cn(
+                           "font-inter text-2xl font-bold tracking-tighter tabular-nums leading-none",
+                           isSuperBonus ? "text-blue-600" : isPenalty ? "text-rose-600" : "text-[#0a192f]"
+                        )}>
+                           {views}
                         </span>
-                        <div className="flex items-baseline gap-1">
-                           <span className={cn("text-2xl font-medium tracking-tighter", isSuperBonus ? "text-blue-600" : "text-slate-800")}>
-                              {views}
-                           </span>
-                           <span className="text-[10px] font-medium text-slate-300 uppercase tracking-widest">M</span>
-                        </div>
-                     </div>
-                     <div className="relative pt-1 px-1">
-                        <input
-                           type="range"
-                           min="0"
-                           max="200"
-                           step="5"
-                           value={views}
-                           onChange={(e) => {
-                              setViews(Number(e.target.value));
-                              setIsAnimating(true);
-                              setTimeout(() => setIsAnimating(false), 500);
-                           }}
-                           className="w-full h-1 bg-slate-50 rounded-full appearance-none cursor-pointer accent-blue-600 transition-all hover:h-1.5"
-                        />
+                        <span className="font-outfit text-[11px] font-bold text-slate-400 uppercase tracking-widest">M</span>
                      </div>
                   </div>
+                  
+                  <div className="relative pt-1 px-1">
+                     <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        step="5"
+                        value={views}
+                        onChange={(e) => {
+                           setViews(Number(e.target.value));
+                           setIsAnimating(true);
+                           setTimeout(() => setIsAnimating(false), 300);
+                        }}
+                        className="w-full h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-[#0a192f] transition-all hover:h-2"
+                     />
+                  </div>
 
-                  <div className="flex flex-col items-center justify-center py-4 border-t border-slate-50 animate-in fade-in duration-700">
-                     <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2">Expected Net Profit</p>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                     <span className="font-outfit text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
+                        Projected Return
+                     </span>
                      <div className={cn(
-                        "text-4xl md:text-5xl font-medium tracking-tighter transition-all duration-500 flex items-baseline gap-2",
-                        isPenalty ? "text-rose-400" : isSuperBonus ? "text-blue-600" : "text-emerald-500",
-                        isAnimating && "scale-105"
+                        "font-inter text-3xl font-bold tracking-tighter tabular-nums transition-transform duration-300 leading-none flex items-baseline gap-1.5",
+                        isPenalty ? "text-rose-600" : isSuperBonus ? "text-blue-600" : "text-emerald-600",
+                        isAnimating && "scale-[1.02]"
                      )}>
                         {comm >= 0 ? '+' : ''}{comm.toLocaleString()}
-                        <span className="text-sm font-medium text-slate-300 uppercase tracking-normal">THB</span>
+                        <span className="font-outfit text-[12px] font-semibold text-slate-400 uppercase tracking-widest">THB</span>
                      </div>
                   </div>
                </div>
             </div>
 
-            {/* STATUS TIERS - ADAPTIVE FOR VERTICAL/MOBILE */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               {/* SUPER BONUS TIER - PREMIUM DARK STYLE MATCHING HEADER */}
-               <div className={cn(
-                  "relative overflow-hidden rounded-[2rem] border p-8 space-y-4 transition-all duration-700 group flex flex-col justify-center",
-                  isSuperBonus
-                     ? "bg-gradient-to-br from-slate-950 via-blue-950 to-black border-white/10 text-white shadow-xl scale-[1.01]"
-                     : "border-slate-100 opacity-60 grayscale hover:grayscale-0 hover:border-blue-200"
-               )}>
-                  <div className="flex items-center gap-2 mb-1">
-                     <div className={cn(
-                        "px-3 py-1 border rounded-full flex items-center gap-2",
-                        isSuperBonus ? "border-blue-400/30" : "border-blue-600"
-                     )}>
-                        <Trophy size={12} className={isSuperBonus ? "text-blue-400" : "text-blue-600"} />
-                        <span className={cn(
-                           "text-[9px] font-medium uppercase tracking-[0.2em] leading-none",
-                           isSuperBonus ? "text-blue-400" : "text-blue-600"
-                        )}>Special Bonus Tier</span>
-                     </div>
-                  </div>
-                  <h3 className={cn(
-                     "text-xl font-medium tracking-tight",
-                     isSuperBonus ? "text-white" : "text-slate-800"
-                  )}>SUPER BONUS</h3>
-                  <p className={cn(
-                     "text-[12px] font-medium leading-relaxed font-noto",
-                     isSuperBonus ? "text-slate-400" : "text-slate-500"
-                  )}>
-                     ปรับคอมมิชชันใหม่เป็น <span className={isSuperBonus ? "text-blue-400" : "text-blue-600"}>1,500 บาท / 10 ล้านวิว</span> ตั้งแต่ 100 ล้านวิวขึ้นไปต่อเดือน
-                  </p>
-                  {isSuperBonus && <Sparkles size={32} className="absolute -bottom-1 -right-1 text-blue-400/30 animate-pulse" strokeWidth={1} />}
+            {/* OPERATIONAL MATRIX (TIERS) */}
+            <div className="rounded-3xl border border-slate-200 overflow-hidden flex flex-col shadow-sm bg-white">
+               <div className="bg-slate-50/80 border-b border-slate-100 p-3.5 px-5 flex items-center justify-between">
+                  <h3 className="font-outfit text-[10px] font-semibold text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                     <TrendingUp size={14} className="text-slate-500" />
+                     Operational Tiers Matrix
+                  </h3>
                </div>
-
-               {/* MILESTONE LIST - SCALED DOWN */}
-               <div className="rounded-[2rem] border border-slate-100 p-8 space-y-4 group transition-all duration-500 hover:border-emerald-100 flex flex-col justify-center">
-                  <div className="flex items-center justify-between mb-1">
-                     <h3 className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <TrendingUp size={14} className="text-emerald-500" /> Tier Milestones
-                     </h3>
+               
+               <div className="flex flex-col divide-y divide-slate-100">
+                  {/* PENALTY */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors">
+                     <span className="font-inter text-[11px] font-semibold text-rose-500 uppercase tracking-wide">
+                        {"< 10M Views"}
+                     </span>
+                     <span className="font-inter text-[12px] font-bold text-rose-600 tabular-nums">
+                        -2,000 THB 
+                        <span className="text-[10px] ml-1.5 text-rose-400 font-medium uppercase tracking-widest inline-block">(Penalty)</span>
+                     </span>
                   </div>
-                  <div className="space-y-3">
-                     {[20, 30, 100].map(tier => (
-                        <div key={tier} className="flex items-center justify-between text-[12px] font-medium">
-                           <div className="flex items-center gap-3">
-                              <div className={cn(
-                                 "w-1 h-1 rounded-full transition-all duration-500",
-                                 views >= tier ? (tier === 100 ? "bg-blue-600" : "bg-emerald-500") : "bg-slate-100 shadow-inner"
-                              )} />
-                              <span className={cn(
-                                 "transition-all duration-300",
-                                 views >= tier ? "text-slate-800" : "text-slate-300"
-                              )}>
-                                 ทะลุ {tier}M
-                              </span>
-                           </div>
+
+                  {/* BASE SALARY */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors">
+                     <span className="font-inter text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
+                        10M - 19M Views
+                     </span>
+                     <span className="font-inter text-[12px] font-bold text-slate-600 tabular-nums uppercase tracking-widest">
+                        Base Salary
+                     </span>
+                  </div>
+
+                  {/* 20M TIER */}
+                  <div className={cn(
+                     "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors duration-300",
+                     views >= 20 && views < 30 ? "bg-slate-50" : ""
+                  )}>
+                     <span className={cn(
+                        "font-inter text-[11px] font-semibold uppercase tracking-wide",
+                        views >= 20 && views < 30 ? "text-[#0a192f]" : "text-slate-600"
+                     )}>
+                        {"≥ 20M Views"}
+                     </span>
+                     <span className={cn(
+                        "font-inter text-[12px] font-bold tabular-nums",
+                        views >= 20 && views < 30 ? "text-emerald-600" : "text-slate-500"
+                     )}>
+                        +2,000 THB
+                     </span>
+                  </div>
+
+                  {/* 30M+ TIER */}
+                  <div className={cn(
+                     "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors duration-300",
+                     views >= 30 && views < 100 ? "bg-slate-50" : ""
+                  )}>
+                     <div className="flex flex-col gap-0.5">
+                        <span className={cn(
+                           "font-inter text-[11px] font-semibold uppercase tracking-wide",
+                           views >= 30 && views < 100 ? "text-[#0a192f]" : "text-slate-600"
+                        )}>
+                           {"≥ 30M Views"}
+                        </span>
+                        <span className="font-noto text-[10px] text-slate-400">
+                           +1,000 THB ทุกๆ 10M ถัดไป
+                        </span>
+                     </div>
+                     <span className={cn(
+                        "font-inter text-[12px] font-bold tabular-nums",
+                        views >= 30 && views < 100 ? "text-emerald-600" : "text-slate-500"
+                     )}>
+                        {comm >= 3000 ? `+${comm.toLocaleString()} THB` : "+3,000 THB MIN"}
+                     </span>
+                  </div>
+
+                  {/* SUPER BONUS TIER */}
+                  <div className={cn(
+                     "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 gap-3 transition-opacity duration-500 relative overflow-hidden",
+                     isSuperBonus 
+                        ? "bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 text-white" 
+                        : "bg-slate-50/50"
+                  )}>
+                     {/* Decorative background for super bonus */}
+                     {isSuperBonus && (
+                        <div className="absolute inset-0 bg-[#0a192f]/20 z-0"></div>
+                     )}
+                     
+                     <div className="flex flex-col gap-1 relative z-10">
+                        <div className="flex items-center gap-1.5">
+                           <Trophy size={14} className={isSuperBonus ? "text-yellow-400 drop-shadow-sm" : "text-slate-400"} />
                            <span className={cn(
-                              "transition-all duration-300 font-medium tabular-nums py-0.5 border-b border-transparent",
-                              views >= tier
-                                 ? (tier === 100 ? "text-blue-600" : "text-emerald-600")
-                                 : "text-slate-200"
+                              "font-outfit text-[11px] font-bold uppercase tracking-widest",
+                              isSuperBonus ? "text-white" : "text-slate-700"
                            )}>
-                              +{tier === 100 ? '15,000' : tier === 30 ? '3,000' : '2,000'} THB
+                              Super Bonus Tier
                            </span>
                         </div>
-                     ))}
+                        <span className={cn(
+                           "font-noto text-[10px]",
+                           isSuperBonus ? "text-blue-100" : "text-slate-500"
+                        )}>
+                           เรทพิเศษ 1,500 บาท / 10M ตั้งแต่ 100M เป็นต้นไป
+                        </span>
+                     </div>
+                     <span className={cn(
+                        "font-inter text-[14px] font-bold tabular-nums relative z-10 flex items-center gap-1.5",
+                        isSuperBonus ? "text-white" : "text-slate-500"
+                     )}>
+                        {isSuperBonus ? `+${comm.toLocaleString()} THB` : "+15,000 THB MIN"}
+                     </span>
                   </div>
                </div>
             </div>
 
-            {/* PENALTY ADVISORY - MINIMALIST */}
-            <div className={cn(
-               "flex items-center gap-4 px-8 py-4 rounded-[1.5rem] border transition-all duration-500",
-               isPenalty ? "border-rose-100 opacity-100" : "border-slate-50 opacity-40 grayscale"
-            )}>
-               <AlertTriangle size={16} className={cn(isPenalty ? "text-rose-500" : "text-slate-300")} strokeWidth={1.5} />
-               <p className="text-[11px] font-medium text-slate-500 font-noto leading-normal">
-                  หมายเหตุ: หากยอดวิวไม่ถึง 10 ล้านวิว หักปรับ 2,000 บาท | ยอดตั้งแต่ 10 ล้านวิวขึ้นไป รับเงินเดือนปกติ
+            {/* AUDIT ADVISORY */}
+            <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50/80 flex items-start gap-2.5">
+               <AlertTriangle size={15} className="text-slate-400 shrink-0 mt-0.5" />
+               <p className="font-noto text-[10px] text-slate-500 leading-relaxed uppercase tracking-wide">
+                  <span className="font-semibold text-slate-700">Audit Rule:</span> เงื่อนไขยอดวิว หากไม่ถึงเกณฑ์พ้นสภาพรับเงินเดือนพื้นฐาน และไม่มีข้อยกเว้นกรณีการลาทุกประเภท
                </p>
             </div>
          </div>
@@ -426,18 +471,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
             </div>
          </div>
 
-         {/* HERO SECTION */}
-         <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-950 via-blue-950 to-black p-8 md:p-12 text-white shadow-2xl border border-white/5">
-            <div className="relative z-10 max-w-3xl space-y-4">
-               <h2 className="text-xl md:text-2xl font-medium leading-tight font-prompt">
-                  ระเบียบปฏิบัติและ <span className="text-blue-500">มาตรฐานการทำงานภายใน</span>
-               </h2>
-               <p className="text-slate-400 text-[13px] md:text-sm font-medium leading-relaxed font-noto">
-                  คู่มือการดำเนินงานที่เป็นมาตรฐาน เพื่อรักษาคุณภาพและระดับประสิทธิภาพสูงสุดร่วมกันในองค์กร
-               </p>
-            </div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
-         </div>
+
 
          <div className="flex flex-col lg:flex-row gap-8 items-start">
 
