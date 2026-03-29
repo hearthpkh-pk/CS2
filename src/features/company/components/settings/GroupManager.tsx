@@ -9,7 +9,13 @@ import {
   Save, 
   Target, 
   Briefcase,
-  AlertCircle
+  AlertCircle,
+  ChevronRight,
+  ShieldCheck,
+  TrendingUp,
+  FileText,
+  Star,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GroupDefinition, GroupPolicy } from '@/types';
@@ -19,34 +25,34 @@ import { configService } from '@/services/configService';
 export const GroupManager: React.FC = () => {
   const { config, saveGroup, deleteGroup, refreshConfig } = useCompanyConfig();
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-
+  
   const [newGroup, setNewGroup] = useState<Partial<GroupDefinition & GroupPolicy>>({
     id: '',
     name: '',
     description: '',
     minPagesPerDay: 10,
-    minClipsPerPage: 4
+    minClipsPerPage: 4,
+    isDefault: false
   });
 
   const handleSave = () => {
     if (!newGroup.id || !newGroup.name) return;
 
     const group: GroupDefinition = {
-      id: newGroup.id,
+      id: (newGroup.id || '').toUpperCase(),
       name: newGroup.name,
       description: newGroup.description,
+      isDefault: newGroup.isDefault || false,
       policy: {
-        groupId: newGroup.id,
+        groupId: (newGroup.id || '').toUpperCase(),
         minPagesPerDay: newGroup.minPagesPerDay || 10,
         minClipsPerPage: newGroup.minClipsPerPage || 4
       }
     };
 
-    // Save Group
     saveGroup(group);
     
-    // Also sync to legacy groupPolicies for backward compatibility
+    // Sync to legacy groupPolicies
     const currentConfig = configService.getConfig();
     const updatedPolicies = [...(currentConfig.performancePolicy.groupPolicies || [])];
     const existingIdx = updatedPolicies.findIndex(p => p.groupId === group.id);
@@ -67,7 +73,12 @@ export const GroupManager: React.FC = () => {
 
     refreshConfig();
     setIsAdding(false);
-    setNewGroup({ id: '', name: '', description: '', minPagesPerDay: 10, minClipsPerPage: 4 });
+    setNewGroup({ id: '', name: '', description: '', minPagesPerDay: 10, minClipsPerPage: 4, isDefault: false });
+  };
+
+  const handleSetDefault = (group: GroupDefinition) => {
+    saveGroup({ ...group, isDefault: true });
+    refreshConfig();
   };
 
   const handleDelete = (id: string) => {
@@ -84,133 +95,134 @@ export const GroupManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-prompt">
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-8">
-        <div className="flex justify-between items-center font-outfit tracking-tight">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800">Organizational Groups</h3>
-            <p className="text-slate-400 text-xs mt-1">Define departments and their unique operational targets.</p>
-          </div>
-          {!isAdding && (
-            <button 
-              onClick={() => setIsAdding(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-2xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-xl shadow-blue-100"
-            >
-              <Plus size={18} /> Add New Group
-            </button>
-          )}
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 font-prompt">
+      <div className="space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-slate-50 pb-6">
+           <div className="space-y-1">
+              <h3 className="text-xl font-bold text-slate-800 font-outfit uppercase tracking-tight">Organizational Units</h3>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest text-left">จัดการกลุ่มและเป้าหมายแยกตามเงื่อนไขแบรนด์</p>
+           </div>
+           {!isAdding && (
+             <button 
+               onClick={() => setIsAdding(true)}
+               className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-all shadow-sm"
+             >
+               <Plus size={18} />
+             </button>
+           )}
         </div>
 
         {isAdding && (
-          <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-6 animate-in zoom-in-95 duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Group ID (Internal)</label>
-                <input 
-                  value={newGroup.id}
-                  onChange={(e) => setNewGroup({...newGroup, id: e.target.value})}
-                  placeholder="e.g. News, Movies"
-                  className="w-full bg-white border-none rounded-xl px-5 py-4 text-xs font-bold focus:ring-2 ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Name</label>
-                <input 
-                  value={newGroup.name}
-                  onChange={(e) => setNewGroup({...newGroup, name: e.target.value})}
-                  placeholder="e.g. กลุ่มข่าว"
-                  className="w-full bg-white border-none rounded-xl px-5 py-4 text-xs font-bold focus:ring-2 ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
-                <input 
-                  value={newGroup.description}
-                  onChange={(e) => setNewGroup({...newGroup, description: e.target.value})}
-                  placeholder="Brief summary of group responsibilities..."
-                  className="w-full bg-white border-none rounded-xl px-5 py-4 text-xs font-bold focus:ring-2 ring-blue-500 outline-none"
-                />
+          <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">ID (Internal)</label>
+                  <input 
+                    value={newGroup.id}
+                    onChange={(e) => setNewGroup({...newGroup, id: e.target.value.toUpperCase()})}
+                    placeholder="NEWS"
+                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-xs font-bold focus:border-blue-500/20 outline-none transition-all uppercase"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Group Name</label>
+                  <input 
+                    value={newGroup.name}
+                    onChange={(e) => setNewGroup({...newGroup, name: e.target.value})}
+                    placeholder="เช่น กลุ่มรายการ"
+                    className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-xs font-bold focus:border-blue-500/20 outline-none transition-all"
+                  />
+                </div>
               </div>
 
-              <div className="md:col-span-2 pt-4 border-t border-slate-200">
-                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                   <Target size={14} /> Custom Submission Targets
-                 </p>
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-[11px] font-bold text-slate-600 ml-1 font-prompt">จำนวนเพจขั้นต่ำ (หน้า/วัน)</label>
-                       <input 
-                         type="number"
-                         value={newGroup.minPagesPerDay}
-                         onChange={(e) => setNewGroup({...newGroup, minPagesPerDay: parseInt(e.target.value)})}
-                         className="w-full bg-white border-none rounded-xl px-5 py-4 text-xs font-bold focus:ring-2 ring-blue-500 outline-none"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[11px] font-bold text-slate-600 ml-1 font-prompt">จำนวนคลิปขั้นต่ำ (คลิป/เพจ)</label>
-                       <input 
-                         type="number"
-                         value={newGroup.minClipsPerPage}
-                         onChange={(e) => setNewGroup({...newGroup, minClipsPerPage: parseInt(e.target.value)})}
-                         className="w-full bg-white border-none rounded-xl px-5 py-4 text-xs font-bold focus:ring-2 ring-blue-500 outline-none"
-                       />
-                    </div>
-                 </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Work Policy (Pages & Clips)</label>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="relative">
+                      <input 
+                        type="number"
+                        value={newGroup.minPagesPerDay}
+                        onChange={(e) => setNewGroup({...newGroup, minPagesPerDay: parseInt(e.target.value)})}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-blue-500/20 outline-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300 uppercase">Pages</span>
+                   </div>
+                   <div className="relative">
+                      <input 
+                        type="number"
+                        value={newGroup.minClipsPerPage}
+                        onChange={(e) => setNewGroup({...newGroup, minClipsPerPage: parseInt(e.target.value)})}
+                        className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:border-blue-500/20 outline-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300 uppercase">Clips</span>
+                   </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <button 
-                onClick={() => setIsAdding(false)}
-                className="px-6 py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all font-outfit"
-              >
-                Cancel
-              </button>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setIsAdding(false)} className="px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">Discard</button>
               <button 
                 onClick={handleSave}
-                className="bg-slate-900 text-white px-10 py-3 rounded-2xl text-xs font-bold hover:bg-black transition-all shadow-lg shadow-black/5 font-outfit tracking-tighter"
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all font-outfit"
               >
-                Register Operational Group
+                Save Unit
               </button>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           {config.groups.map(group => {
             const groupPolicy = group.policy;
             return (
-              <div key={group.id} className="group relative p-6 bg-slate-50 border border-slate-100 rounded-[2.5rem] hover:border-blue-200 transition-all shadow-sm">
+              <div key={group.id} className="group relative p-6 bg-slate-50/30 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-100 transition-all duration-300">
                 <div className="flex justify-between items-start mb-4">
-                   <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
-                         <Layers size={22} />
+                   <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-800 font-outfit uppercase text-base tracking-tight">{group.name}</h4>
+                        {group.isDefault && (
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md border border-blue-100">
+                            <Star size={10} fill="currentColor" />
+                            <span className="text-[9px] font-bold uppercase tracking-widest leading-none">Default</span>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                         <h4 className="font-bold text-slate-800">{group.name}</h4>
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{group.id}</p>
+                      <div className="flex items-center gap-3">
+                         <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{group.id}</span>
+                         <span className="text-[11px] text-slate-400 font-medium tracking-tight truncate max-w-[150px]">{group.description || 'System Unit'}</span>
                       </div>
                    </div>
-                   <button 
-                     onClick={() => handleDelete(group.id)}
-                     className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                   >
-                     <Trash2 size={16} />
-                   </button>
+                   
+                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all text-slate-300">
+                      {!group.isDefault && (
+                        <button 
+                          onClick={() => handleSetDefault(group)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all"
+                          title="Set default"
+                        >
+                          <Star size={16} />
+                        </button>
+                      )}
+                      <button onClick={() => handleDelete(group.id)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:text-rose-500 hover:bg-rose-50 transition-all">
+                        <Trash2 size={16} />
+                      </button>
+                   </div>
                 </div>
-                
-                <p className="text-xs text-slate-500 mb-6 font-prompt leading-relaxed min-h-[2.5rem] italic">
-                   {group.description || 'No description provided for this group.'}
-                </p>
 
-                <div className="grid grid-cols-2 gap-3">
-                   <div className="p-3 bg-white rounded-2xl border border-slate-50 text-center">
-                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Min Pages</p>
-                      <p className="text-sm font-black text-slate-700">{groupPolicy?.minPagesPerDay || config.performancePolicy.requiredPagesPerDay}</p>
+                <div className="grid grid-cols-2 gap-4 text-slate-600">
+                   <div className="p-3 bg-white border border-slate-50 rounded-xl space-y-0.5">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Limit</p>
+                      <p className="text-base font-bold tabular-nums text-slate-900 font-outfit">
+                        {groupPolicy?.minPagesPerDay} <span className="text-[9px] text-slate-300 font-bold ml-1 uppercase">Pages</span>
+                      </p>
                    </div>
-                   <div className="p-3 bg-white rounded-2xl border border-slate-50 text-center">
-                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Clips/Page</p>
-                      <p className="text-sm font-black text-slate-700">{groupPolicy?.minClipsPerPage || config.performancePolicy.clipsPerPageInLog}</p>
+                   <div className="p-3 bg-white border border-slate-50 rounded-xl space-y-0.5">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Submission</p>
+                      <p className="text-base font-bold tabular-nums text-slate-900 font-outfit">
+                        {groupPolicy?.minClipsPerPage} <span className="text-[9px] text-slate-300 font-bold ml-1 uppercase">Clips</span>
+                      </p>
                    </div>
                 </div>
               </div>

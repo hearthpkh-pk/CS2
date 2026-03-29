@@ -3,22 +3,27 @@
 import React, { useState } from 'react';
 import { 
   Building2,
-  Tag,
-  FileText, 
   Settings2, 
   Plus, 
   Trash2, 
   Save, 
   CheckCircle2, 
-  AlertCircle,
-  Globe,
-  Briefcase,
   Megaphone,
   Layers,
-  Edit3
+  ChevronRight,
+  Globe,
+  Trophy,
+  Target,
+  Flame,
+  TrendingUp,
+  Coins,
+  ShieldAlert,
+  Database,
+  LayoutGrid,
+  BellRing
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Brand, CompanyRule, PolicyConfiguration, Role, User } from '@/types';
+import { Brand, PolicyConfiguration, Role, User } from '@/types';
 import { configService } from '@/services/configService';
 import { useCompanyConfig } from '../hooks/useCompanyConfig';
 import { AnnouncementManager } from './settings/AnnouncementManager';
@@ -29,25 +34,24 @@ interface CompanySettingsViewProps {
 }
 
 export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ currentUser }) => {
-  const { config, refreshConfig } = useCompanyConfig();
-  const [activeTab, setActiveTab] = useState<'brands' | 'rules' | 'policy' | 'announcements' | 'groups'>('brands');
+  const { config, updatePerformancePolicy, refreshConfig } = useCompanyConfig();
+  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups'>('announcements');
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSavePolicy = (updatedPolicy: PolicyConfiguration) => {
-    configService.updateConfig({ ...config, performancePolicy: updatedPolicy });
-    refreshConfig();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-  };
-
-  // --- Brand Logic ---
   const [newBrand, setNewBrand] = useState('');
+  const [isAddingBrand, setIsAddingBrand] = useState(false);
+
   const handleAddBrand = () => {
     if (!newBrand) return;
-    const brand: Brand = { id: `brand-${Date.now()}`, name: newBrand, isActive: true };
-    configService.saveBrand(brand);
-    refreshConfig();
-    setNewBrand('');
+    setIsAddingBrand(true);
+    try {
+      const brand: Brand = { id: `brand-${Date.now()}`, name: newBrand, isActive: true };
+      configService.saveBrand(brand);
+      refreshConfig();
+      setNewBrand('');
+    } finally {
+      setIsAddingBrand(false);
+    }
   };
 
   const handleDeleteBrand = (id: string) => {
@@ -55,261 +59,131 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
     refreshConfig();
   };
 
-  // --- Rule Logic ---
-  const [newRule, setNewRule] = useState<Partial<CompanyRule>>({ title: '', content: '', category: 'General' });
-  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
-
-  const handleSaveRule = () => {
-    if (!newRule.title || !newRule.content) return;
-    const rule: CompanyRule = { 
-      id: editingRuleId || `rule-${Date.now()}`, 
-      title: newRule.title || '', 
-      content: newRule.content || '', 
-      category: (newRule.category as any) || 'General',
-      order: newRule.order || (config.rules.length + 1),
-      targetRoles: newRule.targetRoles,
-      lastUpdated: new Date().toISOString() 
-    };
-    configService.saveRule(rule);
-    refreshConfig();
-    setNewRule({ title: '', content: '', category: 'General' });
-    setEditingRuleId(null);
-  };
-
-  const handleEditRule = (rule: CompanyRule) => {
-    setNewRule(rule);
-    setEditingRuleId(rule.id);
-  };
-
-  const handleDeleteRule = (id: string) => {
-    configService.deleteRule(id);
-    refreshConfig();
+  const handleCommit = () => {
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
   };
 
   if (currentUser.role !== Role.SuperAdmin && currentUser.role !== Role.Developer) {
-    return <div className="p-8 text-slate-500 font-prompt">Access Denied. Super Admin only.</div>;
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400 space-y-4 font-prompt">
+        <Building2 size={32} strokeWidth={1.5} />
+        <p className="text-sm uppercase tracking-[0.2em] font-medium">Access Restricted</p>
+      </div>
+    );
   }
 
+  const tabs = [
+    { id: 'announcements', label: 'Broadcast', icon: Megaphone, desc: 'Global Announcements' },
+    { id: 'brands', label: 'Brands', icon: LayoutGrid, desc: 'Client Portfolios' },
+    { id: 'groups', label: 'Groups', icon: Layers, desc: 'Team Unit Targets' },
+    { id: 'policy', label: 'KPI Matrix', icon: Settings2, desc: 'Financial Matrix' },
+  ] as const;
+
   return (
-    <div className="p-4 md:p-8 pb-32 space-y-10 max-w-[1400px] mx-auto animate-in fade-in duration-700 font-prompt">
+    <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-700 font-prompt text-slate-600 pb-32">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
+      {/* HEADER & TOP NAVIGATION (OPERATIONAL SCALE: ICON-ONLY TABS) */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">
-            <span>Admin Control Panel</span>
-            <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-            <span>Enterprise Configuration</span>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-800 font-outfit tracking-tight flex items-center gap-3">
-            <Building2 size={28} className="text-blue-600" />
-            Company Settings
-          </h1>
+           <h2 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight flex items-center gap-3">
+              Company Settings
+           </h2>
+           <p className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1.5 flex items-center gap-2 font-noto">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              Admin Console & Operational Matrix
+           </p>
         </div>
 
-        {isSaved && (
-          <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 px-4 py-2 rounded-xl text-xs font-bold animate-in slide-in-from-top-2">
-            <CheckCircle2 size={16} />
-            Data Synchronized
-          </div>
-        )}
+        {/* COMPACT ICON-ONLY TAB SWITCHER (ALIGNED RIGHT) */}
+        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
+          {tabs.map((tab) => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                "p-3 rounded-xl transition-all duration-300 relative group",
+                activeTab === tab.id 
+                  ? "bg-blue-600 text-white shadow-xl shadow-blue-100" 
+                  : "text-slate-300 hover:text-blue-600"
+              )}
+            >
+              <tab.icon size={20} />
+              
+              {/* Tooltip for reference */}
+              <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                {tab.label}
+              </span>
+            </button>
+          ))}
+          
+          {isSaved && (
+             <div className="px-3 text-emerald-500 animate-in fade-in zoom-in duration-300">
+                <CheckCircle2 size={18} />
+             </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+      {/* CONTENT AREA (OPERATIONAL SCALE: ROUNDED-2XL) */}
+      <div className="w-full animate-in slide-in-from-bottom-4 duration-500">
         
-        {/* Navigation Sidebar */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white rounded-3xl border border-slate-100 p-2 shadow-sm space-y-1">
-            <button 
-              onClick={() => setActiveTab('brands')}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-widest",
-                activeTab === 'brands' ? "bg-slate-900 text-white shadow-lg shadow-black/5" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <Tag size={16} /> Portfolio
-            </button>
-            <button 
-              onClick={() => setActiveTab('rules')}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-widest",
-                activeTab === 'rules' ? "bg-slate-900 text-white shadow-lg shadow-black/5" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <FileText size={16} /> Policy Rules
-            </button>
-            <button 
-              onClick={() => setActiveTab('groups')}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-widest",
-                activeTab === 'groups' ? "bg-slate-900 text-white shadow-lg shadow-black/5" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <Layers size={16} /> Groups
-            </button>
-            <button 
-              onClick={() => setActiveTab('announcements')}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-widest",
-                activeTab === 'announcements' ? "bg-slate-900 text-white shadow-lg shadow-black/5" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <Megaphone size={16} /> Broadcaster
-            </button>
-            <button 
-              onClick={() => setActiveTab('policy')}
-              className={cn(
-                "w-full flex items-center gap-3 p-4 rounded-2xl transition-all font-bold text-xs uppercase tracking-widest",
-                activeTab === 'policy' ? "bg-slate-900 text-white shadow-lg shadow-black/5" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <Settings2 size={16} /> KPI Matrix
-            </button>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="lg:col-span-3 space-y-8">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 md:p-10 min-h-[600px] relative">
           
-          {/* BRAND MANAGEMENT */}
+          {/* ANNOUNCEMENT MANAGER */}
+          {activeTab === 'announcements' && (
+            <AnnouncementManager />
+          )}
+
+          {/* BRAND MANAGEMENT (LEGIBILITY UPGRADE) */}
           {activeTab === 'brands' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-8">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Ad Portfolio Brands</h3>
-                  <p className="text-slate-400 text-xs mt-1">Manage official brands for ad-placement and performance reporting.</p>
-                </div>
-
-                <div className="flex gap-2">
-                  <input 
-                    placeholder="New Brand Name..."
-                    value={newBrand}
-                    onChange={(e) => setNewBrand(e.target.value)}
-                    className="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-medium placeholder:text-slate-300"
-                  />
-                  <button 
-                    onClick={handleAddBrand}
-                    className="bg-blue-600 text-white px-8 py-4 rounded-2xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
-                  >
-                    <Plus size={18} /> Add
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {config.brands.map(brand => (
-                    <div key={brand.id} className="group flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-blue-600 font-black text-xs shadow-sm">
-                           {brand.name.charAt(0)}
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">{brand.name}</span>
+            <div className="space-y-10">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-6 border-b border-slate-50 pb-8">
+                   <div className="space-y-1">
+                      <h3 className="text-xl font-bold text-slate-800 font-outfit uppercase tracking-tight">Client Brand Assets</h3>
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">โน้ตรายชื่อแบรนด์ลูกค้าสำหรับมอบหมายงาน</p>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <div className="flex gap-2 p-1.5 bg-white border border-slate-100 rounded-xl focus-within:border-blue-400 transition-all shadow-sm w-[350px]">
+                        <input 
+                          placeholder="ชื่อแบรนด์ลูกค้า..."
+                          value={newBrand}
+                          onChange={(e) => setNewBrand(e.target.value.toUpperCase())}
+                          className="flex-1 bg-transparent border-none px-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-300 uppercase"
+                        />
+                        <button 
+                          onClick={handleAddBrand}
+                          disabled={!newBrand || isAddingBrand}
+                          className="bg-blue-600 text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all shadow-sm disabled:opacity-30"
+                        >
+                          <Plus size={18} />
+                        </button>
                       </div>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                  {config.brands.map(brand => (
+                    <div key={brand.id} className="group relative p-6 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-white hover:border-blue-100 transition-all duration-300">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100">
+                           <LayoutGrid size={20} className="text-blue-600" />
+                        </div>
+                        <div className="space-y-1">
+                           <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate block max-w-[150px]">{brand.name}</span>
+                           <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Registered Brand</p>
+                        </div>
+                      </div>
+                      
                       <button 
                         onClick={() => handleDeleteBrand(brand.id)}
-                        className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute top-5 right-5 text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* RULES EDITOR */}
-          {activeTab === 'rules' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-8">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-800">Dynamic Policy Publisher</h3>
-                      <p className="text-slate-400 text-xs mt-1">Manage content displayed in the Unified Policy Center.</p>
-                    </div>
-                    {editingRuleId && (
-                       <button 
-                         onClick={() => { setEditingRuleId(null); setNewRule({title: '', content: '', category: 'General' }); }}
-                         className="text-slate-400 text-xs font-bold hover:text-slate-600"
-                       >
-                         Cancel Edit
-                       </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{editingRuleId ? 'Modify Strategy' : 'Construct New Policy'}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input 
-                        placeholder="Rule Title..."
-                        value={newRule.title}
-                        onChange={(e) => setNewRule({...newRule, title: e.target.value})}
-                        className="bg-white border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-bold"
-                      />
-                        <select 
-                          value={newRule.category}
-                          onChange={(e) => setNewRule({...newRule, category: e.target.value as any})}
-                          className="bg-white border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-bold"
-                        >
-                          <option value="Operation">Operation</option>
-                          <option value="Finance">Finance</option>
-                          <option value="Safety">Safety</option>
-                          <option value="Compliance">Compliance</option>
-                          <option value="General">General</option>
-                        </select>
-                    </div>
-                    <textarea 
-                      placeholder="Policy Content & Details (Use - for bullets)..."
-                      value={newRule.content}
-                      onChange={(e) => setNewRule({...newRule, content: e.target.value})}
-                      className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm focus:ring-2 ring-blue-500 outline-none font-medium h-32 whitespace-pre-wrap"
-                    />
-                    <button 
-                      onClick={handleSaveRule}
-                      className="w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-bold hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/5"
-                    >
-                      {editingRuleId ? <Save size={18} /> : <Plus size={18} />} 
-                      {editingRuleId ? 'Commit Rule Changes' : 'Publish Official Rule'}
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {config.rules.map(rule => (
-                      <div key={rule.id} className="p-6 bg-white border border-slate-100 rounded-3xl group relative hover:border-blue-100 transition-all shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                           <div className="flex items-center gap-3">
-                              <span className={cn(
-                                "px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter",
-                                rule.category === 'Finance' ? "bg-emerald-50 text-emerald-600" : 
-                                rule.category === 'Safety' ? "bg-rose-50 text-rose-600" : 
-                                rule.category === 'Operation' ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-600"
-                              )}>
-                                {rule.category}
-                              </span>
-                              <h4 className="font-bold text-slate-800">{rule.title}</h4>
-                           </div>
-                           <div className="flex items-center gap-1">
-                              <button 
-                                onClick={() => handleEditRule(rule)}
-                                className="p-2 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteRule(rule.id)}
-                                className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                           </div>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed font-noto line-clamp-2">{rule.content}</p>
-                        <p className="text-[9px] text-slate-300 mt-4 uppercase font-bold tracking-widest leading-none">
-                          Sync Hash: {rule.id.substring(0, 8)} • Updated: {new Date(rule.lastUpdated).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-               </div>
             </div>
           )}
 
@@ -318,89 +192,123 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
             <GroupManager />
           )}
 
-          {/* ANNOUNCEMENT MANAGER */}
-          {activeTab === 'announcements' && (
-            <AnnouncementManager />
-          )}
-
-          {/* SYSTEM POLICY */}
+          {/* SYSTEM POLICY (KPI MATRIX - UNCHANGED AS REQUESTED) */}
           {activeTab === 'policy' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-8 font-prompt font-noto">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-800 font-outfit tracking-tight">Financial Performance Policy</h3>
-                      <p className="text-slate-400 text-xs mt-1">Configure global view targets, penalties, and baseline thresholds.</p>
-                    </div>
-                    <button 
-                      onClick={() => handleSavePolicy(config.performancePolicy)}
-                      className="bg-emerald-600 text-white px-8 py-3 rounded-2xl text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-100"
-                    >
-                      <Save size={18} /> Update Matrix
-                    </button>
+            <div className="space-y-10">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-8 border-b border-slate-50 pb-8">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-slate-800 font-outfit uppercase tracking-tight">Core KPI Strategy Matrix</h3>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest text-left">กฎนโยบายการทำยอดและผลประโยชน์ของบริษัท</p>
                   </div>
+                  <button 
+                    onClick={handleCommit}
+                    className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-all shadow-md"
+                  >
+                    <Save size={18} />
+                  </button>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                          <Globe size={14} className="text-blue-500" /> Organizational Targets
-                        </p>
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-bold text-slate-600 ml-1">Daily Minimum View Target (Total)</label>
-                          <input 
-                            type="number"
-                            value={config.performancePolicy.minViewTarget}
-                            onChange={(e) => configService.updateConfig({...config, performancePolicy: {...config.performancePolicy, minViewTarget: parseInt(e.target.value)}})}
-                            className="w-full bg-white border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 ring-blue-500 outline-none"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="space-y-2">
-                             <label className="text-[11px] font-bold text-slate-600 ml-1">Pages Per Day</label>
-                             <input 
-                               type="number"
-                               value={config.performancePolicy.requiredPagesPerDay}
-                               onChange={(e) => configService.updateConfig({...config, performancePolicy: {...config.performancePolicy, requiredPagesPerDay: parseInt(e.target.value)}})}
-                               className="w-full bg-white border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 ring-blue-500 outline-none"
-                             />
-                           </div>
-                           <div className="space-y-2">
-                             <label className="text-[11px] font-bold text-slate-600 ml-1">Clips Per Page</label>
-                             <input 
-                               type="number"
-                               value={config.performancePolicy.clipsPerPageInLog}
-                               onChange={(e) => configService.updateConfig({...config, performancePolicy: {...config.performancePolicy, clipsPerPageInLog: parseInt(e.target.value)}})}
-                               className="w-full bg-white border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 ring-blue-500 outline-none"
-                             />
-                           </div>
-                        </div>
-                     </div>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+                   {/* Monthly Performance Targets */}
+                   <div className="space-y-10">
+                      <div className="space-y-1">
+                         <h4 className="text-[10px] font-bold text-slate-800 uppercase tracking-[0.2em] flex items-center gap-2">
+                           <Target size={14} className="text-blue-500" />
+                           Performance Baseline
+                         </h4>
+                      </div>
+                      
+                      <div className="space-y-8">
+                         <div className="space-y-2">
+                            <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest ml-1">เป้ายอดวิวขั้นต่ำ (Monthly Target - M)</label>
+                            <div className="relative group">
+                               <input 
+                                 type="number"
+                                 value={(config.performancePolicy.minViewTarget || 0) / 1000000}
+                                 onChange={(e) => updatePerformancePolicy({ minViewTarget: (parseFloat(e.target.value) || 0) * 1000000 })}
+                                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-base font-medium text-slate-900 focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 outline-none transition-all tabular-nums"
+                               />
+                               <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300 uppercase tracking-widest font-outfit">Millions (M)</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 italic ml-1">*ยอดที่ต้องทำให้ได้เพื่อรับเงินเดือนปกติ (เช่น กรอก 10 = 10,000,000 วิว)</p>
+                         </div>
+                         
+                         <div className="space-y-2">
+                            <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest ml-1">ค่าปรับกรณีไม่ถึงเป้า (Monthly Penalty)</label>
+                            <div className="relative group">
+                               <input 
+                                 type="number"
+                                 value={config.performancePolicy.penaltyAmount}
+                                 onChange={(e) => updatePerformancePolicy({ penaltyAmount: parseInt(e.target.value) || 0 })}
+                                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-base font-medium text-rose-500 focus:border-rose-500/20 focus:ring-8 focus:ring-rose-500/5 outline-none transition-all tabular-nums"
+                               />
+                               <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300 uppercase tracking-widest font-outfit">THB</span>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
 
-                     <div className="space-y-6 p-6 bg-amber-50/30 rounded-3xl border border-amber-100/50">
-                        <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                          <Briefcase size={14} /> Compensation Matrix
-                        </p>
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-bold text-slate-600 ml-1 font-prompt">หักเงินประกันเพจ (บาท/ครั้ง)</label>
-                          <input 
-                            type="number"
-                            value={config.performancePolicy.penaltyAmount}
-                            onChange={(e) => configService.updateConfig({...config, performancePolicy: {...config.performancePolicy, penaltyAmount: parseInt(e.target.value)}})}
-                            className="w-full bg-white border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 ring-amber-500 outline-none text-rose-500"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-bold text-slate-600 ml-1 font-prompt">โบนัสวิวสะสม (บาท/ล้านวิว)</label>
-                          <input 
-                            type="number"
-                            value={config.performancePolicy.bonusStep1}
-                            onChange={(e) => configService.updateConfig({...config, performancePolicy: {...config.performancePolicy, bonusStep1: parseInt(e.target.value)}})}
-                            className="w-full bg-white border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 ring-emerald-500 outline-none text-emerald-600"
-                          />
-                        </div>
-                     </div>
-                  </div>
-               </div>
+                   {/* Reward & Commission Logic */}
+                   <div className="space-y-10">
+                      <div className="space-y-1">
+                         <h4 className="text-[10px] font-bold text-slate-800 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <Coins size={14} className="text-emerald-500" />
+                            Commission Logic (Stepped)
+                         </h4>
+                      </div>
+
+                      <div className="space-y-8">
+                         <div className="space-y-2">
+                            <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest ml-1">เรทคอมมิชชั่นปกติ (Standard Rate / 10M)</label>
+                            <div className="relative group">
+                               <input 
+                                 type="number"
+                                 value={config.performancePolicy.bonusStep1}
+                                 onChange={(e) => updatePerformancePolicy({ bonusStep1: parseInt(e.target.value) || 0 })}
+                                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-base font-medium text-emerald-600 focus:border-emerald-500/20 focus:ring-8 focus:ring-emerald-500/5 outline-none transition-all tabular-nums"
+                               />
+                               <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300 uppercase tracking-widest font-outfit">THB / 10M</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 italic ml-1">*เงินคอมมิชชั่นที่ได้รับต่อยอดทุกๆ 10 ล้านวิว (เช่น 1,000)</p>
+                         </div>
+
+                         <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                               <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Super Bonus (M)</label>
+                               <input 
+                                 type="number"
+                                 value={(config.performancePolicy.superBonusThreshold || 0) / 1000000}
+                                 onChange={(e) => updatePerformancePolicy({ superBonusThreshold: (parseFloat(e.target.value) || 0) * 1000000 })}
+                                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-base font-medium text-slate-900 focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 outline-none transition-all tabular-nums"
+                               />
+                               <p className="text-[10px] text-slate-400 italic">*จุดที่ปรับเรทโบนัสพิเศษ (เช่น 100)</p>
+                            </div>
+                            <div className="space-y-2">
+                               <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest ml-1">Super Rate / 10M</label>
+                               <input 
+                                 type="number"
+                                 value={config.performancePolicy.bonusStep2}
+                                 onChange={(e) => updatePerformancePolicy({ bonusStep2: parseInt(e.target.value) || 0 })}
+                                 className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-4 text-base font-medium text-blue-600 focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 outline-none transition-all tabular-nums"
+                               />
+                               <p className="text-[10px] text-slate-400 italic">*เรทใหม่เมื่อทะลุเป้า Super</p>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* AUDIT STATUS */}
+                <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between opacity-30 grayscale">
+                   <div className="space-y-0.5">
+                      <p className="text-slate-800 font-bold text-[10px] tracking-tight">Intelligence Core v2.4</p>
+                      <p className="text-slate-400 text-[8px] uppercase tracking-widest font-bold">Secure Parameter Sync</p>
+                   </div>
+                   <div className="flex items-center gap-4 text-slate-300">
+                      <Globe size={12} />
+                      <span className="text-[8px] font-bold uppercase tracking-widest">Persisted</span>
+                   </div>
+                </div>
             </div>
           )}
 

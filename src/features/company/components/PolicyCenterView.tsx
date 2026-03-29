@@ -35,6 +35,8 @@ import { cn } from '@/lib/utils';
 import { User, Role, CompanyRule } from '@/types';
 import { useCompanyConfig } from '../hooks/useCompanyConfig';
 import { configService } from '@/services/configService';
+import { CommissionCalculator } from './CommissionCalculator';
+import { RuleContentRenderer } from './RuleContentRenderer';
 
 interface PolicyCenterViewProps {
    currentUser: User;
@@ -116,330 +118,16 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
       setEditForm({ ...editForm, targetRoles: updated });
    };
 
-   // COMMISSION CALCULATOR SUB-COMPONENT - REFINED UX (Compact, Motivation-Oriented Matrix)
-   const CommissionCalculator = () => {
-      const [views, setViews] = useState(10);
-      const [isAnimating, setIsAnimating] = useState(false);
-
-      // Calculation Logic Based on Reference
-      const calculateCommission = (v: number) => {
-         if (v < 10) return -2000;
-         if (v < 20) return 0;
-         if (v < 30) return 2000;
-         if (v < 100) {
-            return 3000 + (Math.floor((v - 30) / 10) * 1000);
-         }
-         return (Math.floor(v / 10) * 1500);
-      };
-
-      const comm = calculateCommission(views);
-      const isSuperBonus = views >= 100;
-      const isPenalty = views < 10;
-
-      return (
-         <div className="flex flex-col space-y-5 animate-in fade-in duration-500 max-w-2xl font-noto mx-auto w-full">
-            
-            {/* INPUT SECTION & PROJECTED RETURN */}
-            <div className="rounded-3xl border border-slate-200 p-6 flex flex-col space-y-5 transition-all hover:border-slate-300 bg-white shadow-sm">
-               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                     <Calculator size={16} className="text-[#0a192f]" />
-                     <h4 className="font-outfit text-xs font-semibold text-[#0a192f] uppercase tracking-widest leading-none">
-                        Commission Simulator
-                     </h4>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-full bg-slate-50">
-                     <Target size={12} className="text-slate-500" />
-                     <span className="font-outfit text-[9px] font-bold text-slate-600 uppercase tracking-widest leading-none">
-                        Base Target: 10M
-                     </span>
-                  </div>
-               </div>
-
-               <div className="flex flex-col space-y-5">
-                  <div className="flex justify-between items-end">
-                     <span className="font-outfit text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
-                        Total Views (Millions)
-                     </span>
-                     <div className="flex items-baseline gap-1">
-                        <span className={cn(
-                           "font-inter text-2xl font-bold tracking-tighter tabular-nums leading-none",
-                           isSuperBonus ? "text-blue-600" : isPenalty ? "text-rose-600" : "text-[#0a192f]"
-                        )}>
-                           {views}
-                        </span>
-                        <span className="font-outfit text-[11px] font-bold text-slate-400 uppercase tracking-widest">M</span>
-                     </div>
-                  </div>
-                  
-                  <div className="relative pt-1 px-1">
-                     <input
-                        type="range"
-                        min="0"
-                        max="200"
-                        step="5"
-                        value={views}
-                        onChange={(e) => {
-                           setViews(Number(e.target.value));
-                           setIsAnimating(true);
-                           setTimeout(() => setIsAnimating(false), 300);
-                        }}
-                        className="w-full h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-[#0a192f] transition-all hover:h-2"
-                     />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                     <span className="font-outfit text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
-                        Projected Return
-                     </span>
-                     <div className={cn(
-                        "font-inter text-3xl font-bold tracking-tighter tabular-nums transition-transform duration-300 leading-none flex items-baseline gap-1.5",
-                        isPenalty ? "text-rose-600" : isSuperBonus ? "text-blue-600" : "text-emerald-600",
-                        isAnimating && "scale-[1.02]"
-                     )}>
-                        {comm >= 0 ? '+' : ''}{comm.toLocaleString()}
-                        <span className="font-outfit text-[12px] font-semibold text-slate-400 uppercase tracking-widest">THB</span>
-                     </div>
-                  </div>
-               </div>
-            </div>
-
-            {/* OPERATIONAL MATRIX (TIERS) */}
-            <div className="rounded-3xl border border-slate-200 overflow-hidden flex flex-col shadow-sm bg-white">
-               <div className="bg-slate-50/80 border-b border-slate-100 p-3.5 px-5 flex items-center justify-between">
-                  <h3 className="font-outfit text-[10px] font-semibold text-slate-600 uppercase tracking-widest flex items-center gap-2">
-                     <TrendingUp size={14} className="text-slate-500" />
-                     Operational Tiers Matrix
-                  </h3>
-               </div>
-               
-               <div className="flex flex-col divide-y divide-slate-100">
-                  {/* PENALTY */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors">
-                     <span className="font-inter text-[11px] font-semibold text-rose-500 uppercase tracking-wide">
-                        {"< 10M Views"}
-                     </span>
-                     <span className="font-inter text-[12px] font-bold text-rose-600 tabular-nums">
-                        -2,000 THB 
-                        <span className="text-[10px] ml-1.5 text-rose-400 font-medium uppercase tracking-widest inline-block">(Penalty)</span>
-                     </span>
-                  </div>
-
-                  {/* BASE SALARY */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors">
-                     <span className="font-inter text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
-                        10M - 19M Views
-                     </span>
-                     <span className="font-inter text-[12px] font-bold text-slate-600 tabular-nums uppercase tracking-widest">
-                        Base Salary
-                     </span>
-                  </div>
-
-                  {/* 20M TIER */}
-                  <div className={cn(
-                     "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors duration-300",
-                     views >= 20 && views < 30 ? "bg-slate-50" : ""
-                  )}>
-                     <span className={cn(
-                        "font-inter text-[11px] font-semibold uppercase tracking-wide",
-                        views >= 20 && views < 30 ? "text-[#0a192f]" : "text-slate-600"
-                     )}>
-                        {"≥ 20M Views"}
-                     </span>
-                     <span className={cn(
-                        "font-inter text-[12px] font-bold tabular-nums",
-                        views >= 20 && views < 30 ? "text-emerald-600" : "text-slate-500"
-                     )}>
-                        +2,000 THB
-                     </span>
-                  </div>
-
-                  {/* 30M+ TIER */}
-                  <div className={cn(
-                     "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 gap-2 transition-colors duration-300",
-                     views >= 30 && views < 100 ? "bg-slate-50" : ""
-                  )}>
-                     <div className="flex flex-col gap-0.5">
-                        <span className={cn(
-                           "font-inter text-[11px] font-semibold uppercase tracking-wide",
-                           views >= 30 && views < 100 ? "text-[#0a192f]" : "text-slate-600"
-                        )}>
-                           {"≥ 30M Views"}
-                        </span>
-                        <span className="font-noto text-[10px] text-slate-400">
-                           +1,000 THB ทุกๆ 10M ถัดไป
-                        </span>
-                     </div>
-                     <span className={cn(
-                        "font-inter text-[12px] font-bold tabular-nums",
-                        views >= 30 && views < 100 ? "text-emerald-600" : "text-slate-500"
-                     )}>
-                        {comm >= 3000 ? `+${comm.toLocaleString()} THB` : "+3,000 THB MIN"}
-                     </span>
-                  </div>
-
-                  {/* SUPER BONUS TIER */}
-                  <div className={cn(
-                     "flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 gap-3 transition-opacity duration-500 relative overflow-hidden",
-                     isSuperBonus 
-                        ? "bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 text-white" 
-                        : "bg-slate-50/50"
-                  )}>
-                     {/* Decorative background for super bonus */}
-                     {isSuperBonus && (
-                        <div className="absolute inset-0 bg-[#0a192f]/20 z-0"></div>
-                     )}
-                     
-                     <div className="flex flex-col gap-1 relative z-10">
-                        <div className="flex items-center gap-1.5">
-                           <Trophy size={14} className={isSuperBonus ? "text-yellow-400 drop-shadow-sm" : "text-slate-400"} />
-                           <span className={cn(
-                              "font-outfit text-[11px] font-bold uppercase tracking-widest",
-                              isSuperBonus ? "text-white" : "text-slate-700"
-                           )}>
-                              Super Bonus Tier
-                           </span>
-                        </div>
-                        <span className={cn(
-                           "font-noto text-[10px]",
-                           isSuperBonus ? "text-blue-100" : "text-slate-500"
-                        )}>
-                           เรทพิเศษ 1,500 บาท / 10M ตั้งแต่ 100M เป็นต้นไป
-                        </span>
-                     </div>
-                     <span className={cn(
-                        "font-inter text-[14px] font-bold tabular-nums relative z-10 flex items-center gap-1.5",
-                        isSuperBonus ? "text-white" : "text-slate-500"
-                     )}>
-                        {isSuperBonus ? `+${comm.toLocaleString()} THB` : "+15,000 THB MIN"}
-                     </span>
-                  </div>
-               </div>
-            </div>
-
-            {/* AUDIT ADVISORY */}
-            <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50/80 flex items-start gap-2.5">
-               <AlertTriangle size={15} className="text-slate-400 shrink-0 mt-0.5" />
-               <p className="font-noto text-[10px] text-slate-500 leading-relaxed uppercase tracking-wide">
-                  <span className="font-semibold text-slate-700">Audit Rule:</span> เงื่อนไขยอดวิว หากไม่ถึงเกณฑ์พ้นสภาพรับเงินเดือนพื้นฐาน และไม่มีข้อยกเว้นกรณีการลาทุกประเภท
-               </p>
-            </div>
-         </div>
-      );
-   };
-
-   // INFOGRAPHIC RENDERER COMPONENT
-   const RuleContentRenderer = ({ content, ruleId }: { content: string, ruleId: string }) => {
-      const lines = content.split('\n').filter(l => l.trim().length > 0);
-
-      // COMMISSION SPECIAL RENDERER
-      if (ruleId === 'rule-commission' || content.toLowerCase().includes('commission') || content.includes('ค่าคอม')) {
-         return <CommissionCalculator />;
-      }
-
-      if (ruleId === 'rule-responsibilities' || ruleId === 'rule-general' || content.includes('พนักงาน')) {
-         return (
-            <div className="space-y-4">
-               {lines.map((line, i) => (
-                  <div key={i} className="flex items-start gap-4 group cursor-default">
-                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0 transition-all duration-300 group-hover:scale-150 group-hover:bg-blue-600 shadow-sm" />
-                     <p className="text-[13px] text-slate-600 font-medium leading-relaxed font-noto transition-all duration-300 group-hover:text-slate-900 group-hover:translate-x-1 group-hover:scale-[1.02] origin-left">
-                        {line.replace(/^- /, '')}
-                     </p>
-                  </div>
-               ))}
-            </div>
-         );
-      }
-
-      if (content.includes('Tier 1') || content.includes('Tier 2') || content.includes('Commission')) {
-         return (
-            <div className="space-y-3">
-               {lines.map((line, i) => {
-                  const isTier = line.includes('Tier');
-                  return (
-                     <div key={i} className={cn(
-                        "flex items-center gap-4 p-3 rounded-2xl border transition-all duration-300 font-prompt group cursor-default",
-                        isTier ? "border-emerald-200 hover:border-emerald-400" : "border-slate-100 hover:border-blue-200"
-                     )}>
-                        <div className={cn(
-                           "w-1.5 h-1.5 rounded-full shrink-0 ml-1 shadow-sm transition-all duration-300 group-hover:scale-125",
-                           isTier ? "bg-emerald-500" : "bg-slate-300 group-hover:bg-blue-500"
-                        )} />
-                        <p className={cn(
-                           "text-[13px] leading-relaxed font-medium transition-all duration-300 group-hover:translate-x-1 group-hover:scale-[1.01] origin-left",
-                           isTier ? "text-emerald-900" : "text-slate-600 group-hover:text-slate-900"
-                        )}>
-                           {line.replace(/^- /, '')}
-                        </p>
-                     </div>
-                  );
-               })}
-            </div>
-         );
-      }
-
-      if (content.includes('วันจันทร์') || content.includes('ลางาน') || content.includes('เวลาทำงาน')) {
-         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-               {lines.map((line, i) => (
-                  <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-transparent border border-slate-100 group transition-all duration-300 hover:border-blue-200 cursor-default">
-                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0 shadow-sm transition-all duration-300 group-hover:scale-150" />
-                     <p className="text-[13px] text-slate-700 font-medium leading-normal font-noto transition-all duration-300 group-hover:text-slate-900 group-hover:scale-[1.02] origin-left">{line.replace(/^- /, '')}</p>
-                  </div>
-               ))}
-            </div>
-         );
-      }
-
-      if (content.includes('หักเงิน') || content.includes('เตือน') || content.includes('โทษ')) {
-         return (
-            <div className="space-y-5">
-               <div className="p-6 rounded-[2rem] bg-transparent border border-rose-100 flex items-center gap-5 group transition-all duration-300 hover:border-rose-300 cursor-default">
-                  <AlertTriangle size={24} className="text-rose-500 shrink-0 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
-                  <div className="space-y-1">
-                     <h4 className="text-sm font-medium text-rose-900 leading-tight">มาตรการทางวินัย</h4>
-                     <p className="text-[13px] text-rose-800 font-medium leading-relaxed font-noto transition-all duration-300 group-hover:text-rose-950 group-hover:scale-[1.01] origin-left">
-                        {lines[0]}
-                     </p>
-                  </div>
-               </div>
-               {lines.length > 1 && (
-                  <div className="space-y-3 pl-2">
-                     {lines.slice(1).map((line, i) => (
-                        <div key={i} className="flex items-start gap-4 group cursor-default">
-                           <div className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 shrink-0 shadow-sm transition-all duration-300 group-hover:scale-150" />
-                           <p className="text-[13px] font-medium text-slate-500 font-noto transition-all duration-300 group-hover:text-slate-800 group-hover:translate-x-1 group-hover:scale-[1.02] origin-left">{line.replace(/^- /, '')}</p>
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </div>
-         );
-      }
-
-      return (
-         <div className="space-y-3">
-            {lines.map((line, i) => (
-               <div key={i} className="flex items-start gap-4 group cursor-default">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0 shadow-sm transition-all duration-300 group-hover:scale-150" />
-                  <p className="text-[13px] text-slate-600 font-medium font-noto leading-relaxed transition-all duration-300 group-hover:text-slate-900 group-hover:translate-x-1 group-hover:scale-[1.02] origin-left">{line.replace(/^- /, '')}</p>
-               </div>
-            ))}
-         </div>
-      );
-   };
-
    return (
       <div className="p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto animate-in fade-in duration-700 font-prompt pb-32">
 
          {/* PAGE HEADER */}
          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
-            <div className="space-y-1">
-               <h1 className="text-2xl font-medium font-outfit tracking-tight text-slate-900 border-l-2 border-blue-600 pl-4 uppercase">
+            <div className="space-y-1.5">
+               <h1 className="text-3xl font-bold font-outfit tracking-tight text-slate-900 uppercase">
                   Governance & Standards
                </h1>
-               <p className="text-sm text-slate-400 font-medium font-noto pl-4 uppercase tracking-[0.2em] text-[10px]">
+               <p className="text-[10px] text-slate-400 font-bold font-noto uppercase tracking-[0.25em]">
                   Internal Compliance & Operating Guidelines
                </p>
             </div>
@@ -454,26 +142,29 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
                   </div>
 
                   {isAdminOrDev && (
-                     <button
-                        onClick={handleToggleEdit}
-                        className={cn(
-                           "w-11 h-11 flex items-center justify-center rounded-2xl transition-all border shadow-sm",
-                           isEditMode
-                              ? "text-rose-500 border-rose-500 hover:scale-105"
-                              : "text-slate-400 border-slate-200 hover:border-blue-500 hover:text-blue-500"
-                        )}
-                        title={isEditMode ? 'Exit Mode' : 'Modify Policy'}
-                     >
-                        {isEditMode ? <X size={20} /> : <Edit3 size={20} />}
-                     </button>
+                     <div className="flex items-center gap-2">
+                        
+                        <button
+                           onClick={() => {
+                               handleToggleEdit();
+                           }}
+                           className={cn(
+                              "w-11 h-11 flex items-center justify-center rounded-2xl transition-all border shadow-sm",
+                              isEditMode
+                                 ? "text-rose-500 border-rose-500 hover:scale-105"
+                                 : "text-slate-400 border-slate-200 hover:border-blue-500 hover:text-blue-500"
+                           )}
+                           title={isEditMode ? 'Exit Mode' : 'Modify Policy'}
+                        >
+                           {isEditMode ? <X size={20} /> : <Edit3 size={20} />}
+                        </button>
+                     </div>
                   )}
                </div>
             </div>
          </div>
 
-
-
-         <div className="flex flex-col lg:flex-row gap-8 items-start">
+         <div className="pt-2 flex flex-col lg:flex-row gap-10 items-start">
 
             {/* SIDEBAR */}
             <div className="w-full lg:w-80 shrink-0 lg:sticky lg:top-24 space-y-4 font-prompt">
@@ -493,16 +184,16 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
                               if (isEditMode) setEditForm({ ...rule });
                            }}
                            className={cn(
-                              "w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] transition-all duration-300 border font-medium text-left",
+                              "w-full flex items-center justify-between px-6 py-4 rounded-2xl text-[13px] transition-all duration-300 border font-medium text-left",
                               activeRuleId === rule.id
-                                 ? "text-blue-600 border-blue-600 bg-transparent shadow-lg shadow-blue-600/5 font-semibold"
+                                 ? "bg-[#2871df] text-white border-[#2871df] shadow-xl shadow-blue-600/20 font-semibold"
                                  : "text-slate-500 border-slate-100 hover:border-blue-200 bg-transparent"
                            )}
                         >
                            <div className="flex items-center gap-3">
                               <span className={cn(
                                  "transition-transform group-hover:scale-110",
-                                 activeRuleId === rule.id ? "text-blue-600" : "text-blue-500"
+                                 activeRuleId === rule.id ? "text-white" : "text-blue-500"
                               )}>
                                  {idx + 1}.
                               </span>
@@ -510,7 +201,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
                            </div>
                            <ChevronRight size={14} className={cn(
                               "transition-transform duration-300",
-                              activeRuleId === rule.id ? "translate-x-1 opacity-100 text-blue-600" : "opacity-0"
+                              activeRuleId === rule.id ? "translate-x-1 opacity-100 text-white" : "opacity-0"
                            )} />
                         </button>
 
@@ -539,7 +230,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
 
             {/* CONTENT AREA */}
             <div className="flex-1 min-w-0 bg-transparent border border-slate-100 rounded-[2.5rem] p-8 md:p-12 shadow-sm min-h-[700px] animate-in slide-in-from-bottom-4 duration-500 font-prompt">
-               {isEditMode && editForm ? (
+                               {isEditMode && editForm ? (
                   /* EDITOR VIEW */
                   <div className="space-y-10 animate-in fade-in duration-500">
                      <div className="flex items-center justify-between border-b border-slate-100 pb-8">
@@ -635,7 +326,11 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser 
                      </div>
 
                      <div className="prose prose-slate max-w-none">
-                        <RuleContentRenderer content={activeRule.content} ruleId={activeRule.id} />
+                        <RuleContentRenderer 
+                            content={activeRule.content} 
+                            ruleId={activeRule.id} 
+                            settings={config.performancePolicy}
+                         />
                      </div>
                   </div>
                ) : (

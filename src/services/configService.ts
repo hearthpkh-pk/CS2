@@ -62,7 +62,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
   rules: DEFAULT_RULES,
   groups: [
     { id: 'news', name: 'กลุ่มข่าวสาร', description: 'กลุ่มเน้นงานปริมาณข่าวสารรายวัน', policy: { groupId: 'news', minPagesPerDay: 5, minClipsPerPage: 8 } },
-    { id: 'movies', name: 'กลุ่มหนัง', description: 'กลุ่มงานคุณภาพภาพยนตร์', policy: { groupId: 'movies', minPagesPerDay: 10, minClipsPerPage: 4 } },
+    { id: 'movies', name: 'กลุ่มหนัง', description: 'กลุ่มงานคุณภาพภาพยนตร์', isDefault: true, policy: { groupId: 'movies', minPagesPerDay: 10, minClipsPerPage: 4 } },
     { id: 'shows', name: 'กลุ่มรายการ', description: 'กลุ่มวาไรตี้และรายการทีวี', policy: { groupId: 'shows', minPagesPerDay: 10, minClipsPerPage: 4 } }
   ],
   announcements: [
@@ -174,10 +174,17 @@ export const configService = {
 
   saveGroup(group: GroupDefinition): CompanyConfig {
     const config = this.getConfig();
-    const groups = [...config.groups];
+    let groups = [...config.groups];
+
+    // If setting a new default, ensure all others are set to false
+    if (group.isDefault) {
+      groups = groups.map(g => ({ ...g, isDefault: false }));
+    }
+
     const index = groups.findIndex(g => g.id === group.id);
     if (index >= 0) groups[index] = group;
     else groups.push(group);
+    
     return this.updateConfig({ ...config, groups });
   },
 

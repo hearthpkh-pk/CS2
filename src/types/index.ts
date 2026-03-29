@@ -277,6 +277,7 @@ export interface GroupDefinition {
   name: string; // e.g., 'ข่าว', 'หนัง'
   policy: GroupPolicy;
   description?: string;
+  isDefault?: boolean;
 }
 
 export interface Announcement {

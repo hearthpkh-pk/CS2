@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { configService } from '@/services/configService';
-import { Announcement, CompanyConfig, GroupDefinition, GroupPolicy, Role, User } from '@/types';
+import { Announcement, CompanyConfig, GroupDefinition, GroupPolicy, Role, User, PolicyConfiguration } from '@/types';
 
 export const useCompanyConfig = () => {
   const [config, setConfig] = useState<CompanyConfig>(configService.getConfig());
@@ -24,44 +24,53 @@ export const useCompanyConfig = () => {
     return updated;
   }, []);
 
+  // --- Performance Policy ---
+  const updatePerformancePolicy = useCallback((policy: Partial<PolicyConfiguration>) => {
+    const currentConfig = configService.getConfig();
+    const updatedPolicy = { ...currentConfig.performancePolicy, ...policy };
+    const updatedConfig = configService.updateConfig({ performancePolicy: updatedPolicy });
+    setConfig(updatedConfig);
+    return updatedConfig;
+  }, []);
+
   // --- Group Policy Logic ---
   const getPolicyForUser = useCallback((user: User) => {
     const globalPolicy = config.performancePolicy;
     const userGroup = (config.groups || []).find(g => g.id === user.group);
+    const defaultGroup = (config.groups || []).find(g => g.isDefault);
     
     const resolve = (pages: number, clips: number) => ({
       requiredPagesPerDay: pages,
       clipsPerPageInLog: clips
     });
 
-    if (!userGroup) {
-      return resolve(globalPolicy.requiredPagesPerDay, globalPolicy.clipsPerPageInLog);
+    if (userGroup) {
+      return resolve(userGroup.policy.minPagesPerDay, userGroup.policy.minClipsPerPage);
     }
 
-    return resolve(userGroup.policy.minPagesPerDay, userGroup.policy.minClipsPerPage);
+    if (defaultGroup) {
+      return resolve(defaultGroup.policy.minPagesPerDay, defaultGroup.policy.minClipsPerPage);
+    }
+
+    // Last resort fallback (matches global KPI Matrix setting)
+    return resolve(globalPolicy.requiredPagesPerDay, globalPolicy.clipsPerPageInLog);
   }, [config.groups, config.performancePolicy]);
 
   // --- Announcement Targeting ---
   const getActiveAnnouncements = useCallback((user: User) => {
     const now = new Date();
     return (config.announcements || []).filter(ann => {
-      // 1. Basic Active Check
       if (!ann.isActive) return false;
-
-      // 2. Schedule Check (Temporal)
       if (ann.startDate && now < new Date(ann.startDate)) return false;
       if (ann.endDate && now > new Date(ann.endDate)) return false;
 
-      // 3. Targeting
       const hasRoleTarget = ann.targetRoles && ann.targetRoles.length > 0;
       const hasGroupTarget = ann.targetGroups && ann.targetGroups.length > 0;
       const hasTeamTarget = ann.targetTeams && ann.targetTeams.length > 0;
       const hasUserTarget = ann.targetUsers && ann.targetUsers.length > 0;
 
-      // If no targets defined, it's public
       if (!hasRoleTarget && !hasGroupTarget && !hasTeamTarget && !hasUserTarget) return true;
 
-      // Check specific targets
       if (hasRoleTarget && ann.targetRoles?.includes(user.role)) return true;
       if (hasGroupTarget && user.group && ann.targetGroups?.includes(user.group)) return true;
       if (hasTeamTarget && user.teamId && ann.targetTeams?.includes(user.teamId)) return true;
@@ -91,6 +100,7 @@ export const useCompanyConfig = () => {
     getActiveAnnouncements,
     saveAnnouncement,
     deleteAnnouncement,
+    updatePerformancePolicy,
     refreshConfig
   };
 };
