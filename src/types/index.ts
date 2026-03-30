@@ -7,7 +7,9 @@ export enum Role {
 }
 
 export type LeaveType = 'Sick' | 'Vacation' | 'Personal' | 'Business';
-export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
+// Leave doesn't require approval; it's recorded and forwarded to Super Admin
+// for acknowledgment and payroll calculation.
+export type LeaveStatus = 'Recorded' | 'Acknowledged';
 
 export interface LeaveRequest {
   id: string;
@@ -19,7 +21,8 @@ export interface LeaveRequest {
   reason: string;
   status: LeaveStatus;
   createdAt: string;
-  approvedBy?: string;
+  acknowledgedBy?: string; // Super Admin who reviewed it
+  acknowledgedAt?: string; // When it was reviewed
 }
 
 export interface CalendarEvent {
@@ -333,6 +336,7 @@ export interface PersonalTask {
   userId: string;
   title: string;
   completed: boolean;
-  dueDate?: string; // ISO string
-  createdAt: string; // ISO string
+  startDate?: string; // ISO string — optional: task starts on this date
+  endDate?: string;   // ISO string — optional: task ends on this date
+  createdAt: string;  // ISO string — when the task was created (metadata only)
 }
