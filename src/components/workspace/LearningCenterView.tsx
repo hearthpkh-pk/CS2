@@ -123,26 +123,28 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Search & Filter Header */}
-      <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 font-outfit uppercase tracking-tight flex items-center gap-3">
-            <BookOpen size={28} className="text-blue-600" />
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-5 animate-in fade-in duration-700">
+      {/* HQ LEARNING HEADER (Mode 2) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
             Learning Center
-          </h2>
-          <p className="text-slate-400 text-xs font-noto font-bold mt-1 uppercase tracking-widest">ศูนย์รวมความรู้และเทคนิคการทำงาน</p>
+          </h1>
+          <p className="text-[11px] text-slate-400 font-medium font-noto uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+            Knowledge Base & Staff Training Hub • <span className="text-[var(--primary-theme)] font-bold">HQ Education Console</span>
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="px-5 py-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 min-w-[280px]">
+        <div className="flex items-center gap-2">
+          <div className="px-5 h-11 bg-white rounded-2xl border border-slate-200 flex items-center gap-3 min-w-[280px] shadow-sm hover:border-slate-300 transition-all focus-within:border-[var(--primary-theme)]/30 focus-within:ring-4 focus-within:ring-[var(--primary-theme)]/5">
             <Search size={16} className="text-slate-400" />
             <input 
               type="text" 
-              placeholder="ค้นหาบทเรียนที่ต้องการ..."
+              placeholder="ค้นหาบทเรียน..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent text-sm font-bold text-slate-700 outline-none w-full placeholder:text-slate-300"
+              className="bg-transparent text-sm font-bold text-slate-700 outline-none w-full placeholder:text-slate-200"
             />
           </div>
           {isAdmin && (
@@ -151,26 +153,26 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
                 setEditingVideo(null);
                 setIsEditorOpen(true);
               }}
-              className="h-11 px-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-slate-100"
+              className="h-11 px-4 bg-white border border-slate-200 text-slate-400 hover:text-[var(--primary-theme)] hover:border-blue-100 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all shadow-sm active:scale-95 shrink-0"
+              title="Add New Content"
             >
-               <Plus size={14} /> Add Content
+               <Plus size={18} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Tags & Categories Row */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {(['All', 'Mandatory', 'Technical'] as const).map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border",
+                "px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap border shrink-0",
                 activeCategory === cat 
-                  ? "bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200" 
-                  : "bg-white border-slate-100 text-slate-400 hover:border-blue-200 hover:text-blue-500"
+                  ? "bg-slate-900 border-slate-900 text-white shadow-md shadow-slate-200" 
+                  : "bg-white border-slate-100 text-slate-400 hover:border-blue-200 hover:text-[var(--primary-theme)]"
               )}
             >
               {cat === 'All' ? 'ทั้งหมด' : cat === 'Mandatory' ? '📌 คอร์สบังคับ' : '⚡ เทคนิคการทำงาน'}
@@ -184,8 +186,8 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
             <button
                onClick={() => setSelectedTag(null)}
                className={cn(
-                 "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
-                 !selectedTag ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-transparent border-transparent text-slate-400"
+                 "px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all border shrink-0",
+                 !selectedTag ? "bg-blue-50 border-blue-200 text-[var(--primary-theme)]" : "bg-transparent border-transparent text-slate-400"
                )}
             >
                #ALL
@@ -195,10 +197,10 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
                 key={tag}
                 onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
                 className={cn(
-                  "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
+                  "px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all border shrink-0",
                   selectedTag === tag 
-                    ? "bg-blue-600 border-blue-600 text-white shadow-sm" 
-                    : "bg-white border-slate-100 text-slate-400 hover:border-blue-100 hover:text-blue-500"
+                    ? "bg-[var(--primary-theme)] border-[var(--primary-theme)] text-white shadow-sm" 
+                    : "bg-white border-slate-100 text-slate-400 hover:border-blue-100 hover:text-[var(--primary-theme)]"
                 )}
               >
                 #{tag.toUpperCase()}
@@ -262,13 +264,12 @@ export const LearningCenterView: React.FC<LearningCenterViewProps> = ({ currentU
         </div>
       )}
 
-      {/* Video Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredVideos.map(video => (
           <div 
             key={video.id}
             onClick={() => setSelectedVideo(video)}
-            className="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer relative"
+            className="group bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer relative"
           >
             {video.isNew && (
               <div className="absolute top-4 left-4 z-10 px-2 py-1 bg-yellow-400 text-slate-900 text-[8px] font-black rounded-lg uppercase tracking-widest shadow-lg">

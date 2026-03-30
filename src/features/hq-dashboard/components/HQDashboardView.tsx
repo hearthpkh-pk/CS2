@@ -42,19 +42,19 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
   const attainmentScore = Math.min(dashboardData.attainmentPercentage, 100);
 
   return (
-    <div className="p-8 pb-32 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4 animate-in fade-in duration-700">
       
-      {/* 1. MINIMALIST HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em]">
-            <span>Enterprise Management</span>
-            <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-            <span>{dashboardData.scope} Executive Console</span>
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-800 font-outfit tracking-tight">
+      {/* 1. HQ COMMAND HEADER (Mode 2) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
             HQ Control Center
           </h1>
+          <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em] mt-1.5">
+            <span className="font-outfit font-bold tracking-[0.25em]">Enterprise Management</span>
+            <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+            <span className="text-[var(--primary-theme)] font-prompt font-bold">{dashboardData.scope} Executive Console</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-xl px-3 py-1.5 shadow-sm hover:border-slate-200 transition-colors">
@@ -89,10 +89,10 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
         riskCount={dashboardData.riskRadar.length}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
         
         {/* 3. ATTAINMENT & MATRIX (LEFT 8/12) */}
-        <div className="lg:col-span-8 space-y-8">
+        <div className="lg:col-span-8 flex flex-col gap-4 md:gap-8">
           
           {/* STRATEGIC ATTAINMENT */}
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
@@ -132,7 +132,7 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
         </div>
 
         {/* 4. RISK & ACTIVITY (RIGHT 4/12) */}
-        <div className="lg:col-span-4 space-y-8">
+        <div className="lg:col-span-4 flex flex-col gap-4 md:gap-8">
           
           <RiskCenter risks={dashboardData.riskRadar} />
 

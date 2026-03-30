@@ -61,49 +61,50 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
   ] as const;
 
   return (
-    <div className="flex flex-col gap-10 p-10 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10 animate-in fade-in duration-700">
       
-      {/* Header & Navigation */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
-              <Database size={20} />
-            </div>
-            Team Management
-          </h2>
-          <p className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1.5 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-            Personnel & Unit Administration Hub
+      {/* Page Header (Golden Rules Mode 1) */}
+      <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+              TEAM MANAGEMENT
+            </h2>
+          </div>
+          <p className="text-slate-400 font-noto text-[11px] mt-1.5">
+            ระบบบริหารจัดการโครงสร้างและสิทธิ์การเข้าถึง • <span className="text-[var(--primary-theme)] font-bold">Admin Hub</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "p-3 rounded-xl transition-all duration-300 relative group",
-                activeTab === tab.id 
-                  ? "bg-blue-600 text-white shadow-xl shadow-blue-100" 
-                  : "text-slate-300 hover:text-blue-600"
-              )}
-            >
-              <tab.icon size={20} />
-              {activeTab === tab.id && (
-                 <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                   {tab.label}
-                 </span>
-              )}
-            </button>
-          ))}
-          <div className="w-px h-6 bg-slate-100 mx-2"></div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mr-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "p-2.5 rounded-2xl transition-all duration-300 relative group flex items-center justify-center border",
+                  activeTab === tab.id 
+                    ? "bg-[var(--primary-theme)] border-[var(--primary-theme)] text-white shadow-lg shadow-blue-100/50" 
+                    : "bg-white border-slate-200 text-slate-400 hover:text-[var(--primary-theme)] hover:border-[var(--primary-theme)] shadow-sm"
+                )}
+              >
+                <tab.icon size={18} />
+                {activeTab === tab.id && (
+                   <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                     {tab.label}
+                   </span>
+                )}
+              </button>
+            ))}
+          </div>
+          
           <button 
             onClick={() => setEditingUser({ id: `user-${Date.now()}`, name: '', role: Role.Staff, username: '', isActive: true })}
-            className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--primary-theme)] text-white text-sm font-bold font-noto rounded-2xl hover:bg-[var(--primary-theme-hover)] transition-all shadow-lg shadow-blue-100/50 active:scale-95"
           >
-            <Plus size={20} />
+            <Plus size={18} />
+            เพิ่มพนักงาน
           </button>
         </div>
       </div>

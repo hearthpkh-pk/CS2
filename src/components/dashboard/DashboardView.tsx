@@ -57,38 +57,39 @@ export const DashboardView = ({
   const { chartData, totals, matrixData, quotaData } = payload;
 
   return (
-    <div className="animate-fade-in max-w-6xl mx-auto pb-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-100 pb-6">
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pt-4 pb-6 mb-6 gap-6">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-slate-800 font-outfit tracking-tight">
-            Dashboard
-          </h2>
-          <div className="flex items-center gap-2 text-slate-400 font-noto text-[10px] uppercase tracking-widest font-bold">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-            รายงานข้อมูลเพจ
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+              DASHBOARD
+            </h2>
           </div>
+          <p className="text-slate-400 font-noto text-[11px] mt-1.5">
+            รายงานข้อมูลเพจภาพรวม • <span className="text-[var(--primary-theme)] font-bold">Analytics</span>
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           {/* Data Mode Toggle */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto">
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto">
             <button
               onClick={() => setIsDemoMode(false)}
-              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${!isDemoMode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+              className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all ${!isDemoMode ? 'bg-white text-[var(--primary-theme)] shadow-sm' : 'text-slate-400 hover:text-[var(--primary-theme)]'}`}
             >
-              Real
+              REAL
             </button>
             <button
               onClick={() => setIsDemoMode(true)}
-              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${isDemoMode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}
+              className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all ${isDemoMode ? 'bg-white text-[var(--primary-theme)] shadow-sm' : 'text-slate-400 hover:text-[var(--primary-theme)]'}`}
             >
-              Mockup
+              MOCKUP
             </button>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 w-full sm:w-auto">
-            <Filter size={14} className="text-slate-300" />
-            <select value={selectedPage} onChange={e => setSelectedPage(e.target.value)} className="bg-transparent text-slate-700 text-xs font-semibold font-noto outline-none flex-1">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl py-2 px-3 w-full sm:w-auto shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
+            <Filter size={14} />
+            <select value={selectedPage} onChange={e => setSelectedPage(e.target.value)} className="bg-transparent text-inherit text-xs font-bold font-noto outline-none flex-1 cursor-pointer">
               <option value="all">ทุกเพจ</option>
               {workingPages.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -96,14 +97,14 @@ export const DashboardView = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 w-full sm:w-auto">
-            <Calendar size={14} className="text-slate-300" />
-            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-transparent text-slate-700 text-xs font-semibold font-noto outline-none">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl py-2 px-3 w-full sm:w-auto shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
+            <Calendar size={14} />
+            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-transparent text-inherit text-xs font-bold font-noto outline-none cursor-pointer">
               <option value="all">ทุกเดือน</option>
               {thaiMonths.map((m, i) => <option key={i} value={(i + 1).toString().padStart(2, '0')}>{m}</option>)}
             </select>
-            <div className="w-px h-3 bg-slate-100"></div>
-            <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-transparent text-slate-700 text-xs font-semibold font-noto outline-none">
+            <div className="w-px h-3 bg-slate-200 mx-1.5"></div>
+            <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-transparent text-inherit text-xs font-bold font-noto outline-none cursor-pointer">
               <option value="2024">2567</option>
               <option value="2025">2568</option>
               <option value="2026">2569</option>

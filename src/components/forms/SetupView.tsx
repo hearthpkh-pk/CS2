@@ -333,7 +333,7 @@ export const SetupView = ({
 
   return (
     <div className={cn(
-      "animate-fade-in pb-20 relative bg-slate-50 min-h-screen -m-6 p-6 transition-colors duration-500",
+      "w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-20 animate-in fade-in duration-700 flex flex-col gap-8 text-slate-900 transition-colors duration-500",
       viewMode === 'pages' ? "theme-pages" : "theme-accounts"
     )}>
       <KanbanHeader
@@ -346,7 +346,7 @@ export const SetupView = ({
         trashCount={deletedPages.length + deletedAccounts.length}
       />
 
-      <div className="pb-12 bg-slate-50 space-y-8">
+      <div className="space-y-8">
         <AdminBar
           activeBoxes={activeBoxes}
           accountsByBox={accountsByBox}

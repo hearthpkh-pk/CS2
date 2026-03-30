@@ -89,36 +89,35 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
   ] as const;
 
   return (
-    <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-700 font-prompt text-slate-600 pb-32">
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4 animate-in fade-in duration-700">
       
-      {/* HEADER & TOP NAVIGATION (OPERATIONAL SCALE: ICON-ONLY TABS) */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
-        <div className="space-y-1">
-           <h2 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight flex items-center gap-3">
-              Company Settings
-           </h2>
-           <p className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-bold mt-1.5 flex items-center gap-2 font-noto">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              Admin Console & Operational Matrix
-           </p>
+      {/* HQ COMPANY SETTINGS HEADER (Mode 2) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+            Company Settings
+          </h1>
+          <p className="text-[11px] text-slate-400 font-medium font-noto uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+            Admin Console & Operational Matrix • <span className="text-[var(--primary-theme)] font-bold">Enterprise View</span>
+          </p>
         </div>
 
         {/* COMPACT ICON-ONLY TAB SWITCHER (ALIGNED RIGHT) */}
-        <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-100 shadow-sm h-11 shrink-0">
           {tabs.map((tab) => (
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
-                "p-3 rounded-xl transition-all duration-300 relative group",
+                "p-2.5 rounded-xl transition-all duration-300 relative group shrink-0",
                 activeTab === tab.id 
-                  ? "bg-blue-600 text-white shadow-xl shadow-blue-100" 
-                  : "text-slate-300 hover:text-blue-600"
+                  ? "bg-[var(--primary-theme)] text-white shadow-lg shadow-blue-600/20" 
+                  : "text-slate-300 hover:text-[var(--primary-theme)]"
               )}
             >
-              <tab.icon size={20} />
+              <tab.icon size={18} />
               
-              {/* Tooltip for reference */}
               <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                 {tab.label}
               </span>
@@ -133,10 +132,8 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
         </div>
       </div>
 
-      {/* CONTENT AREA (OPERATIONAL SCALE: ROUNDED-2XL) */}
       <div className="w-full animate-in slide-in-from-bottom-4 duration-500">
-        
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 md:p-10 min-h-[600px] relative">
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8 md:p-12 min-h-[600px] relative">
           
           {/* ANNOUNCEMENT MANAGER */}
           {activeTab === 'announcements' && (

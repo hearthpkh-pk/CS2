@@ -239,24 +239,25 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   };
 
   return (
-    <div className="pb-10">
-      <div className="max-w-5xl mx-auto animate-fade-in">
-        <div className="flex justify-between items-end border-b border-slate-200 pb-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-1.5">
-              <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight leading-none pt-1">Transactions</h2>
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 animate-fade-in flex flex-col gap-8">
+        <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Transactions</h2>
             </div>
-            <p className="text-slate-400 text-xs font-noto tracking-wide">กรอกข้อมูล 3 วันย้อนหลัง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span></p>
+            <p className="text-slate-400 font-noto text-[11px] mt-1.5">
+              กรอกข้อมูล 3 วันย้อนหลัง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span>
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Date Picker (Left) */}
-            <div className="flex items-center h-[44px] px-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
+            <div className="flex items-center py-2.5 px-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
               <input
                 type="date"
                 value={logDate}
                 onChange={e => setLogDate(e.target.value)}
-                className="text-inherit font-bold outline-none bg-transparent font-inter text-sm cursor-pointer w-full"
+                className="text-inherit font-bold outline-none bg-transparent font-noto text-sm cursor-pointer w-full"
               />
             </div>
 
@@ -271,17 +272,17 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
             <button
               type="button"
               onClick={() => document.getElementById('csvInput')?.click()}
-              className="w-[44px] h-[44px] flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-blue)] hover:border-[var(--primary-blue)] rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
+              className="p-3 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-blue)] hover:border-[var(--primary-blue)] rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
               title="Import Meta CSV"
             >
               <FilePlus size={18} /> 
             </button>
 
             {/* Toggle Mode Panel (Right) */}
-            <div className="relative flex items-center bg-[#054ab3] p-1 rounded-xl shadow-md border border-white/10 overflow-hidden h-[44px]">
+            <div className="relative flex items-center bg-[#054ab3] p-1 rounded-2xl shadow-md border border-white/10 overflow-hidden">
               <div
                 className={cn(
-                  "absolute top-1 bottom-1 w-[40px] bg-white rounded-[10px] shadow-sm transition-all duration-300 ease-in-out",
+                  "absolute top-1 bottom-1 w-[40px] bg-white rounded-xl shadow-sm transition-all duration-300 ease-in-out",
                   activeMode === 'views' ? "left-1" : "left-[45px]"
                 )}
               />
@@ -289,7 +290,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                 type="button"
                 onClick={() => setActiveMode('views')}
                 className={cn(
-                  "relative z-10 w-[40px] h-full flex items-center justify-center rounded-[10px] transition-colors duration-300",
+                  "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-colors duration-300",
                   activeMode === 'views' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
                 )}
                 title="โหมดยอดวิว"
@@ -300,7 +301,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                 type="button"
                 onClick={() => setActiveMode('followers')}
                 className={cn(
-                  "relative z-10 w-[40px] h-full flex items-center justify-center rounded-[10px] transition-colors duration-300",
+                  "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-colors duration-300",
                   activeMode === 'followers' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
                 )}
                 title="โหมดยอดผู้ติดตาม"
@@ -404,14 +405,13 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
           <div className="p-8 bg-slate-50/30 flex justify-end border-t border-slate-100">
             <button
               type="submit"
-              className="bg-[var(--primary-blue)] hover:bg-[#1e40af] text-white px-8 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100/50 text-sm active:scale-95"
+              className="bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-8 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100/50 text-sm active:scale-95"
             >
               <Save size={18} />
               <span>บันทึกข้อมูล</span>
             </button>
           </div>
         </form>
-      </div>
 
       {/* Import Modal */}
       {isImportModalOpen && (
@@ -513,7 +513,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                     </button>
                     <button
                       onClick={handleFinalSave}
-                      className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
+                      className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white rounded-2xl shadow-xl shadow-blue-100/50 hover:-translate-y-0.5 transition-all active:scale-95"
                     >
                       ยืนยันบันทึก
                     </button>

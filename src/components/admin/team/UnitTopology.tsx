@@ -39,15 +39,14 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
       {/* Header & Action */}
       <div className="flex items-end justify-between border-b border-slate-100 pb-8">
         <div>
-          <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight">Unit Topology</h3>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2 flex items-center gap-2">
-            <Briefcase size={12} className="text-blue-500" />
-            Organizational Structure & Leadership Mapping
+          <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight leading-none mb-1">UNIT TOPOLOGY</h3>
+          <p className="text-[11px] text-slate-400 font-noto mt-2 flex items-center gap-2">
+            <span className="text-[var(--primary-theme)] font-bold">โครงสร้างองค์กร</span> • Organizational Structure & Mapping
           </p>
         </div>
         <button 
           onClick={() => onCreateTeam(`New Unit ${teams.length + 1}`)}
-          className="group flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95"
+          className="group flex items-center gap-3 px-8 py-4 bg-[var(--primary-theme)] text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-[var(--primary-theme-hover)] transition-all shadow-xl shadow-blue-100/50 active:scale-95"
         >
           <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
             <Plus size={14} />
@@ -79,17 +78,17 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
                           onChange={(e) => setEditName(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(team.id)}
                           autoFocus
-                          className="bg-slate-50 border border-blue-200 rounded-xl px-4 py-2 text-lg font-bold text-blue-600 outline-none w-full"
+                          className="bg-slate-50 border border-blue-200 rounded-xl px-4 py-2 text-lg font-bold text-[var(--primary-theme)] outline-none w-full"
                         />
-                        <button onClick={() => handleSaveEdit(team.id)} className="p-2 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-100"><Check size={16} /></button>
-                        <button onClick={() => setEditingTeamId(null)} className="p-2 bg-slate-100 text-slate-400 rounded-xl"><X size={16} /></button>
+                        <button onClick={() => handleSaveEdit(team.id)} className="p-2 bg-[var(--primary-theme)] text-white rounded-xl shadow-lg shadow-blue-100/50 hover:bg-[var(--primary-theme-hover)] transition-colors"><Check size={16} /></button>
+                        <button onClick={() => setEditingTeamId(null)} className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:text-slate-600 transition-colors"><X size={16} /></button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
                         <h4 className="text-xl font-bold text-slate-800 font-outfit tracking-tight leading-none">{team.name}</h4>
                         <button 
                           onClick={() => handleStartEdit(team)}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-blue-600 transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-[var(--primary-theme)] transition-all"
                         >
                           <Edit2 size={14} />
                         </button>

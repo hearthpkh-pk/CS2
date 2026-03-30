@@ -186,7 +186,7 @@ export default function CreatorApp() {
       />
 
       <div className={cn(
-        "flex-1 md:ml-20 flex flex-col min-h-screen relative transition-colors duration-500",
+        "flex-1 md:pl-20 flex flex-col min-h-screen relative transition-colors duration-500",
         viewMode === 'pages' ? "theme-pages" : "theme-accounts"
       )}>
         <MobileHeader />

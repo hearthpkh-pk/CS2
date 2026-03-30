@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Target, Clock, Activity, Share2, ChevronRight, ArrowRight, Box, Search, Users, FileText, BarChart2 } from 'lucide-react';
 import { DailyReport } from '@/types';
 import { reportService } from '../services/reportService';
+import { cn } from '@/lib/utils';
 import { ExecutiveStats } from './PerformanceAudit/ExecutiveStats';
 
 interface ReportsViewProps {
@@ -65,47 +66,62 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
 
   return (
     <>
-      <div className="animate-fade-in max-w-6xl mx-auto pb-20 px-4 sm:px-0 relative text-slate-900">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-100 pb-8">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight flex items-center gap-3">
-              Reports & Statistics
-            </h2>
-            <div className="flex items-center gap-2.5 text-slate-400 font-noto text-[9px] uppercase tracking-[0.2em] font-medium">
-              <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-              Command Console • 27 Mar 2026
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10 animate-in fade-in duration-700 overflow-x-hidden text-slate-900">
+        {/* Page Header (Golden Rules Mode 1) */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 pt-4 pb-6 mb-6">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+                REPORTS & STATISTICS
+              </h2>
             </div>
+            <p className="text-slate-400 font-noto text-[11px] mt-1.5">
+              รายงานและสถิติการปฏิบัติงาน • <span className="text-[var(--primary-theme)] font-bold">Command Console</span>
+            </p>
           </div>
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+             <div className="relative group w-full sm:w-64">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[var(--primary-theme)] transition-colors" size={16} />
+                <input 
+                  type="text"
+                  placeholder="Search by name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[var(--primary-theme)] focus:ring-4 focus:ring-blue-100/50 transition-all placeholder:text-slate-300"
+                />
+             </div>
+
              {/* Mode Switcher */}
-             <div className="inline-flex p-1.5 bg-slate-100/80 rounded-2xl border border-slate-100 shadow-sm relative z-10 shrink-0">
+             <div className="relative flex bg-[var(--primary-theme)] p-1 rounded-2xl shadow-inner shadow-blue-900/20 h-[40px] z-10 shrink-0 w-full sm:w-[84px]">
+                {/* Sliding Pill */}
+                <div 
+                  className="absolute top-1 bottom-1 w-[38px] bg-white rounded-xl shadow-md transition-transform duration-300 ease-out z-0"
+                  style={{ 
+                    transform: viewMode === 'report' ? 'translateX(0)' : 'translateX(100%)' 
+                  }}
+                />
+                
                 <button 
                   onClick={() => setViewMode('report')}
                   title="Report Matrix"
-                  className={`p-2 rounded-xl transition-all duration-300 ${viewMode === 'report' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={cn(
+                    "relative z-10 flex-1 flex items-center justify-center transition-colors duration-300",
+                    viewMode === 'report' ? "text-[var(--primary-theme)] drop-shadow-sm" : "text-white/60 hover:text-white"
+                  )}
                 >
                   <FileText size={18} />
                 </button>
                 <button 
                   onClick={() => setViewMode('stats')}
                   title="Performance Statistics"
-                  className={`p-2 rounded-xl transition-all duration-300 ${viewMode === 'stats' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={cn(
+                    "relative z-10 flex-1 flex items-center justify-center transition-colors duration-300",
+                    viewMode === 'stats' ? "text-[var(--primary-theme)] drop-shadow-sm" : "text-white/60 hover:text-white"
+                  )}
                 >
                   <BarChart2 size={18} />
                 </button>
-             </div>
-
-             <div className="relative group w-full md:w-64">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={16} />
-                <input 
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-blue-200 focus:ring-4 focus:ring-blue-50/20 transition-all placeholder:text-slate-300"
-                />
              </div>
           </div>
         </div>
@@ -115,17 +131,17 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
              <div className="max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto ring-8 ring-blue-50/50 group-hover:rotate-12 transition-transform duration-500">
-                   <BarChart2 size={40} className="text-blue-500" />
+                   <BarChart2 size={40} className="text-[var(--primary-theme)]" />
                 </div>
                 <div className="space-y-3">
                    <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight">System Developer Console</h3>
                    <p className="text-slate-400 font-medium text-[13px] leading-relaxed">
-                      คุณกำลังอยู่ในโหมด <span className="text-blue-600 font-bold">Root Architecture</span> ข้อมูลรายงานทางธุรกิจของผู้อื่นจะถูกจำกัดไว้เพื่อความเป็นส่วนตัว
+                      คุณกำลังอยู่ในโหมด <span className="text-[var(--primary-theme)] font-bold">Root Architecture</span> ข้อมูลรายงานทางธุรกิจของผู้อื่นจะถูกจำกัดไว้เพื่อความเป็นส่วนตัว
                    </p>
                 </div>
                 <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100/50">
                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                      โปรดใช้ปุ่ม <span className="text-blue-500">FAB (Developer Tool)</span> มุมขวาล่าง <br/> เพื่อสวมสิทธิ์เป็นผู้ใช้งานที่ต้องการตรวจสอบข้อมูลครับ
+                      โปรดใช้ปุ่ม <span className="text-[var(--primary-theme)]">FAB (Developer Tool)</span> มุมขวาล่าง <br/> เพื่อสวมสิทธิ์เป็นผู้ใช้งานที่ต้องการตรวจสอบข้อมูลครับ
                    </p>
                 </div>
              </div>
@@ -133,7 +149,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
         ) : viewMode === 'report' ? (
           <>
             {/* Precision KPI Summary Grid - HQ Control Center Style */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
                {[
                  { id: 'all', label: 'Global Personnel', icon: Users, value: reports.length, unit: 'operators' },
                  { id: 'department', label: 'Operational Units', icon: Activity, value: uniqueDepartments.length, unit: 'departments' },
@@ -145,16 +161,16 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                    onClick={() => selectFilter(card.id as any)}
                    className={`bg-white p-6 rounded-[1.5rem] border transition-all text-left group relative ${
                      filterMode === card.id 
-                     ? 'border-blue-300 shadow-md ring-4 ring-blue-50/30' 
+                     ? 'border-[var(--primary-theme)] shadow-md ring-4 ring-blue-50/30' 
                      : 'border-slate-100 hover:border-slate-200 shadow-sm'
                    }`}
                  >
                     <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <card.icon size={14} className={filterMode === card.id ? 'text-blue-500' : 'text-slate-300'} strokeWidth={1.5} />
+                      <card.icon size={14} className={filterMode === card.id ? 'text-[var(--primary-theme)]' : 'text-slate-300'} strokeWidth={1.5} />
                       {card.label}
                     </p>
                     <div className="flex items-baseline gap-2">
-                      <span className={`text-2xl font-bold font-outfit tracking-tight ${filterMode === card.id ? 'text-blue-600' : 'text-slate-700'}`}>
+                      <span className={`text-2xl font-bold font-outfit tracking-tight ${filterMode === card.id ? 'text-[var(--primary-theme)]' : 'text-slate-700'}`}>
                         {card.value}
                       </span>
                       <span className="text-[10px] font-medium text-slate-400 tracking-wider lowercase opacity-60">
@@ -162,7 +178,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                       </span>
                     </div>
                     {filterMode === card.id && (
-                      <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                      <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-[var(--primary-theme)] animate-pulse"></div>
                     )}
                  </button>
                ))}
@@ -177,7 +193,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                       onClick={() => setActiveFilterValue(activeFilterValue === val ? null : val)}
                       className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all border ${
                         activeFilterValue === val 
-                        ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
+                        ? 'bg-[var(--primary-theme)] border-[var(--primary-theme)] text-white shadow-md' 
                         : 'bg-white border-slate-100 text-slate-400 hover:border-blue-100 hover:text-slate-600'
                       }`}
                     >
@@ -187,7 +203,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                  {activeFilterValue && (
                     <button 
                       onClick={() => setActiveFilterValue(null)}
-                      className="px-4 py-2 rounded-xl text-[10px] font-bold text-blue-500 hover:bg-blue-50 transition-all flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl text-[10px] font-bold text-[var(--primary-theme)] hover:bg-blue-50 transition-all flex items-center gap-1.5"
                     >
                        Clear Selection
                     </button>
@@ -197,15 +213,15 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
 
             {/* Main List */}
             <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
-              <div className="overflow-x-auto relative">
-                <table className="w-full text-left border-collapse min-w-[900px]">
+            <div className="overflow-x-auto relative custom-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead className="bg-slate-50/40">
-                    <tr className="border-b border-slate-50">
-                      <th className="pl-12 pr-6 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80">Operational Staff</th>
-                      <th className="px-6 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80">Running Campaigns</th>
-                      <th className="px-6 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-center">Output Volume</th>
-                      <th className="px-6 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-center">Sync Time</th>
-                      <th className="pl-6 pr-12 py-6 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-right">Drill-down</th>
+                    <tr className="border-b border-slate-50/60">
+                      <th className="pl-4 md:pl-8 pr-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80">Operational Staff</th>
+                      <th className="px-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80">Running Campaigns</th>
+                      <th className="px-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-center">Output Volume</th>
+                      <th className="px-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-center">Sync Time</th>
+                      <th className="pl-6 pr-4 md:pr-8 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-right">Drill-down</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -215,33 +231,33 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                         className={`hover:bg-slate-50/80 transition-all duration-300 group cursor-pointer ${pinnedIds.has(report.id) ? 'bg-blue-50/10' : ''}`}
                         onClick={() => setSelectedReport(report)}
                       >
-                        <td className="pl-12 pr-6 py-6">
-                          <div className="flex items-center gap-4">
+                        <td className="pl-4 md:pl-8 pr-6 py-4 md:py-5">
+                          <div className="flex items-center gap-3 md:gap-4">
                             <button 
                               onClick={(e) => togglePin(e, report.id)}
-                              className={`p-1.5 rounded-lg transition-all ${pinnedIds.has(report.id) ? 'text-blue-500' : 'text-slate-200 hover:text-slate-400'}`}
+                              className={`p-1.5 rounded-lg transition-all ${pinnedIds.has(report.id) ? 'text-[var(--primary-theme)]' : 'text-slate-200 hover:text-slate-400'}`}
                             >
-                              <Target size={14} className={pinnedIds.has(report.id) ? 'fill-blue-500' : ''} />
+                              <Target size={13} className={pinnedIds.has(report.id) ? 'fill-[var(--primary-theme)]' : ''} />
                             </button>
 
-                            <div className="w-11 h-11 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:border-blue-200 group-hover:text-blue-500 transition-all shadow-sm shrink-0">
+                            <div className="w-9 h-9 rounded-xl md:w-11 md:h-11 md:rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:border-blue-200 group-hover:text-[var(--primary-theme)] transition-all shadow-sm shrink-0">
                               <span className="text-xs font-bold">{report.userName.charAt(0)}</span>
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[15px] font-medium text-slate-800 font-noto tracking-tight truncate flex items-center gap-2">
+                              <p className="text-[14px] font-medium text-slate-800 font-noto tracking-tight truncate flex items-center gap-2">
                                 {report.userName}
-                                {pinnedIds.has(report.id) && <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter">Pinned</span>}
+                                {pinnedIds.has(report.id) && <span className="text-[8px] bg-blue-100 text-[var(--primary-theme)] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter">Pinned</span>}
                               </p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest border border-slate-100 px-1.5 py-0.5 rounded-lg">{report.department} • {report.group}</span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest border border-slate-50 px-1.5 py-0.5 rounded-lg">{report.department} • {report.group}</span>
                                 {report.tags && report.tags.map((tag: string, tIdx: number) => (
-                                  <span key={`${tag}-${tIdx}`} className="text-[9px] text-emerald-500 font-bold border border-emerald-100 px-1.5 py-0.5 rounded-lg uppercase tracking-widest">{tag}</span>
+                                  <span key={`${tag}-${tIdx}`} className="text-[9px] text-emerald-500 font-bold border border-emerald-50 px-1.5 py-0.5 rounded-lg uppercase tracking-widest">{tag}</span>
                                 ))}
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-6">
+                        <td className="px-6 py-4 md:py-5">
                           <div className="flex flex-wrap gap-2">
                             {report.brand !== 'None' ? (
                               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-100 group-hover:border-blue-100 transition-colors bg-white/50">
@@ -255,7 +271,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-6">
+                        <td className="px-6 py-4 md:py-5">
                           <div className="flex flex-col items-center gap-2">
                             <p className="text-[13px] font-medium text-slate-600 font-inter">
                               {report.postCount} <span className="text-[10px] text-slate-300">/ {report.totalPostsRequired}</span>
@@ -268,15 +284,15 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-6 text-center">
+                        <td className="px-6 py-4 md:py-5 text-center">
                            <div className="inline-flex items-center gap-2.5 text-slate-400">
-                              <Clock size={13} strokeWidth={1.5} className="group-hover:text-blue-400 transition-colors" />
+                              <Clock size={13} strokeWidth={1.5} className="group-hover:text-[var(--primary-theme)] transition-colors" />
                               <span className="text-[12px] font-medium font-inter group-hover:text-slate-700 transition-colors">{report.submissionTime}</span>
                            </div>
                         </td>
-                        <td className="pl-12 pr-12 py-6 text-right">
-                          <div className="inline-flex p-2.5 text-slate-300 group-hover:text-blue-500 transition-all bg-white rounded-2xl border border-slate-50 group-hover:border-blue-100 shadow-sm group-hover:shadow-md">
-                             <ChevronRight size={18} strokeWidth={2} />
+                        <td className="pl-6 pr-4 md:pr-8 py-4 md:py-5 text-right">
+                          <div className="inline-flex p-2 text-slate-300 group-hover:text-[var(--primary-theme)] transition-all bg-white rounded-xl border border-slate-50 group-hover:border-blue-100 shadow-sm group-hover:shadow-md">
+                             <ChevronRight size={16} strokeWidth={2.5} />
                           </div>
                         </td>
                       </tr>
@@ -301,7 +317,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
               {/* Drawer Header */}
               <div className="p-8 md:p-10 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20">
                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl border border-blue-100 flex items-center justify-center text-blue-500 shadow-sm shrink-0">
+                    <div className="w-12 h-12 rounded-2xl border border-blue-100 flex items-center justify-center text-[var(--primary-theme)] shadow-sm shrink-0">
                        <Target size={20} />
                     </div>
                     <div className="min-w-0">
@@ -356,7 +372,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                             <div className="flex items-center justify-between mb-3 border-b border-transparent group-hover/item:border-slate-100 pb-2 transition-colors">
                               <div className="flex items-center gap-2.5 min-w-0">
                                  <div className="w-6 h-6 rounded-lg bg-white border border-slate-100 flex items-center justify-center shrink-0">
-                                    <Activity size={10} className="text-slate-300 group-hover/item:text-blue-400" />
+                                    <Activity size={10} className="text-slate-300 group-hover/item:text-[var(--primary-theme)]" />
                                  </div>
                                  <span className="text-[12px] font-semibold text-slate-600 font-noto truncate">Page Unit {i+1}</span>
                               </div>
@@ -367,7 +383,7 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
                                   <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Est. Reach</p>
                                   <p className="text-[11px] font-bold text-slate-500 font-inter tracking-tighter">{((Math.random() * 800) + 200).toFixed(0)}K</p>
                                </div>
-                               <button className="p-1.5 text-slate-300 hover:text-blue-500 transition-colors shrink-0">
+                               <button className="p-1.5 text-slate-300 hover:text-[var(--primary-theme)] transition-colors shrink-0">
                                   <Share2 size={12} strokeWidth={2} />
                                 </button>
                             </div>
@@ -392,3 +408,4 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
     </>
   );
 };
+

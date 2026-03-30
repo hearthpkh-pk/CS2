@@ -120,51 +120,47 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
    };
 
    return (
-      <div className="p-4 md:p-8 space-y-8 max-w-[1400px] mx-auto animate-in fade-in duration-700 font-prompt pb-32">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4 animate-in fade-in duration-700">
 
-         {/* PAGE HEADER */}
-         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
-            <div className="space-y-1.5">
-               <h1 className="text-3xl font-bold font-outfit tracking-tight text-slate-900 uppercase">
+         {/* HQ GOVERNANCE HEADER (Mode 2) */}
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
+            <div className="flex flex-col gap-1">
+               <h1 className="text-2xl font-bold font-outfit tracking-tight text-[#0f172a] uppercase leading-none">
                   Governance & Standards
                </h1>
-               <p className="text-[10px] text-slate-400 font-bold font-noto uppercase tracking-[0.25em]">
-                  Internal Compliance & Operating Guidelines
+               <p className="text-[11px] text-slate-400 font-medium font-noto uppercase tracking-[0.2em] mt-1.5">
+                  Internal Compliance & Operating Guidelines • <span className="text-[var(--primary-theme)] font-bold">HQ Policy Console</span>
                </p>
             </div>
 
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-3 bg-transparent p-1">
-                  <div className="flex items-center gap-3 px-6 py-2.5 border border-slate-100 rounded-2xl bg-transparent">
-                     <Users size={16} className="text-blue-500" />
-                     <h4 className="font-medium text-xs text-slate-700 uppercase tracking-widest leading-none">
-                        {userGroup?.name || 'Standard'}
-                     </h4>
-                  </div>
-
-                  {isAdminOrDev && (
-                     <div className="flex items-center gap-2">
-                        <button
-                           onClick={() => {
-                               if (activeRuleId === 'rule-commission' && onNavigate) {
-                                  onNavigate('settings', 'policy');
-                               } else {
-                                  handleToggleEdit();
-                               }
-                           }}
-                           className={cn(
-                              "w-11 h-11 flex items-center justify-center rounded-2xl transition-all border shadow-sm",
-                              isEditMode
-                                 ? "text-rose-500 border-rose-500 hover:scale-105"
-                                 : "text-slate-400 border-slate-200 hover:border-blue-500 hover:text-blue-500"
-                           )}
-                           title={isEditMode ? 'Exit Mode' : 'Modify Policy'}
-                        >
-                           {isEditMode ? <X size={20} /> : <Edit3 size={20} />}
-                        </button>
-                     </div>
-                  )}
+            <div className="flex items-center gap-2">
+               <div className="flex items-center gap-3 px-4 h-11 border border-slate-100 rounded-2xl bg-white shadow-sm shrink-0">
+                  <ShieldCheck size={16} className="text-[var(--primary-theme)]" />
+                  <h4 className="font-bold text-[11px] text-slate-600 uppercase tracking-widest leading-none font-prompt">
+                     {userGroup?.name || 'Standard Group'}
+                  </h4>
                </div>
+
+               {isAdminOrDev && (
+                  <button
+                     onClick={() => {
+                         if (activeRuleId === 'rule-commission' && onNavigate) {
+                            onNavigate('settings', 'policy');
+                         } else {
+                            handleToggleEdit();
+                         }
+                     }}
+                     className={cn(
+                        "w-11 h-11 flex items-center justify-center rounded-2xl transition-all border shadow-sm shrink-0",
+                        isEditMode
+                           ? "text-rose-500 border-rose-500 bg-rose-50 shadow-rose-100"
+                           : "text-slate-400 border-slate-200 bg-white hover:border-[var(--primary-theme)] hover:text-[var(--primary-theme)]"
+                     )}
+                     title={isEditMode ? 'Exit Mode' : 'Modify Policy'}
+                  >
+                     {isEditMode ? <X size={20} /> : <Edit3 size={18} />}
+                  </button>
+               )}
             </div>
          </div>
 

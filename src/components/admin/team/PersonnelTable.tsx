@@ -44,7 +44,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
               onClick={() => onRoleFilterChange(role as any)}
               className={cn(
                 "px-5 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
-                roleFilter === role ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "text-slate-400 hover:text-blue-600"
+                roleFilter === role ? "bg-[var(--primary-theme)] text-white shadow-lg shadow-blue-100/50" : "text-slate-400 hover:text-[var(--primary-theme)]"
               )}
             >
               {role === 'All' ? 'All Personnel' : ROLE_LABELS[role as Role]}
@@ -79,7 +79,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm transition-transform group-hover:scale-110",
                         user.role === Role.Admin ? 'bg-slate-900' : 
-                        user.role === Role.Manager ? 'bg-indigo-600' : 'bg-blue-600'
+                        user.role === Role.Manager ? 'bg-indigo-600' : 'bg-[var(--primary-theme)]'
                       )}>
                         {user.name.charAt(0)}
                       </div>
@@ -130,7 +130,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                   <td className="px-8 py-5 text-right">
                     <button 
                       onClick={() => onEdit(user)}
-                      className="p-2.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90"
+                      className="p-2.5 text-slate-300 hover:text-[var(--primary-theme)] hover:bg-blue-50 rounded-xl transition-all active:scale-95"
                     >
                       <Edit3 size={16} />
                     </button>
