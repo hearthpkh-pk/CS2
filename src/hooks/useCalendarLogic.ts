@@ -79,6 +79,11 @@ export function useCalendarLogic(currentUser: User) {
     }
   }, [currentUser.id, tasks]);
 
+  const updateTask = useCallback((updatedTask: PersonalTask) => {
+    taskService.saveTask(currentUser.id, updatedTask);
+    setTasks(taskService.getTasks(currentUser.id));
+  }, [currentUser.id]);
+
   const deleteTask = useCallback((taskId: string) => {
     taskService.deleteTask(currentUser.id, taskId);
     setTasks(taskService.getTasks(currentUser.id));
@@ -178,6 +183,7 @@ export function useCalendarLogic(currentUser: User) {
     setNewTaskTitle,
     addTask,
     toggleTask,
+    updateTask,
     deleteTask,
     isTaskOnDay,
 
