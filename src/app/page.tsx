@@ -186,8 +186,13 @@ export default function CreatorApp() {
       />
 
       <div className={cn(
-        "flex-1 md:pl-20 flex flex-col min-h-screen relative transition-colors duration-500",
-        viewMode === 'pages' ? "theme-pages" : "theme-accounts"
+        "flex-1 md:pl-20 flex flex-col min-h-screen relative transition-colors duration-500"
+        /* 
+           🛡️ THEME ISOLATION NOTE: 
+           เราไม่ใส่ theme-pages/theme-accounts ที่ระดับ Global ตรงนี้แล้วนะครับ 
+           เพื่อป้องกัน "สีรั่ว" (Theme Bleeding) ไปหน้าอื่น เช่น Calendar หรือ Dashboard 
+           ให้แต่ละ View (เช่น SetupView) จัดการ Theme ของตัวเองภายใน Component เท่านั้น
+        */
       )}>
         <MobileHeader />
 
