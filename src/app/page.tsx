@@ -82,13 +82,13 @@ export default function CreatorApp() {
   const handleAddPage = (pageData: Omit<Page, 'id'>) => {
     const newPage: Page = { ...pageData, id: Date.now().toString(), createdAt: new Date().toISOString() };
     dataService.savePage(newPage);
-    setPages(dataService.getPages());
+    setPages(dataService.getPages(currentUser));
     showToast('เพิ่มเพจสำเร็จ');
   };
 
   const handleUpdatePage = (updatedPage: Page) => {
     dataService.savePage(updatedPage);
-    setPages(dataService.getPages());
+    setPages(dataService.getPages(currentUser));
     showToast('อัปเดตข้อมูลเรียบร้อย');
   };
 
@@ -96,7 +96,7 @@ export default function CreatorApp() {
     const page = pages.find(p => p.id === id);
     if (page) {
       dataService.savePage({ ...page, isDeleted: true, deletedAt: new Date().toISOString() });
-      setPages(dataService.getPages());
+      setPages(dataService.getPages(currentUser));
       showToast('ย้ายเพจลงถังขยะเรียบร้อย');
     }
   };
@@ -105,14 +105,14 @@ export default function CreatorApp() {
     const page = pages.find(p => p.id === id);
     if (page) {
       dataService.savePage({ ...page, isDeleted: false, deletedAt: undefined });
-      setPages(dataService.getPages());
+      setPages(dataService.getPages(currentUser));
       showToast('กู้คืนเพจเรียบร้อย');
     }
   };
 
   const handlePermanentDeletePage = (id: string) => {
     dataService.deletePage(id);
-    setPages(dataService.getPages());
+    setPages(dataService.getPages(currentUser));
     setLogs(dataService.getLogs());
     showToast('ลบเพจถาวรเรียบร้อย');
   };
@@ -120,13 +120,13 @@ export default function CreatorApp() {
   const handleAddAccount = (accData: Omit<FBAccount, 'id'>) => {
     const newAcc: FBAccount = { ...accData, id: `acc-${Date.now()}`, createdAt: new Date().toISOString() };
     dataService.saveAccount(newAcc);
-    setAccounts(dataService.getAccounts());
+    setAccounts(dataService.getAccounts(currentUser));
     showToast('เพิ่มบัญชีสำเร็จ');
   };
 
   const handleUpdateAccount = (updatedAcc: FBAccount) => {
     dataService.saveAccount(updatedAcc);
-    setAccounts(dataService.getAccounts());
+    setAccounts(dataService.getAccounts(currentUser));
     showToast('อัปเดตบัญชีเรียบร้อย');
   };
 
@@ -134,7 +134,7 @@ export default function CreatorApp() {
     const acc = accounts.find(a => a.id === id);
     if (acc) {
       dataService.saveAccount({ ...acc, isDeleted: true, deletedAt: new Date().toISOString() });
-      setAccounts(dataService.getAccounts());
+      setAccounts(dataService.getAccounts(currentUser));
       showToast('ย้ายบัญชีลงถังขยะเรียบร้อย');
     }
   };
@@ -143,14 +143,14 @@ export default function CreatorApp() {
     const acc = accounts.find(a => a.id === id);
     if (acc) {
       dataService.saveAccount({ ...acc, isDeleted: false, deletedAt: undefined });
-      setAccounts(dataService.getAccounts());
+      setAccounts(dataService.getAccounts(currentUser));
       showToast('กู้คืนบัญชีเรียบร้อย');
     }
   };
 
   const handlePermanentDeleteAccount = (id: string) => {
     dataService.deleteAccount(id);
-    setAccounts(dataService.getAccounts());
+    setAccounts(dataService.getAccounts(currentUser));
     showToast('ลบบัญชีถาวรเรียบร้อย');
   };
 
@@ -159,8 +159,8 @@ export default function CreatorApp() {
     const deletedAccounts = accounts.filter(a => a.isDeleted);
     deletedPages.forEach(p => dataService.deletePage(p.id));
     deletedAccounts.forEach(a => dataService.deleteAccount(a.id));
-    setPages(dataService.getPages());
-    setAccounts(dataService.getAccounts());
+    setPages(dataService.getPages(currentUser));
+    setAccounts(dataService.getAccounts(currentUser));
     showToast('ล้างถังขยะเรียบร้อย');
   };
 
@@ -171,7 +171,7 @@ export default function CreatorApp() {
     if (page) {
       const updatedPage = { ...page, facebookData: meta as any };
       dataService.savePage(updatedPage);
-      setPages(dataService.getPages());
+      setPages(dataService.getPages(currentUser));
       showToast('ซิงค์ข้อมูลสำเร็จ');
     }
   };

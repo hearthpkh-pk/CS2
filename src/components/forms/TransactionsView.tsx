@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Save, FilePlus, Search, X, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Save, FilePlus, Search, X, Check, Eye, Users } from 'lucide-react';
 import { Page, DailyLog, User } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +14,8 @@ interface Props {
 
 export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) => {
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
-  const [inputData, setInputData] = useState<Record<string, { followers: string; views: string }>>({});
+  const [activeMode, setActiveMode] = useState<'views' | 'followers'>('views');
+  const [inputData, setInputData] = useState<Record<string, Record<string, { followers: string; views: string }>>>({});
 
   // CSV Import States
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -24,17 +25,55 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetPageId, setSelectedTargetPageId] = useState<string | null>(null);
 
+  // Filter and sort pages to match SetupView order
+  const sortedPages = useMemo(() => {
+    return pages
+      .filter(p => !p.isDeleted)
+      .sort((a, b) => {
+        // 1. Sort by Box ID
+        const boxA = a.boxId || 0;
+        const boxB = b.boxId || 0;
+        if (boxA !== boxB) return boxA - boxB;
+        
+        // 2. Sort by Status (Active first)
+        if (a.status === 'Active' && b.status !== 'Active') return -1;
+        if (a.status !== 'Active' && b.status === 'Active') return 1;
+        
+        // 3. Sort by Name
+        return a.name.localeCompare(b.name);
+      });
+  }, [pages]);
+
+  const rollingDates = useMemo(() => {
+    const d1Obj = new Date(logDate);
+    
+    // We parse logic accurately so dates roll backwards natively via Date
+    const d2Obj = new Date(d1Obj);
+    d2Obj.setDate(d2Obj.getDate() - 1);
+    const d3Obj = new Date(d1Obj);
+    d3Obj.setDate(d3Obj.getDate() - 2);
+
+    return [
+      d3Obj.toISOString().split('T')[0],
+      d2Obj.toISOString().split('T')[0],
+      d1Obj.toISOString().split('T')[0]
+    ];
+  }, [logDate]);
+
   useEffect(() => {
-    const dataForDate: Record<string, { followers: string; views: string }> = {};
-    pages.forEach(p => {
-      const existingLog = logs.find(l => l.pageId === p.id && l.date === logDate);
-      dataForDate[p.id] = {
-        followers: existingLog?.followers.toString() || '',
-        views: existingLog?.views.toString() || ''
-      };
+    const dataForDates: Record<string, Record<string, { followers: string; views: string }>> = {};
+    sortedPages.forEach(p => {
+      dataForDates[p.id] = {};
+      rollingDates.forEach(date => {
+        const existingLog = logs.find(l => l.pageId === p.id && l.date === date);
+        dataForDates[p.id][date] = {
+          followers: existingLog?.followers?.toString() || '',
+          views: existingLog?.views?.toString() || ''
+        };
+      });
     });
-    setInputData(dataForDate);
-  }, [logDate, pages, logs]);
+    setInputData(dataForDates);
+  }, [rollingDates, sortedPages, logs]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,8 +158,8 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
     });
     setSearchQuery('');
 
-    if (pages.length === 1) {
-      setSelectedTargetPageId(pages[0].id);
+    if (sortedPages.length === 1) {
+      setSelectedTargetPageId(sortedPages[0].id);
       setImportStep('confirm');
       setIsImportModalOpen(true);
     } else {
@@ -137,7 +176,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const handleFinalSave = () => {
     const pageId = selectedTargetPageId;
     const rows = pendingCsvRows;
-    const targetPage = pages.find(p => p.id === pageId);
+    const targetPage = sortedPages.find(p => p.id === pageId);
     if (!targetPage || !pageId) return;
 
     const newLogs = rows.map(r => {
@@ -163,7 +202,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
     setImportStep('select');
   };
 
-  const filteredPages = pages.filter(p =>
+  const filteredPages = sortedPages.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.boxId?.toString().includes(searchQuery)
@@ -172,25 +211,26 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newLogs: DailyLog[] = [];
-    pages.forEach(p => {
-      const fStr = inputData[p.id]?.followers || '';
-      const vStr = inputData[p.id]?.views || '';
+    sortedPages.forEach(p => {
+      rollingDates.forEach(date => {
+        const fStr = inputData[p.id]?.[date]?.followers || '';
+        const vStr = inputData[p.id]?.[date]?.views || '';
 
-      // Save if at least one value is provided
-      if (fStr !== '' || vStr !== '') {
-        const followers = parseInt(fStr) || 0;
-        const views = parseInt(vStr) || 0;
+        if (fStr !== '' || vStr !== '') {
+          const followers = parseInt(fStr) || 0;
+          const views = parseInt(vStr) || 0;
 
-        newLogs.push({
-          id: `log-${p.id}-${logDate}`,
-          pageId: p.id,
-          staffId: p.ownerId || currentUser.id,
-          date: logDate,
-          followers,
-          views,
-          createdAt: new Date().toISOString()
-        });
-      }
+          newLogs.push({
+            id: `log-${p.id}-${date}`,
+            pageId: p.id,
+            staffId: p.ownerId || currentUser.id,
+            date: date,
+            followers,
+            views,
+            createdAt: new Date().toISOString()
+          });
+        }
+      });
     });
 
     if (newLogs.length > 0) {
@@ -204,15 +244,23 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
         <div className="flex justify-between items-end border-b border-slate-200 pb-6 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-1.5">
-              <div className="p-2 bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
-                <FilePlus className="text-[var(--primary-blue)]" size={22} />
-              </div>
               <h2 className="text-2xl font-bold text-primary-navy font-outfit uppercase tracking-tight leading-none pt-1">Transactions</h2>
             </div>
-            <p className="text-slate-400 text-xs font-noto tracking-wide">กรอกข้อมูลทีละหลายเพจในรูปแบบตาราง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span></p>
+            <p className="text-slate-400 text-xs font-noto tracking-wide">กรอกข้อมูล 3 วันย้อนหลัง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span></p>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Date Picker (Left) */}
+            <div className="flex items-center h-[44px] px-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
+              <input
+                type="date"
+                value={logDate}
+                onChange={e => setLogDate(e.target.value)}
+                className="text-inherit font-bold outline-none bg-transparent font-inter text-sm cursor-pointer w-full"
+              />
+            </div>
+
+            {/* CSV Import Button (Middle) */}
             <input
               type="file"
               id="csvInput"
@@ -223,18 +271,42 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
             <button
               type="button"
               onClick={() => document.getElementById('csvInput')?.click()}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 hover:bg-emerald-100 transition-all shadow-sm"
+              className="w-[44px] h-[44px] flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-blue)] hover:border-[var(--primary-blue)] rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
+              title="Import Meta CSV"
             >
-              <FilePlus size={14} /> Import Meta CSV
+              <FilePlus size={18} /> 
             </button>
 
-            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm transition-all focus-within:ring-4 focus-within:ring-blue-50 focus-within:border-[var(--primary-blue)]">
-              <input
-                type="date"
-                value={logDate}
-                onChange={e => setLogDate(e.target.value)}
-                className="text-slate-700 font-bold outline-none bg-transparent font-inter text-sm cursor-pointer"
+            {/* Toggle Mode Panel (Right) */}
+            <div className="relative flex items-center bg-[#054ab3] p-1 rounded-xl shadow-md border border-white/10 overflow-hidden h-[44px]">
+              <div
+                className={cn(
+                  "absolute top-1 bottom-1 w-[40px] bg-white rounded-[10px] shadow-sm transition-all duration-300 ease-in-out",
+                  activeMode === 'views' ? "left-1" : "left-[45px]"
+                )}
               />
+              <button
+                type="button"
+                onClick={() => setActiveMode('views')}
+                className={cn(
+                  "relative z-10 w-[40px] h-full flex items-center justify-center rounded-[10px] transition-colors duration-300",
+                  activeMode === 'views' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
+                )}
+                title="โหมดยอดวิว"
+              >
+                <Eye size={16} strokeWidth={2.5} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMode('followers')}
+                className={cn(
+                  "relative z-10 w-[40px] h-full flex items-center justify-center rounded-[10px] transition-colors duration-300",
+                  activeMode === 'followers' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
+                )}
+                title="โหมดยอดผู้ติดตาม"
+              >
+                <Users size={16} strokeWidth={2.5} />
+              </button>
             </div>
           </div>
         </div>
@@ -244,49 +316,86 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto w-1/3">ชื่อเพจ / หมวดหมู่</th>
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">สถานะ</th>
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">ยอดผู้ติดตาม</th>
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">ยอดวิววันนี้</th>
+                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto w-1/4">ชื่อเพจ / หมวดหมู่</th>
+                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center w-24">สถานะ</th>
+                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">{rollingDates[0].split('-').slice(1).reverse().join('/')} (2 วันก่อน)</th>
+                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">{rollingDates[1].split('-').slice(1).reverse().join('/')} (เมื่อวาน)</th>
+                  <th className="p-6 text-[var(--primary-blue)] font-black text-[10px] uppercase tracking-[0.15em] font-noto text-center bg-blue-50/30">{rollingDates[2].split('-').slice(1).reverse().join('/')} (วันนี้)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {pages.map((p) => (
+                {sortedPages.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/20 transition-colors">
                     <td className="p-4">
-                      <div className="font-bold text-primary-navy text-md font-noto mb-0.5">{p.name}</div>
-                      <div className="text-[11px] text-slate-400 font-noto flex items-center gap-2">
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        {p.category}
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50/50 border border-blue-100/50 flex flex-col items-center justify-center flex-shrink-0 shadow-sm">
+                          <span className="text-[8px] text-blue-400 font-bold uppercase tracking-wider leading-none mb-0.5">Box</span>
+                          <span className="text-xs font-black text-[var(--primary-blue)] font-inter leading-none">{p.boxId || '#'}</span>
+                        </div>
+                        <div>
+                          <div className="font-bold text-primary-navy text-sm font-noto mb-0.5">{p.name}</div>
+                          <div className="text-[10px] text-slate-400 font-noto flex items-center gap-2">
+                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                            {p.category}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="p-4 text-center">
                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider font-noto",
+                        "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider font-noto shadow-sm",
                         p.status === 'Active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                           p.status === 'Rest' ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-red-50 text-red-600 border border-red-100"
                       )}>
                         {p.status}
                       </span>
                     </td>
-                    <td className="p-4 px-6">
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={inputData[p.id]?.followers || ''}
-                        onChange={e => setInputData(prev => ({ ...prev, [p.id]: { ...prev[p.id], followers: e.target.value } }))}
-                        className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold font-inter outline-none focus:border-[var(--primary-blue)] focus:bg-white focus:ring-4 focus:ring-blue-50 text-center transition-all placeholder:text-slate-200"
-                      />
-                    </td>
-                    <td className="p-4 px-6">
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={inputData[p.id]?.views || ''}
-                        onChange={e => setInputData(prev => ({ ...prev, [p.id]: { ...prev[p.id], views: e.target.value } }))}
-                        className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold font-inter outline-none focus:border-[var(--primary-blue)] focus:bg-white focus:ring-4 focus:ring-blue-50 text-center transition-all placeholder:text-slate-200"
-                      />
-                    </td>
+                    
+                    {rollingDates.map((date, idx) => (
+                      <td key={date} className={cn("p-4 px-3", idx === 2 ? "bg-blue-50/10" : "")}>
+                        <div className="relative group mx-auto max-w-[140px]">
+                          {activeMode === 'views' ? (
+                            <input
+                              type="number"
+                              placeholder="0"
+                              value={inputData[p.id]?.[date]?.views || ''}
+                              onChange={e => setInputData(prev => ({ 
+                                ...prev, 
+                                [p.id]: { 
+                                  ...prev[p.id], 
+                                  [date]: { ...(prev[p.id]?.[date] || {}), views: e.target.value } 
+                                } 
+                              }))}
+                              className={cn(
+                                "w-full border rounded-xl px-4 py-3 text-sm font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
+                                idx === 2 
+                                  ? "bg-white border-blue-200 text-[#054ab3] focus:border-[#054ab3] focus:ring-4 focus:ring-blue-50 shadow-sm hover:border-[#054ab3]/50" 
+                                  : "bg-slate-50/50 border-slate-100 text-slate-700 focus:border-[#054ab3] focus:bg-white focus:shadow-sm hover:bg-white"
+                              )}
+                            />
+                          ) : (
+                            <input
+                              type="number"
+                              placeholder="0"
+                              value={inputData[p.id]?.[date]?.followers || ''}
+                              onChange={e => setInputData(prev => ({ 
+                                ...prev, 
+                                [p.id]: { 
+                                  ...prev[p.id], 
+                                  [date]: { ...(prev[p.id]?.[date] || {}), followers: e.target.value } 
+                                } 
+                              }))}
+                              className={cn(
+                                "w-full border rounded-xl px-4 py-3 text-sm font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
+                                idx === 2 
+                                  ? "bg-emerald-50/30 border-emerald-200 text-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm hover:border-emerald-500/50" 
+                                  : "bg-slate-50/50 border-slate-100 text-slate-700 focus:border-emerald-500 focus:bg-white focus:shadow-sm hover:bg-white"
+                              )}
+                            />
+                          )}
+                        </div>
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -295,10 +404,10 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
           <div className="p-8 bg-slate-50/30 flex justify-end border-t border-slate-100">
             <button
               type="submit"
-              className="bg-[var(--primary-blue)] hover:bg-[#0b5ed7] active:scale-[0.98] text-white font-bold py-3.5 px-10 rounded-2xl flex items-center gap-3 transition-all shadow-xl shadow-blue-100"
+              className="bg-[var(--primary-blue)] hover:bg-[#1e40af] text-white px-8 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100/50 text-sm active:scale-95"
             >
-              <Save size={20} />
-              <span className="font-noto text-lg">บันทึก</span>
+              <Save size={18} />
+              <span>บันทึกข้อมูล</span>
             </button>
           </div>
         </form>

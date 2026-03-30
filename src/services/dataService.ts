@@ -32,8 +32,15 @@ export const dataService = {
     return pages.filter(p => p.ownerId === user.id);
   },
 
+  _getRawPages: (): Page[] => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem(STORAGE_KEYS.PAGES);
+    if (!saved) return initialPages;
+    return JSON.parse(saved);
+  },
+
   savePage: (page: Page): void => {
-    const pages = dataService.getPages();
+    const pages = dataService._getRawPages();
     const existingIndex = pages.findIndex(p => p.id === page.id);
     if (existingIndex >= 0) {
       pages[existingIndex] = page;
@@ -44,7 +51,7 @@ export const dataService = {
   },
 
   deletePage: (id: string): void => {
-    const pages = dataService.getPages().filter(p => p.id !== id);
+    const pages = dataService._getRawPages().filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
     
     // Also cleanup logs for this page
@@ -76,8 +83,15 @@ export const dataService = {
     return accounts.filter(a => a.ownerId === user.id);
   },
 
+  _getRawAccounts: (): FBAccount[] => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    if (!saved) return initialAccounts;
+    return JSON.parse(saved);
+  },
+
   saveAccount: (account: FBAccount): void => {
-    const accounts = dataService.getAccounts();
+    const accounts = dataService._getRawAccounts();
     const existingIndex = accounts.findIndex(a => a.id === account.id);
     if (existingIndex >= 0) {
       accounts[existingIndex] = account;
@@ -88,7 +102,7 @@ export const dataService = {
   },
 
   deleteAccount: (id: string): void => {
-    const accounts = dataService.getAccounts().filter(a => a.id !== id);
+    const accounts = dataService._getRawAccounts().filter(a => a.id !== id);
     localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
   },
 
@@ -148,8 +162,15 @@ export const dataService = {
     return []; // Others can't see user list
   },
 
+  _getRawUsers: (): User[] => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem('cs_users');
+    if (!saved) return initialUsers;
+    return JSON.parse(saved);
+  },
+
   saveUser: (user: User): void => {
-    const users = dataService.getUsers();
+    const users = dataService._getRawUsers();
     const existingIndex = users.findIndex(u => u.id === user.id);
     if (existingIndex >= 0) {
       users[existingIndex] = user;
