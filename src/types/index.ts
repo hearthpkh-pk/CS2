@@ -253,6 +253,14 @@ export interface GrowthMetric {
   growthPercentage: number;
 }
 
+export interface PublicHoliday {
+  id: string;
+  name: string;
+  date: string; // MM-DD for recurring or YYYY-MM-DD for one-time
+  multiplier: number; // e.g. 2.0 for 2x Pay
+  isRecurring: boolean; // if true, ignore year (recurring every year)
+}
+
 // --- Company Configuration ---
 export interface Brand {
   id: string;
@@ -301,6 +309,7 @@ export interface CompanyConfig {
   rules: CompanyRule[];
   groups: GroupDefinition[]; // Managed groups
   announcements: Announcement[]; // Global broadcaster
+  holidays: PublicHoliday[]; // Double Pay & Holiday Dates
   performancePolicy: PolicyConfiguration;
 }
 
@@ -317,4 +326,13 @@ export interface ReportsData {
     totalViews: number;
     avgAttainment: number;
   }[];
+}
+
+export interface PersonalTask {
+  id: string;
+  userId: string;
+  title: string;
+  completed: boolean;
+  dueDate?: string; // ISO string
+  createdAt: string; // ISO string
 }

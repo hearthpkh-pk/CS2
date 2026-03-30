@@ -35,8 +35,8 @@ import { cn } from '@/lib/utils';
 import { User, Role, CompanyRule } from '@/types';
 import { useCompanyConfig } from '../hooks/useCompanyConfig';
 import { configService } from '@/services/configService';
-import { CommissionCalculator } from './CommissionCalculator';
 import { RuleContentRenderer } from './RuleContentRenderer';
+import { holidayService } from '@/services/holidayService';
 
 interface PolicyCenterViewProps {
    currentUser: User;
@@ -57,9 +57,24 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
    const [isSaving, setIsSaving] = useState(false);
 
    // Filter and Sort Rules
-   const filteredRules = config.rules
+   const rawRules = [...config.rules];
+   
+   // Inject Dynamic Holiday Rule if it doesn't exist in DB
+   if (!rawRules.find(r => r.id === 'rule-holidays')) {
+      rawRules.push({
+         id: 'rule-holidays',
+         title: 'สวัสดิการวันหยุดและค่าแรงพิเศษ (Holiday Policy)',
+         content: holidayService.generatePolicyDescription(config.holidays || []),
+         category: 'Finance',
+         order: 99,
+         lastUpdated: new Date().toISOString()
+      });
+   }
+
+   const filteredRules = rawRules
       .filter(r => {
          if (isAdminOrDev && isEditMode) return true; // Show all in edit mode
+         if (r.id === 'rule-holidays') return true; // Always show holiday rule
          if (!r.targetRoles || r.targetRoles.length === 0) return true; // Default to all
          return r.targetRoles.includes(currentUser.role);
       })
@@ -72,7 +87,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
       }
    }, [filteredRules, activeRuleId]);
 
-   const activeRule = config.rules.find(r => r.id === activeRuleId);
+   const activeRule = filteredRules.find(r => r.id === activeRuleId);
 
    // Administrative Handlers
    const handleToggleEdit = () => {
@@ -144,11 +159,16 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
                {isAdminOrDev && (
                   <button
                      onClick={() => {
-                         if (activeRuleId === 'rule-commission' && onNavigate) {
-                            onNavigate('settings', 'policy');
-                         } else {
-                            handleToggleEdit();
+                         if ((activeRuleId === 'rule-commission' || activeRuleId === 'rule-holidays') && isEditMode && onNavigate) {
+                            setIsEditMode(false);
+                            onNavigate('settings', activeRuleId === 'rule-commission' ? 'policy' : 'holidays');
+                            return;
                          }
+                         if (activeRuleId === 'rule-holidays') {
+                            if (onNavigate) onNavigate('settings', 'holidays');
+                            return;
+                         }
+                         handleToggleEdit();
                      }}
                      className={cn(
                         "w-11 h-11 flex items-center justify-center rounded-2xl transition-all border shadow-sm shrink-0",

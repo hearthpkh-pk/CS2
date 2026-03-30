@@ -64,6 +64,15 @@ const DEFAULT_RULES: CompanyRule[] = [
   }
 ];
 
+const DEFAULT_HOLIDAYS = [
+  { id: 'h-nye', name: 'วันสิ้นปี (New Year\'s Eve)', date: '12-31', multiplier: 2, isRecurring: true },
+  { id: 'h-nyd', name: 'วันขึ้นปีใหม่ (New Year\'s Day)', date: '01-01', multiplier: 2, isRecurring: true },
+  { id: 'h-labour', name: 'วันแรงงานแห่งชาติ (Labour Day)', date: '05-01', multiplier: 2, isRecurring: true },
+  { id: 'h-sk1', name: 'วันสงกรานต์ (Songkran)', date: '04-13', multiplier: 2, isRecurring: true },
+  { id: 'h-sk2', name: 'วันสงกรานต์ (Songkran)', date: '04-14', multiplier: 2, isRecurring: true },
+  { id: 'h-sk3', name: 'วันสงกรานต์ (Songkran)', date: '04-15', multiplier: 2, isRecurring: true }
+];
+
 const DEFAULT_CONFIG: CompanyConfig = {
   id: "company-editor",
   name: "Editor Platform HQ",
@@ -101,7 +110,8 @@ const DEFAULT_CONFIG: CompanyConfig = {
       { groupId: "movies", minPagesPerDay: 10, minClipsPerPage: 4 },
       { groupId: "shows", minPagesPerDay: 10, minClipsPerPage: 4 }
     ]
-  }
+  },
+  holidays: DEFAULT_HOLIDAYS
 };
 
 const loadConfig = (): CompanyConfig => {
@@ -130,9 +140,10 @@ const loadConfig = (): CompanyConfig => {
       ...DEFAULT_CONFIG,
       ...parsed,
       rules: mergedRules,
-      groups: (parsed.groups && parsed.groups.length > 0) ? parsed.groups : DEFAULT_CONFIG.groups,
-      announcements: (parsed.announcements && parsed.announcements.length > 0) ? parsed.announcements : DEFAULT_CONFIG.announcements,
-      brands: (parsed.brands && parsed.brands.length > 0) ? parsed.brands : DEFAULT_CONFIG.brands,
+      announcements: (parsed.announcements !== undefined) ? parsed.announcements : DEFAULT_CONFIG.announcements,
+      brands: (parsed.brands !== undefined) ? parsed.brands : DEFAULT_CONFIG.brands,
+      groups: (parsed.groups !== undefined) ? parsed.groups : DEFAULT_CONFIG.groups,
+      holidays: (parsed.holidays !== undefined) ? parsed.holidays : DEFAULT_CONFIG.holidays,
       performancePolicy: {
         ...DEFAULT_CONFIG.performancePolicy,
         ...(parsed.performancePolicy || {})
@@ -219,6 +230,20 @@ export const configService = {
   deleteAnnouncement(id: string): CompanyConfig {
     const config = this.getConfig();
     return this.updateConfig({ ...config, announcements: config.announcements.filter(a => a.id !== id) });
+  },
+
+  saveHoliday(holiday: any): CompanyConfig {
+    const config = this.getConfig();
+    const holidays = [...config.holidays];
+    const index = holidays.findIndex(h => h.id === holiday.id);
+    if (index >= 0) holidays[index] = holiday;
+    else holidays.push(holiday);
+    return this.updateConfig({ ...config, holidays });
+  },
+
+  deleteHoliday(id: string): CompanyConfig {
+    const config = this.getConfig();
+    return this.updateConfig({ ...config, holidays: config.holidays.filter(h => h.id !== id) });
   },
 
   reorderRules(ruleIds: string[]): CompanyConfig {

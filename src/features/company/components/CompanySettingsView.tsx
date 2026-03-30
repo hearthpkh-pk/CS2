@@ -20,7 +20,8 @@ import {
   ShieldAlert,
   Database,
   LayoutGrid,
-  BellRing
+  BellRing,
+  CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand, PolicyConfiguration, Role, User } from '@/types';
@@ -28,15 +29,16 @@ import { configService } from '@/services/configService';
 import { useCompanyConfig } from '../hooks/useCompanyConfig';
 import { AnnouncementManager } from './settings/AnnouncementManager';
 import { GroupManager } from './settings/GroupManager';
+import { HolidayManager } from './settings/HolidayManager';
 
 interface CompanySettingsViewProps {
   currentUser: User;
-  initialTab?: 'brands' | 'policy' | 'announcements' | 'groups';
+  initialTab?: 'brands' | 'policy' | 'announcements' | 'groups' | 'holidays';
 }
 
 export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ currentUser, initialTab }) => {
   const { config, updatePerformancePolicy, refreshConfig } = useCompanyConfig();
-  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups'>(initialTab || 'announcements');
+  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups' | 'holidays'>(initialTab || 'announcements');
   const [isSaved, setIsSaved] = useState(false);
 
   // Sync initialTab when it changes from props
@@ -86,6 +88,7 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
     { id: 'brands', label: 'Brands', icon: LayoutGrid, desc: 'Client Portfolios' },
     { id: 'groups', label: 'Groups', icon: Layers, desc: 'Team Unit Targets' },
     { id: 'policy', label: 'KPI Matrix', icon: Settings2, desc: 'Financial Matrix' },
+    { id: 'holidays', label: 'Holidays', icon: CalendarDays, desc: 'Public Holiday Rules' },
   ] as const;
 
   return (
@@ -94,7 +97,7 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
       {/* HQ COMPANY SETTINGS HEADER (Mode 2) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+          <h1 className="text-2xl font-semibold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
             Company Settings
           </h1>
           <p className="text-[11px] text-slate-400 font-medium font-noto uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
@@ -145,7 +148,7 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
             <div className="space-y-10">
                 <div className="flex flex-col md:flex-row justify-between items-start gap-6 border-b border-slate-50 pb-8">
                    <div className="space-y-1">
-                      <h3 className="text-xl font-bold text-slate-800 font-outfit uppercase tracking-tight">Client Brand Assets</h3>
+                      <h3 className="text-xl font-semibold text-slate-800 font-outfit uppercase tracking-tight">Client Brand Assets</h3>
                       <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">โน้ตรายชื่อแบรนด์ลูกค้าสำหรับมอบหมายงาน</p>
                    </div>
                    <div className="flex items-center gap-2">
@@ -175,7 +178,7 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
                            <LayoutGrid size={20} className="text-blue-600" />
                         </div>
                         <div className="space-y-1">
-                           <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate block max-w-[150px]">{brand.name}</span>
+                           <span className="text-sm font-semibold text-slate-800 uppercase tracking-tight truncate block max-w-[150px]">{brand.name}</span>
                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Registered Brand</p>
                         </div>
                       </div>
@@ -195,6 +198,11 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
           {/* GROUP MANAGEMENT */}
           {activeTab === 'groups' && (
             <GroupManager />
+          )}
+
+          {/* PUBLIC HOLIDAYS */}
+          {activeTab === 'holidays' && (
+            <HolidayManager />
           )}
 
           {/* SYSTEM POLICY (KPI MATRIX - UNCHANGED AS REQUESTED) */}

@@ -53,19 +53,20 @@ export const PageEditorDrawer = ({
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right h-screen">
           <div className="h-full flex flex-col">
-            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-              <div>
-                <h3 className="text-xl font-bold text-primary-navy font-noto uppercase tracking-tight leading-none">
-                  {editingPage ? 'แก้ไขข้อมูลเพจ' : 'เพิ่มเพจใหม่'}
-                </h3>
-                <p className="text-[10px] text-slate-400 mt-1 font-noto uppercase tracking-wider font-bold opacity-60">รายละเอียดและการเชื่อมโยง Admin</p>
+            <form onSubmit={onSubmit} className="h-full flex flex-col">
+              <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div>
+                  <h3 className="text-xl font-bold text-primary-navy font-noto uppercase tracking-tight leading-none">
+                    {editingPage ? 'แก้ไขข้อมูลเพจ' : 'เพิ่มเพจใหม่'}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-1 font-noto uppercase tracking-wider font-bold opacity-60">รายละเอียดและการเชื่อมโยง Admin</p>
+                </div>
+                <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                  <Plus size={24} className="rotate-45" />
+                </button>
               </div>
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-                <Plus size={24} className="rotate-45" />
-              </button>
-            </div>
 
-            <form onSubmit={onSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-7 scroll-smooth">
+              <div className="flex-1 overflow-y-auto px-8 py-6 space-y-7 scroll-smooth">
               {/* Group 1: Basic Info */}
               <div className="space-y-4">
                 <div className="space-y-1 relative pt-2">
@@ -200,16 +201,17 @@ export const PageEditorDrawer = ({
                   ))}
                 </div>
               </div>
-            </form>
+              </div>
 
-            <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">
-              <button
-                onClick={onSubmit}
-                className="w-full bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200/50 transition-all active:scale-[0.98] font-noto"
-              >
-                {editingPage ? 'บันทึกการแก้ไข' : 'ยืนยันเพิ่มเพจ'}
-              </button>
-            </div>
+              <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">
+                <button
+                  type="submit"
+                  className="w-full bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200/50 transition-all active:scale-[0.98] font-noto"
+                >
+                  {editingPage ? 'บันทึกการแก้ไข' : 'ยืนยันเพิ่มเพจ'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

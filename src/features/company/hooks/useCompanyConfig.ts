@@ -92,6 +92,18 @@ export const useCompanyConfig = () => {
     return updated;
   }, []);
 
+  const saveHoliday = useCallback((holiday: any) => {
+    const updated = configService.saveHoliday(holiday);
+    setConfig(updated);
+    return updated;
+  }, []);
+
+  const deleteHoliday = useCallback((id: string) => {
+    const updated = configService.deleteHoliday(id);
+    setConfig(updated);
+    return updated;
+  }, []);
+
   return {
     config,
     saveGroup,
@@ -100,6 +112,8 @@ export const useCompanyConfig = () => {
     getActiveAnnouncements,
     saveAnnouncement,
     deleteAnnouncement,
+    saveHoliday,
+    deleteHoliday,
     updatePerformancePolicy,
     refreshConfig
   };

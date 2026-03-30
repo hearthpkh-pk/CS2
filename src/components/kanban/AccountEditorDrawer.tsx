@@ -164,7 +164,7 @@ export const AccountEditorDrawer = ({
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right h-screen">
-          <div className="h-full flex flex-col">
+          <form onSubmit={onSubmit} className="h-full flex flex-col">
             <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
               <div>
                 <h3 className="text-xl font-bold text-slate-800 uppercase tracking-tight leading-none">
@@ -172,11 +172,11 @@ export const AccountEditorDrawer = ({
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold opacity-60">Account Hierarchy & Controls</p>
               </div>
-              <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
+              <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
                 <Plus size={24} className="rotate-45" />
               </button>
             </div>
-            <form onSubmit={onSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-8 scroll-smooth">
+            <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 scroll-smooth">
               <SmartImportSection 
                 importText={importText}
                 setImportText={setImportText}
@@ -187,17 +187,17 @@ export const AccountEditorDrawer = ({
               <LoginSection formData={formData} setFormData={setFormData} />
               <EmailSection formData={formData} setFormData={setFormData} />
               <BrowserSection formData={formData} setFormData={setFormData} />
-            </form>
+            </div>
 
             <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">
               <button
-                onClick={onSubmit}
+                type="submit"
                 className="w-full bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200/50 transition-all active:scale-[0.98] font-noto"
               >
                 {editingAccount ? 'บันทึกการแก้ไขบัญชี' : 'ยืนยันเพิ่มบัญชี'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
