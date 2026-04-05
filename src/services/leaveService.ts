@@ -10,9 +10,12 @@ import { supabase } from '@/lib/supabaseClient';
 export const leaveService = {
 
   getLeaves: async (userId?: string): Promise<LeaveRequest[]> => {
-    let query = supabase.from('leave_requests').select('*').order('start_date', { ascending: false });
+    let query = supabase
+      .from('leave_requests')
+      .select('*, profiles:staff_id(name)') // Join กับ profiles เพื่อเอาชื่อ
+      .order('start_date', { ascending: false });
     
-    // ถ้ามีการระบุ userId ค่อยฟิลเตอร์ ถ้าไม่ระบุ (เช่น Super Admin โหลดทั้งหมด) RLS จะทำงานดักให้เอง
+    // ถ้ามีการระบุ userId ค่อยฟิลเตอร์ ถ้าไม่ระบุ (เช่น Super Admin โหลดทั้งหมด)
     if (userId) {
       query = query.eq('staff_id', userId);
     }
@@ -27,7 +30,7 @@ export const leaveService = {
     return (leaves || []).map(l => ({
       id: l.id,
       staffId: l.staff_id,
-      staffName: l.staff_id, // TODO: เรายังไม่ได้ join กับ profile 
+      staffName: (l.profiles as any)?.name || 'Unknown Staff',
       startDate: l.start_date,
       endDate: l.end_date,
       type: l.type,

@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Target, Clock, Activity, Share2, ChevronRight, ArrowRight, Box, Search, Users, FileText, BarChart2 } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 import { DailyReport } from '@/types';
 import { reportService } from '../services/reportService';
-import { cn } from '@/lib/utils';
 import { ExecutiveStats } from './PerformanceAudit/ExecutiveStats';
+import { LeaveAuditReport } from './LeaveAuditReport';
+import { ReportsHeader } from './Common/ReportsHeader';
+import { OperationalMatrix } from './PerformanceAudit/OperationalMatrix';
+import { ReportDrillDown } from './PerformanceAudit/ReportDrillDown';
 
 interface ReportsViewProps {
   currentUser: any;
@@ -13,13 +16,23 @@ interface ReportsViewProps {
 }
 
 export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
+  // --- 1. Global State Management ---
   const [reports] = useState<DailyReport[]>(reportService.getDailyStatus(currentUser));
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
-  const [viewMode, setViewMode] = useState<'report' | 'stats'>('report');
+  const [viewMode, setViewMode] = useState<'report' | 'stats' | 'leaves'>('report');
+  
+  // Filtering & Search State
   const [filterMode, setFilterMode] = useState<'all' | 'brand' | 'department' | 'tag'>('all');
   const [activeFilterValue, setActiveFilterValue] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set(reports.filter((r: DailyReport) => r.isPinned).map((r: DailyReport) => r.id)));
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(
+    new Set(reports.filter(r => r.isPinned).map(r => r.id))
+  );
+
+  // --- 2. Derived Data & Logic ---
+  const uniqueDepartments = Array.from(new Set(reports.map(r => r.department)));
+  const uniqueBrands = Array.from(new Set(reports.map(r => r.brand).filter(b => b !== 'None')));
+  const uniqueTags = Array.from(new Set(reports.flatMap(r => r.tags || [])));
 
   const togglePin = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -28,31 +41,6 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
     else newPinned.add(id);
     setPinnedIds(newPinned);
   };
-
-  // Logic for generating unique options
-  const uniqueDepartments = Array.from(new Set(reports.map(r => r.department)));
-  const uniqueBrands = Array.from(new Set(reports.map(r => r.brand).filter(b => b !== 'None')));
-  const uniqueTags = Array.from(new Set(reports.flatMap(r => r.tags || [])));
-
-  const sortedReports = [...reports].sort((a: DailyReport, b: DailyReport) => {
-    const aPinned = pinnedIds.has(a.id);
-    const bPinned = pinnedIds.has(b.id);
-    if (aPinned && !bPinned) return -1;
-    if (!aPinned && bPinned) return 1;
-    return a.userName.localeCompare(b.userName);
-  });
-
-  const filteredReports = sortedReports.filter((r: DailyReport) => {
-    // Search Filter
-    if (searchTerm && !r.userName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    
-    // Category Filter
-    if (filterMode === 'all') return true;
-    if (filterMode === 'department') return activeFilterValue ? r.department === activeFilterValue : true;
-    if (filterMode === 'brand') return activeFilterValue ? r.brand === activeFilterValue : r.brand !== 'None';
-    if (filterMode === 'tag') return activeFilterValue ? r.tags?.includes(activeFilterValue) : r.tags && r.tags.length > 0;
-    return true;
-  });
 
   const selectFilter = (mode: 'all' | 'brand' | 'department' | 'tag', value: string | null = null) => {
     if (filterMode === mode && !value) {
@@ -64,348 +52,84 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
     }
   };
 
+  // Sorting Logic (Pinned first)
+  const sortedReports = [...reports].sort((a, b) => {
+    const aPinned = pinnedIds.has(a.id);
+    const bPinned = pinnedIds.has(b.id);
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+    return a.userName.localeCompare(b.userName);
+  });
+
+  // Final Filtered Dataset
+  const filteredReports = sortedReports.filter(r => {
+    if (searchTerm && !r.userName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterMode === 'all') return true;
+    if (filterMode === 'department') return activeFilterValue ? r.department === activeFilterValue : true;
+    if (filterMode === 'brand') return activeFilterValue ? r.brand === activeFilterValue : r.brand !== 'None';
+    if (filterMode === 'tag') return activeFilterValue ? r.tags?.includes(activeFilterValue) : r.tags && r.tags.length > 0;
+    return true;
+  });
+
   return (
-    <>
-    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10 animate-in fade-in duration-700 overflow-x-hidden text-slate-900">
-        {/* Page Header (Golden Rules Mode 1) */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 pt-4 pb-6 mb-6">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
-                REPORTS & STATISTICS
-              </h2>
-            </div>
-            <p className="text-slate-400 font-noto text-[11px] mt-1.5">
-              รายงานและสถิติการปฏิบัติงาน • <span className="text-[var(--primary-theme)] font-bold">Command Console</span>
-            </p>
-          </div>
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10 overflow-x-hidden text-slate-900 font-prompt">
+      
+      {/* 🏛️ COMPONENT 1: STANDARDIZED HEADER */}
+      <ReportsHeader 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-             <div className="relative group w-full sm:w-64">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[var(--primary-theme)] transition-colors" size={16} />
-                <input 
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[var(--primary-theme)] focus:ring-4 focus:ring-blue-100/50 transition-all placeholder:text-slate-300"
-                />
-             </div>
-
-             {/* Mode Switcher */}
-             <div className="relative flex bg-[var(--primary-theme)] p-1 rounded-2xl shadow-inner shadow-blue-900/20 h-[40px] z-10 shrink-0 w-full sm:w-[84px]">
-                {/* Sliding Pill */}
-                <div 
-                  className="absolute top-1 bottom-1 w-[38px] bg-white rounded-xl shadow-md transition-transform duration-300 ease-out z-0"
-                  style={{ 
-                    transform: viewMode === 'report' ? 'translateX(0)' : 'translateX(100%)' 
-                  }}
-                />
-                
-                <button 
-                  onClick={() => setViewMode('report')}
-                  title="Report Matrix"
-                  className={cn(
-                    "relative z-10 flex-1 flex items-center justify-center transition-colors duration-300",
-                    viewMode === 'report' ? "text-[var(--primary-theme)] drop-shadow-sm" : "text-white/60 hover:text-white"
-                  )}
-                >
-                  <FileText size={18} />
-                </button>
-                <button 
-                  onClick={() => setViewMode('stats')}
-                  title="Performance Statistics"
-                  className={cn(
-                    "relative z-10 flex-1 flex items-center justify-center transition-colors duration-300",
-                    viewMode === 'stats' ? "text-[var(--primary-theme)] drop-shadow-sm" : "text-white/60 hover:text-white"
-                  )}
-                >
-                  <BarChart2 size={18} />
-                </button>
-             </div>
-          </div>
-        </div>
-
-        {currentUser.role === 'Developer' ? (
-          <div className="bg-white rounded-[3rem] border border-slate-100 p-16 text-center shadow-sm relative overflow-hidden group">
-             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-             <div className="max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto ring-8 ring-blue-50/50 group-hover:rotate-12 transition-transform duration-500">
-                   <BarChart2 size={40} className="text-[var(--primary-theme)]" />
-                </div>
-                <div className="space-y-3">
-                   <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight">System Developer Console</h3>
-                   <p className="text-slate-400 font-medium text-[13px] leading-relaxed">
-                      คุณกำลังอยู่ในโหมด <span className="text-[var(--primary-theme)] font-bold">Root Architecture</span> ข้อมูลรายงานทางธุรกิจของผู้อื่นจะถูกจำกัดไว้เพื่อความเป็นส่วนตัว
-                   </p>
-                </div>
-                <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100/50">
-                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                      โปรดใช้ปุ่ม <span className="text-[var(--primary-theme)]">FAB (Developer Tool)</span> มุมขวาล่าง <br/> เพื่อสวมสิทธิ์เป็นผู้ใช้งานที่ต้องการตรวจสอบข้อมูลครับ
-                   </p>
-                </div>
-             </div>
-          </div>
-        ) : viewMode === 'report' ? (
-          <>
-            {/* Precision KPI Summary Grid - HQ Control Center Style */}
-            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
-               {[
-                 { id: 'all', label: 'Global Personnel', icon: Users, value: reports.length, unit: 'operators' },
-                 { id: 'department', label: 'Operational Units', icon: Activity, value: uniqueDepartments.length, unit: 'departments' },
-                 { id: 'brand', label: 'Client Brands', icon: Share2, value: uniqueBrands.length, unit: 'assets' },
-                 { id: 'tag', label: 'Priority Groups', icon: Target, value: uniqueTags.length, unit: 'focus areas' }
-               ].map((card) => (
-                 <button 
-                   key={card.id}
-                   onClick={() => selectFilter(card.id as any)}
-                   className={`bg-white p-6 rounded-[1.5rem] border transition-all text-left group relative ${
-                     filterMode === card.id 
-                     ? 'border-[var(--primary-theme)] shadow-md ring-4 ring-blue-50/30' 
-                     : 'border-slate-100 hover:border-slate-200 shadow-sm'
-                   }`}
-                 >
-                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <card.icon size={14} className={filterMode === card.id ? 'text-[var(--primary-theme)]' : 'text-slate-300'} strokeWidth={1.5} />
-                      {card.label}
-                    </p>
-                    <div className="flex items-baseline gap-2">
-                      <span className={`text-2xl font-bold font-outfit tracking-tight ${filterMode === card.id ? 'text-[var(--primary-theme)]' : 'text-slate-700'}`}>
-                        {card.value}
-                      </span>
-                      <span className="text-[10px] font-medium text-slate-400 tracking-wider lowercase opacity-60">
-                        {card.unit}
-                      </span>
-                    </div>
-                    {filterMode === card.id && (
-                      <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-[var(--primary-theme)] animate-pulse"></div>
-                    )}
-                 </button>
-               ))}
-            </div>
-
-            {/* Drill-down Sub-Filter (Pills) */}
-            {(filterMode !== 'all') && (
-              <div className="flex flex-wrap items-center gap-2 mb-8 animate-in slide-in-from-top-2 duration-300 bg-slate-50/50 p-2 rounded-2xl border border-slate-50">
-                 {(filterMode === 'department' ? uniqueDepartments : filterMode === 'brand' ? uniqueBrands : uniqueTags).map((val, idx) => (
-                    <button
-                      key={`${filterMode}-${val}-${idx}`}
-                      onClick={() => setActiveFilterValue(activeFilterValue === val ? null : val)}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all border ${
-                        activeFilterValue === val 
-                        ? 'bg-[var(--primary-theme)] border-[var(--primary-theme)] text-white shadow-md' 
-                        : 'bg-white border-slate-100 text-slate-400 hover:border-blue-100 hover:text-slate-600'
-                      }`}
-                    >
-                      {val}
-                    </button>
-                 ))}
-                 {activeFilterValue && (
-                    <button 
-                      onClick={() => setActiveFilterValue(null)}
-                      className="px-4 py-2 rounded-xl text-[10px] font-bold text-[var(--primary-theme)] hover:bg-blue-50 transition-all flex items-center gap-1.5"
-                    >
-                       Clear Selection
-                    </button>
-                 )}
+      {/* 🚀 COMPONENT 2: MAIN VIEW ORCHESTRATION */}
+      {currentUser.role === 'Developer' ? (
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-16 text-center shadow-sm relative overflow-hidden group">
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+           <div className="max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto ring-8 ring-blue-50/50 group-hover:rotate-12 transition-transform duration-500">
+                 <BarChart2 size={40} className="text-[var(--primary-theme)]" />
               </div>
-            )}
-
-            {/* Main List */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
-            <div className="overflow-x-auto relative custom-scrollbar">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                  <thead className="bg-slate-50/40">
-                    <tr className="border-b border-slate-50/60">
-                      <th className="pl-4 md:pl-8 pr-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80">Operational Staff</th>
-                      <th className="px-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80">Running Campaigns</th>
-                      <th className="px-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-center">Output Volume</th>
-                      <th className="px-6 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-center">Sync Time</th>
-                      <th className="pl-6 pr-4 md:pr-8 py-4 md:py-5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] opacity-80 text-right">Drill-down</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {filteredReports.map((report) => (
-                      <tr 
-                        key={report.id} 
-                        className={`hover:bg-slate-50/80 transition-all duration-300 group cursor-pointer ${pinnedIds.has(report.id) ? 'bg-blue-50/10' : ''}`}
-                        onClick={() => setSelectedReport(report)}
-                      >
-                        <td className="pl-4 md:pl-8 pr-6 py-4 md:py-5">
-                          <div className="flex items-center gap-3 md:gap-4">
-                            <button 
-                              onClick={(e) => togglePin(e, report.id)}
-                              className={`p-1.5 rounded-lg transition-all ${pinnedIds.has(report.id) ? 'text-[var(--primary-theme)]' : 'text-slate-200 hover:text-slate-400'}`}
-                            >
-                              <Target size={13} className={pinnedIds.has(report.id) ? 'fill-[var(--primary-theme)]' : ''} />
-                            </button>
-
-                            <div className="w-9 h-9 rounded-xl md:w-11 md:h-11 md:rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:border-blue-200 group-hover:text-[var(--primary-theme)] transition-all shadow-sm shrink-0">
-                              <span className="text-xs font-bold">{report.userName.charAt(0)}</span>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-[14px] font-medium text-slate-800 font-noto tracking-tight truncate flex items-center gap-2">
-                                {report.userName}
-                                {pinnedIds.has(report.id) && <span className="text-[8px] bg-blue-100 text-[var(--primary-theme)] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter">Pinned</span>}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest border border-slate-50 px-1.5 py-0.5 rounded-lg">{report.department} • {report.group}</span>
-                                {report.tags && report.tags.map((tag: string, tIdx: number) => (
-                                  <span key={`${tag}-${tIdx}`} className="text-[9px] text-emerald-500 font-bold border border-emerald-50 px-1.5 py-0.5 rounded-lg uppercase tracking-widest">{tag}</span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 md:py-5">
-                          <div className="flex flex-wrap gap-2">
-                            {report.brand !== 'None' ? (
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-100 group-hover:border-blue-100 transition-colors bg-white/50">
-                                <Share2 size={10} className="text-slate-300" />
-                                <span className="text-[11px] font-medium text-slate-500 font-noto whitespace-nowrap">
-                                  {report.brand}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-[10px] font-medium text-slate-300 italic tracking-wider">No Active Brands</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 md:py-5">
-                          <div className="flex flex-col items-center gap-2">
-                            <p className="text-[13px] font-medium text-slate-600 font-inter">
-                              {report.postCount} <span className="text-[10px] text-slate-300">/ {report.totalPostsRequired}</span>
-                            </p>
-                            <div className="w-24 h-1 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
-                              <div 
-                                className={`h-full transition-all duration-700 ease-out ${report.status === 'Complete' ? 'bg-emerald-400' : 'bg-amber-400'}`} 
-                                style={{ width: `${(report.postCount / (report.totalPostsRequired || 1)) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 md:py-5 text-center">
-                           <div className="inline-flex items-center gap-2.5 text-slate-400">
-                              <Clock size={13} strokeWidth={1.5} className="group-hover:text-[var(--primary-theme)] transition-colors" />
-                              <span className="text-[12px] font-medium font-inter group-hover:text-slate-700 transition-colors">{report.submissionTime}</span>
-                           </div>
-                        </td>
-                        <td className="pl-6 pr-4 md:pr-8 py-4 md:py-5 text-right">
-                          <div className="inline-flex p-2 text-slate-300 group-hover:text-[var(--primary-theme)] transition-all bg-white rounded-xl border border-slate-50 group-hover:border-blue-100 shadow-sm group-hover:shadow-md">
-                             <ChevronRight size={16} strokeWidth={2.5} />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                 <h3 className="text-2xl font-bold text-slate-800 font-outfit tracking-tight">System Developer Console</h3>
+                 <p className="text-slate-400 font-medium text-[13px] leading-relaxed">
+                    คุณกำลังอยู่ในโหมด <span className="text-[var(--primary-theme)] font-bold">Root Architecture</span> ข้อมูลรายงานทางธุรกิจของผู้อื่นจะถูกจำกัดไว้เพื่อความเป็นส่วนตัว
+                 </p>
               </div>
-            </div>
-          </>
-        ) : (
-          <ExecutiveStats reports={reports} />
-        )}
-      </div>
-
-      {/* Drill-down Drawer - Portal-like Overlay outside content container */}
-      {selectedReport && (
-        <div className="fixed inset-y-0 right-0 left-0 md:left-20 z-[100] animate-in fade-in duration-500 flex justify-end">
-           {/* Backdrop covers ONLY the area to the right of the sidebar */}
-           <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" onClick={() => setSelectedReport(null)} />
-           
-           <div className="relative w-full sm:w-[500px] md:w-[600px] lg:w-[700px] bg-white shadow-[-20px_0_80px_rgba(0,0,0,0.1)] animate-in slide-in-from-right duration-700 h-full flex flex-col">
-              {/* Drawer Header */}
-              <div className="p-8 md:p-10 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-20">
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl border border-blue-100 flex items-center justify-center text-[var(--primary-theme)] shadow-sm shrink-0">
-                       <Target size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-xl md:text-2xl font-bold text-slate-800 font-outfit tracking-tight truncate">{selectedReport.userName}</h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.25em] mt-1 opacity-80">Depth Matrix Analysis</p>
-                    </div>
-                 </div>
-                 <button onClick={() => setSelectedReport(null)} className="p-3 text-slate-300 hover:text-slate-800 transition-all hover:bg-slate-50 rounded-2xl focus:outline-none shrink-0">
-                    <ArrowRight size={24} />
-                 </button>
-              </div>
-              
-              {/* Drawer Content */}
-              <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12 custom-scrollbar rtl">
-                 {/* Summary Section */}
-                 <div className="space-y-6 ltr">
-                    <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Operational Metrics</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                       <div className="p-6 rounded-[1.5rem] border border-slate-100 bg-white shadow-sm overflow-hidden relative">
-                          <div className="absolute -right-2 -top-2 opacity-[0.03]">
-                             <Target size={80} />
-                          </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 relative z-10">Total Estimated Views</p>
-                          <div className="flex items-baseline gap-1 relative z-10">
-                             <p className="text-3xl md:text-4xl font-bold text-slate-800 font-inter tracking-tighter">{(selectedReport.views / 1000000).toFixed(2)}</p>
-                             <span className="text-sm font-bold text-slate-300">M</span>
-                          </div>
-                       </div>
-                       <div className="p-6 rounded-[1.5rem] border border-slate-100 bg-white shadow-sm overflow-hidden relative">
-                          <div className="absolute -right-2 -top-2 opacity-[0.03]">
-                             <Box size={80} />
-                          </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 relative z-10">Assigned Assets</p>
-                          <p className="text-3xl md:text-4xl font-bold text-slate-800 font-inter tracking-tighter relative z-10">{selectedReport.pagesCount}</p>
-                       </div>
-                    </div>
-                 </div>
-
-                 {/* Asset Breakdown - Compact Grid */}
-                 <div className="space-y-6 pb-12 ltr">
-                    <div className="flex justify-between items-end">
-                       <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Operational Asset Matrix</h4>
-                       <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                          <span className="text-[11px] font-medium text-slate-400 font-inter tracking-tight">Active Coverage</span>
-                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       {Array.from({ length: selectedReport.pagesCount }).map((_, i) => (
-                         <div key={i} className="flex flex-col p-4 rounded-2xl border border-slate-50 hover:border-blue-50 transition-all hover:bg-slate-50/30 group/item">
-                            <div className="flex items-center justify-between mb-3 border-b border-transparent group-hover/item:border-slate-100 pb-2 transition-colors">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                 <div className="w-6 h-6 rounded-lg bg-white border border-slate-100 flex items-center justify-center shrink-0">
-                                    <Activity size={10} className="text-slate-300 group-hover/item:text-[var(--primary-theme)]" />
-                                 </div>
-                                 <span className="text-[12px] font-semibold text-slate-600 font-noto truncate">Page Unit {i+1}</span>
-                              </div>
-                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${Math.random() > 0.1 ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
-                            </div>
-                            <div className="flex justify-between items-center px-1">
-                               <div className="space-y-0.5 min-w-0">
-                                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Est. Reach</p>
-                                  <p className="text-[11px] font-bold text-slate-500 font-inter tracking-tighter">{((Math.random() * 800) + 200).toFixed(0)}K</p>
-                               </div>
-                               <button className="p-1.5 text-slate-300 hover:text-[var(--primary-theme)] transition-colors shrink-0">
-                                  <Share2 size={12} strokeWidth={2} />
-                                </button>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-              </div>
-
-              {/* Drawer Footer */}
-              <div className="p-8 md:p-10 border-t border-slate-50 bg-white sticky bottom-0">
-                 <button 
-                   onClick={() => setSelectedReport(null)}
-                   className="w-full py-5 rounded-2xl border border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] hover:bg-slate-50 hover:text-slate-800 transition-all active:scale-[0.98] shadow-sm"
-                 >
-                   Exit Detailed Matrix View
-                 </button>
+              <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100/50">
+                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                    โปรดใช้ปุ่ม <span className="text-[var(--primary-theme)]">FAB (Developer Tool)</span> มุมขวาล่าง <br/> เพื่อสวมสิทธิ์เป็นผู้ใช้งานที่ต้องการตรวจสอบข้อมูลครับ
+                 </p>
               </div>
            </div>
         </div>
+      ) : viewMode === 'report' ? (
+        <OperationalMatrix 
+          reports={reports}
+          filteredReports={filteredReports}
+          filterMode={filterMode}
+          onFilterChange={selectFilter}
+          activeFilterValue={activeFilterValue}
+          onActiveFilterChange={setActiveFilterValue}
+          uniqueDepartments={uniqueDepartments}
+          uniqueBrands={uniqueBrands}
+          uniqueTags={uniqueTags}
+          onSelectReport={setSelectedReport}
+          pinnedIds={pinnedIds}
+          onTogglePin={togglePin}
+        />
+      ) : viewMode === 'stats' ? (
+        <ExecutiveStats reports={reports} />
+      ) : (
+        <LeaveAuditReport />
       )}
-    </>
+
+      {/* 📋 COMPONENT 3: DETAIL DRILL-DOWN ANALYTICS */}
+      <ReportDrillDown 
+        selectedReport={selectedReport}
+        onClose={() => setSelectedReport(null)}
+      />
+
+    </div>
   );
 };
-

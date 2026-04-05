@@ -107,6 +107,7 @@ export const dataService = {
       reach: log.reach || 0,
       engagement: log.engagement || 0,
       clips_count: log.clipsCount || 0,
+      links: log.links || [],
       source: log.source || 'Manual'
     }));
 

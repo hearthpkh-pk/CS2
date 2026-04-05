@@ -123,8 +123,9 @@ export interface DailyLog {
   engagement?: number;
   statusAtTime?: string; // Captured status on that day
   isManual?: boolean;    // True if entered by staff
-  source?: 'API' | 'CSV' | 'Manual';
+  source?: 'API' | 'CSV' | 'Manual' | string;
   clipsCount?: number;    // Number of clips submitted
+  links?: string[];      // Array of video URLs
   submittedAt?: string;  // Timestmap of final submission
   createdAt: string;
 }

@@ -21,7 +21,8 @@ import {
   Database,
   LayoutGrid,
   BellRing,
-  CalendarDays
+  CalendarDays,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand, PolicyConfiguration, Role, User } from '@/types';

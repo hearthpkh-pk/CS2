@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { User, Page, FBAccount, DailyLog, PolicyConfiguration } from '@/types';
@@ -8,36 +10,77 @@ import { PerformanceMatrix } from './PerformanceMatrix';
 import { RiskCenter } from './RiskCenter';
 import { ShieldAlert, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// MOCK DATA IMPORT
-import { allMockUsers, mockDashboardPages, mockDashboardLogs, mockDashboardAccounts } from '../mocks/dashboardMocks';
+import { dataService } from '@/services/dataService';
+import { personnelService } from '@/services/personnelService';
 
 interface HQDashboardViewProps {
   currentUser: User;
   policy: PolicyConfiguration;
-  // Options to use Real Data or Mock Data
-  useMocks?: boolean;
 }
 
 export const HQDashboardView: React.FC<HQDashboardViewProps> = ({ 
-  currentUser, policy, useMocks = true
+  currentUser, policy
 }) => {
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
+  // Real Database State
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allPages, setAllPages] = useState<Page[]>([]);
+  const [allAccounts, setAllAccounts] = useState<FBAccount[]>([]);
+  const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch real data on component mount
+  useEffect(() => {
+    const fetchRealData = async () => {
+      setIsLoading(true);
+      try {
+        const [fetchedUsers, fetchedPages, fetchedAccounts, fetchedLogs] = await Promise.all([
+          personnelService.getUsers(),
+          dataService.getPages(),
+          dataService.getAccounts(currentUser),
+          dataService.getLogs()
+        ]);
+        
+        setAllUsers(fetchedUsers);
+        setAllPages(fetchedPages);
+        setAllAccounts(fetchedAccounts);
+        setAllLogs(fetchedLogs);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRealData();
+  }, [currentUser]);
+
   // Decide source of truth
   const dashboardData = useMemo(() => {
+    if (isLoading) return null; // Avoid running heavy calculations while loading
+    
     return hqDashboardService.getMetrics(
       currentUser,
-      allMockUsers,
-      mockDashboardPages,
-      mockDashboardAccounts,
-      mockDashboardLogs,
+      allUsers,
+      allPages,
+      allAccounts,
+      allLogs,
       policy,
       selectedMonth,
       selectedYear
     );
-  }, [currentUser, policy, selectedMonth, selectedYear]);
+  }, [currentUser, policy, selectedMonth, selectedYear, allUsers, allPages, allAccounts, allLogs, isLoading]);
+
+  if (isLoading || !dashboardData) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center space-y-4 opacity-50 h-[60vh]">
+        <div className="w-8 h-8 border-2 border-[var(--primary-theme)] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#0f172a]">Loading Live Matrix...</p>
+      </div>
+    );
+  }
 
   const attainmentScore = Math.min(dashboardData.attainmentPercentage, 100);
 
@@ -52,7 +95,7 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
           </h1>
           <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em] mt-1.5">
             <span className="font-outfit font-bold tracking-[0.25em]">Enterprise Management</span>
-            <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-[var(--primary-theme)] font-prompt font-bold">{dashboardData.scope} Executive Console</span>
           </div>
         </div>
@@ -83,7 +126,7 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
 
       {/* 2. KPI STRIP */}
       <KPIStrip 
-        totalPages={mockDashboardPages.length}
+        totalPages={dashboardData.assets.length}
         totalUsers={dashboardData.totalUsersInScope}
         totalViews={dashboardData.actualTotalViews}
         riskCount={dashboardData.riskRadar.length}
@@ -127,7 +170,7 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
 
           <PerformanceMatrix 
             leaderboard={dashboardData.leaderboard}
-            pages={mockDashboardPages}
+            pages={dashboardData.assets}
           />
         </div>
 
