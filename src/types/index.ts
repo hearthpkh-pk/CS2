@@ -59,8 +59,11 @@ export interface User {
   temporaryPassword?: string;
   salary?: number; // Integer (Baht)
   salaryHistory?: SalaryAdjustment[]; // Log of all salary changes
-  startDate?: string; // YYYY-MM-DD
-  probationDate?: string; // YYYY-MM-DD
+  startDate?: string; // YYYY-MM-DD (Enlistment Date)
+  probationDate?: string; // YYYY-MM-DD (Clearance Date)
+  phone?: string;
+  lineId?: string;
+  status?: 'Pending' | 'Probation' | 'Official' | 'Resigned';
   department?: string; // แผนก: รายการ, หนัง, ข่าว
   group?: string; // กลุ่มงาน: แบรนด์ 1 - 4
   bankName?: string;

@@ -72,7 +72,8 @@ export const dataService = {
     const { data: logs, error } = await supabase
       .from('daily_logs')
       .select('*')
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(100); // กั้นไว้กันดึงข้อมูลมหาศาลเกินความจำเป็น
 
     if (error) {
       console.error('Error fetching logs:', error);
@@ -90,6 +91,36 @@ export const dataService = {
       engagement: l.engagement,
       source: l.source,
       clipsCount: l.clips_count,
+      links: l.links || [],
+      createdAt: l.created_at
+    }));
+  },
+
+  // Targeted Query: ดึงเฉพาะของพนักงานคนเดียว ในวันที่ระบุ (รวดเร็วและ Scalable กว่า)
+  getTodayLogsForUser: async (staffId: string, date: string): Promise<DailyLog[]> => {
+    const { data: logs, error } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .eq('staff_id', staffId)
+      .eq('date', date);
+
+    if (error) {
+      console.error('Error fetching today logs:', error);
+      return [];
+    }
+
+    return (logs || []).map(l => ({
+      id: l.id,
+      pageId: l.page_id,
+      staffId: l.staff_id,
+      date: l.date,
+      followers: l.followers,
+      views: l.views,
+      reach: l.reach,
+      engagement: l.engagement,
+      source: l.source,
+      clipsCount: l.clips_count,
+      links: l.links || [],
       createdAt: l.created_at
     }));
   },

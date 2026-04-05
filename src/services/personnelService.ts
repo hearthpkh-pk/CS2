@@ -13,11 +13,19 @@ export const personnelService = {
       id: p.id,
       name: p.name,
       username: p.username || '',
+      email: p.email || '',
       role: (p.role as Role) || Role.Staff,
+      status: p.status || 'Pending',
+      phone: p.phone || '',
+      lineId: p.line_id || '',
       teamId: p.team_id,
       salary: Number(p.salary) || 0,
       department: p.department,
       group: p.group,
+      bankName: p.bank_name,
+      bankAccount: p.bank_account,
+      startDate: p.enlistment_date,
+      probationDate: p.clearance_date,
       isActive: p.is_active,
     }));
 
@@ -55,18 +63,48 @@ export const personnelService = {
   },
 
   saveUser: async (user: User): Promise<void> => {
-    const payload = {
+    // Base payload — columns ที่มีอยู่ตั้งแต่ต้นและปลอดภัย 100%
+    const basePayload: Record<string, unknown> = {
       name: user.name,
       username: user.username,
       role: user.role,
-      team_id: user.teamId,
-      salary: user.salary,
+      team_id: (user.teamId && !user.teamId.startsWith('team-')) ? user.teamId : null,
+      salary: user.salary ?? 12000,
       department: user.department,
       "group": user.group,
-      is_active: user.isActive
+      is_active: user.status ? (user.status === 'Official' || user.status === 'Probation') : user.isActive
     };
-    const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
-    if (error) console.error('Error updating user:', error);
+
+    // Extended payload — columns ที่เพิ่มโดย migration 07/08
+    // ส่งเฉพาะ field ที่มีค่าเพื่อกัน PGRST204 หากยังไม่ได้รัน Migration
+    const extendedFields: Record<string, unknown> = {};
+    if (user.email     !== undefined) extendedFields.email         = user.email;
+    if (user.phone     !== undefined) extendedFields.phone         = user.phone;
+    if (user.lineId    !== undefined) extendedFields.line_id       = user.lineId;
+    if (user.status    !== undefined) extendedFields.status        = user.status;
+    if (user.bankName  !== undefined) extendedFields.bank_name     = user.bankName;
+    if (user.bankAccount !== undefined) extendedFields.bank_account = user.bankAccount;
+    if (user.startDate !== undefined) extendedFields.enlistment_date = user.startDate;
+    if (user.probationDate !== undefined) extendedFields.clearance_date = user.probationDate;
+
+    const payload = { ...basePayload, ...extendedFields };
+
+    // ตรวจสอบว่าเป็นพนักงานใหม่ (ID จะขึ้นต้นด้วย user-xxxx จากฝั่ง Client) หรือพนักงานเดิม
+    const isNewUser = !user.id || user.id.startsWith('user-');
+
+    if (isNewUser) {
+      const { error } = await supabase.from('profiles').insert(payload);
+      if (error) {
+        console.error('Error inserting new user:', error);
+        throw error;
+      }
+    } else {
+      const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
+      if (error) {
+        console.error('Error updating existing user:', error);
+        throw error;
+      }
+    }
   },
 
   saveTeam: async (team: Team): Promise<void> => {

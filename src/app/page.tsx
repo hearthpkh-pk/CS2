@@ -231,7 +231,7 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'daily-task' && (
-            <DailyTaskView currentUser={currentUser} pages={initialPages} />
+            <DailyTaskView currentUser={currentUser} pages={pages.filter(p => !p.isDeleted && p.status === 'Active')} />
           )}
 
           {currentTab === 'learning' && (

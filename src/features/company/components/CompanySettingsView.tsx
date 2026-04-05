@@ -104,7 +104,7 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
   }
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4 animate-in fade-in duration-700">
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4">
       
       {/* HQ COMPANY SETTINGS HEADER (Mode 2) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">

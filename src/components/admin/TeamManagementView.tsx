@@ -61,7 +61,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
   ] as const;
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10 animate-in fade-in duration-700">
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10">
       
       {/* Page Header (Golden Rules Mode 1) */}
       <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
@@ -100,7 +100,15 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
           </div>
           
           <button 
-            onClick={() => setEditingUser({ id: `user-${Date.now()}`, name: '', role: Role.Staff, username: '', isActive: true })}
+            onClick={() => setEditingUser({ 
+              id: `user-${Date.now()}`, 
+              name: '', 
+              role: Role.Staff, 
+              username: '', 
+              isActive: true,
+              status: 'Pending',
+              salary: 12000  // เงินเดือนพื้นฐานตามนโยบาย
+            })}
             className="flex items-center gap-2 px-5 py-2.5 bg-[var(--primary-theme)] text-white text-sm font-bold font-noto rounded-2xl hover:bg-[var(--primary-theme-hover)] transition-all shadow-lg shadow-blue-100/50 active:scale-95"
           >
             <Plus size={18} />
