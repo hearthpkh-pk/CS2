@@ -1,182 +1,147 @@
 import { Page, DailyLog, FBAccount, User, Role } from "../types";
 import { initialPages, generateMockLogs, initialAccounts, initialUsers } from "./mockData";
+import { supabase } from '@/lib/supabaseClient';
 
 const STORAGE_KEYS = {
-  PAGES: 'cs_pages',
-  LOGS: 'cs_logs',
   ACCOUNTS: 'cs_accounts'
 };
 
 export const dataService = {
-  // --- Pages ---
-  getPages: (user?: User): Page[] => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEYS.PAGES);
-    let pages: Page[] = [];
-    
-    if (!saved) {
-      pages = initialPages;
-      localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
+  // --- Pages (Supabase) ---
+  getPages: async (): Promise<Page[]> => {
+    const { data: pages, error } = await supabase
+      .from('facebook_pages')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching pages:', error);
+      return [];
+    }
+
+    // Map DB schema back to Frontend Type
+    return (pages || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      status: p.status,
+      boxId: p.box_id,
+      ownerId: p.owner_id,
+      teamId: p.team_id,
+      facebookUrl: p.facebook_url,
+      facebookData: p.facebook_data,
+      isDeleted: p.is_deleted,
+      createdAt: p.created_at,
+    }));
+  },
+
+  savePage: async (page: Page): Promise<void> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const payload = {
+      id: (!page.id || page.id === '' || page.id.startsWith('p')) ? undefined : page.id, // ให้ Postgres gen_random_uuid() อัตโนมัติถ้าไม่มี ID
+      name: page.name,
+      category: page.category,
+      status: page.status || 'Active',
+      box_id: page.boxId,
+      owner_id: page.ownerId || user.id,
+      facebook_url: page.facebookUrl,
+      facebook_data: page.facebookData,
+      is_deleted: page.isDeleted || false,
+    };
+
+    if (page.id && !page.id.startsWith('p')) {
+      // Update
+      const { error } = await supabase.from('facebook_pages').update(payload).eq('id', page.id);
+      if (error) console.error('Error updating page:', error);
     } else {
-      pages = JSON.parse(saved);
+      // Insert
+      const { error } = await supabase.from('facebook_pages').insert(payload);
+      if (error) console.error('Error inserting page:', error);
+    }
+  },
+
+  deletePage: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('facebook_pages').delete().eq('id', id);
+    if (error) console.error('Error deleting page:', error);
+  },
+
+  // --- Logs (Supabase) ---
+  getLogs: async (): Promise<DailyLog[]> => {
+    const { data: logs, error } = await supabase
+      .from('daily_logs')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
     }
 
-    // RBAC Scoping
-    if (!user) return [];
-    if (user.role === Role.Developer) return [];
-    if (user.role === Role.SuperAdmin || user.role === Role.Admin) return pages;
-    if (user.role === Role.Manager) {
-      return pages.filter(p => p.teamId === user.teamId || p.ownerId === user.id);
+    return (logs || []).map(l => ({
+      id: l.id,
+      pageId: l.page_id,
+      staffId: l.staff_id,
+      date: l.date,
+      followers: l.followers,
+      views: l.views,
+      reach: l.reach,
+      engagement: l.engagement,
+      source: l.source,
+      clipsCount: l.clips_count,
+      createdAt: l.created_at
+    }));
+  },
+
+  saveLogs: async (newLogs: DailyLog[]): Promise<void> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const upsertPayload = newLogs.map(log => ({
+      page_id: log.pageId,
+      staff_id: log.staffId || user.id,
+      date: log.date,
+      followers: log.followers,
+      views: log.views,
+      reach: log.reach || 0,
+      engagement: log.engagement || 0,
+      clips_count: log.clipsCount || 0,
+      source: log.source || 'Manual'
+    }));
+
+    // ใช้ Upsert: ถ้ารหัสคู่ page_id + date ซ้ำกัน จะทำการดึงข้อมูลใหม่ไปเขียนทับ 
+    const { error } = await supabase
+      .from('daily_logs')
+      .upsert(upsertPayload, { onConflict: 'page_id, date' });
+
+    if (error) {
+      console.error('Error upserting logs:', error);
     }
-    // Staff
-    return pages.filter(p => p.ownerId === user.id);
   },
 
-  _getRawPages: (): Page[] => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEYS.PAGES);
-    if (!saved) return initialPages;
-    return JSON.parse(saved);
-  },
-
-  savePage: (page: Page): void => {
-    const pages = dataService._getRawPages();
-    const existingIndex = pages.findIndex(p => p.id === page.id);
-    if (existingIndex >= 0) {
-      pages[existingIndex] = page;
-    } else {
-      pages.push(page);
-    }
-    localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
-  },
-
-  deletePage: (id: string): void => {
-    const pages = dataService._getRawPages().filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
-    
-    // Also cleanup logs for this page
-    const logs = dataService.getLogs().filter(l => l.pageId !== id);
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
-  },
-
-  // --- Accounts ---
-  getAccounts: (user?: User): FBAccount[] => {
+  // --- Accounts (ยังใช้ LocalStorage ชั่วคราว รอ Phase Data Migration เต็มรูปแบบ) ---
+  getAccounts: async (user?: User): Promise<FBAccount[]> => {
     if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-    let accounts: FBAccount[] = [];
+    let accounts: FBAccount[] = saved ? JSON.parse(saved) : initialAccounts;
 
-    if (!saved) {
-      accounts = initialAccounts;
-      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
-    } else {
-      accounts = JSON.parse(saved);
-    }
-
-    // RBAC Scoping
     if (!user) return [];
-    if (user.role === Role.Developer) return [];
-    if (user.role === Role.SuperAdmin || user.role === Role.Admin) return accounts;
-    if (user.role === Role.Manager) {
-      return accounts.filter(a => a.teamId === user.teamId || a.ownerId === user.id);
-    }
-    // Staff
+    if (user.role === Role.Developer || user.role === Role.SuperAdmin || user.role === Role.Admin) return accounts;
+    if (user.role === Role.Manager) return accounts.filter(a => a.teamId === user.teamId || a.ownerId === user.id);
     return accounts.filter(a => a.ownerId === user.id);
   },
 
-  _getRawAccounts: (): FBAccount[] => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-    if (!saved) return initialAccounts;
-    return JSON.parse(saved);
-  },
-
-  saveAccount: (account: FBAccount): void => {
-    const accounts = dataService._getRawAccounts();
+  saveAccount: async (account: FBAccount): Promise<void> => {
+    const accounts = await dataService.getAccounts();
     const existingIndex = accounts.findIndex(a => a.id === account.id);
-    if (existingIndex >= 0) {
-      accounts[existingIndex] = account;
-    } else {
-      accounts.push(account);
-    }
+    if (existingIndex >= 0) accounts[existingIndex] = account;
+    else accounts.push(account);
     localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
   },
 
-  deleteAccount: (id: string): void => {
-    const accounts = dataService._getRawAccounts().filter(a => a.id !== id);
-    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
-  },
-
-  // --- Logs ---
-  getLogs: (): DailyLog[] => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
-    if (!saved) {
-      const pages = dataService.getPages();
-      const initialLogs = generateMockLogs(pages);
-      localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(initialLogs));
-      return initialLogs;
-    }
-    return JSON.parse(saved);
-  },
-
-  saveLogs: (newLogs: DailyLog[]): void => {
-    const logs = dataService.getLogs();
-    newLogs.forEach(nLog => {
-      const existingIndex = logs.findIndex(l => l.pageId === nLog.pageId && l.date === nLog.date);
-      
-      const logToSave: DailyLog = {
-        ...nLog,
-        source: nLog.source || 'Manual',
-        isManual: nLog.isManual ?? true,
-        createdAt: nLog.createdAt || new Date().toISOString()
-      };
-
-      if (existingIndex >= 0) {
-        logs[existingIndex] = logToSave;
-      } else {
-        logs.push(logToSave);
-      }
-    });
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
-  },
-
-  // --- Users ---
-  getUsers: (requestingUser?: User): User[] => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem('cs_users');
-    let users: User[] = [];
-
-    if (!saved) {
-      users = initialUsers;
-      localStorage.setItem('cs_users', JSON.stringify(users));
-    } else {
-      users = JSON.parse(saved);
-    }
-
-    // RBAC Scoping for User Management
-    if (!requestingUser || requestingUser.role === 'Super Admin') return users;
-    if (requestingUser.role === 'Admin') {
-      // Admins manage same or lower roles in their team
-      return users.filter(u => u.teamId === requestingUser.teamId);
-    }
-    return []; // Others can't see user list
-  },
-
-  _getRawUsers: (): User[] => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem('cs_users');
-    if (!saved) return initialUsers;
-    return JSON.parse(saved);
-  },
-
-  saveUser: (user: User): void => {
-    const users = dataService._getRawUsers();
-    const existingIndex = users.findIndex(u => u.id === user.id);
-    if (existingIndex >= 0) {
-      users[existingIndex] = user;
-    } else {
-      users.push(user);
-    }
-    localStorage.setItem('cs_users', JSON.stringify(users));
+  deleteAccount: async (id: string): Promise<void> => {
+    const accounts = await dataService.getAccounts();
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts.filter(a => a.id !== id)));
   }
 };

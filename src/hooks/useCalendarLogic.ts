@@ -104,23 +104,26 @@ export function useCalendarLogic(currentUser: User) {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
 
   useEffect(() => {
-    setLeaves(leaveService.getLeaves(currentUser.id));
+    const fetchLeaves = async () => {
+      setLeaves(await leaveService.getLeaves(currentUser.id));
+    };
+    fetchLeaves();
   }, [currentUser.id]);
 
-  const recordLeave = useCallback((reason: string, date: Date, type?: LeaveType) => {
-    leaveService.createLeave(currentUser.id, {
-      staffName: currentUser.name,
+  const recordLeave = useCallback(async (reason: string, date: Date, type?: LeaveType) => {
+    await leaveService.createLeave(currentUser.id, {
       startDate: date.toISOString(),
       endDate: date.toISOString(),
       reason,
       type,
+      totalDays: 1 // ลาเต็มวัน 1 วัน (ตามปฏิทินช่องเดียว)
     });
-    setLeaves(leaveService.getLeaves(currentUser.id));
+    setLeaves(await leaveService.getLeaves(currentUser.id));
   }, [currentUser.id, currentUser.name]);
 
-  const deleteLeave = useCallback((leaveId: string) => {
-    leaveService.deleteLeave(currentUser.id, leaveId);
-    setLeaves(leaveService.getLeaves(currentUser.id));
+  const deleteLeave = useCallback(async (leaveId: string) => {
+    await leaveService.deleteLeave(currentUser.id, leaveId);
+    setLeaves(await leaveService.getLeaves(currentUser.id));
   }, [currentUser.id]);
 
   /**

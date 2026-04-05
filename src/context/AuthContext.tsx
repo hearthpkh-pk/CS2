@@ -1,92 +1,106 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Role, User } from '@/types';
+import { User, Role } from '@/types';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AuthContextType {
   user: User | null;
-  originalRole: Role | null;
   isAuthenticated: boolean;
-  login: (role: Role) => void;
-  logout: () => void;
-  switchPerspective: (user: User) => void;
-  restoreOriginalRole: () => void;
+  isLoading: boolean;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [originalRole, setOriginalRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('cs2_user_session');
-    const savedOrig = localStorage.getItem('cs2_original_role');
-    
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('cs2_user_session');
+    // 1. ตรวจสอบ Session ปัจจุบันตอนโหลดแอป
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchUserProfile(session.user.id, session.user.email);
+      } else {
+        setIsLoading(false);
       }
-    }
-    
-    if (savedOrig) {
-      setOriginalRole(savedOrig as Role);
-    }
-    
-    setIsLoading(false);
+    };
+
+    initializeAuth();
+
+    // 2. ดักฟัง Event เมื่อมีการ Login หรือ Logout 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await fetchUserProfile(session.user.id, session.user.email);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = (role: Role) => {
-    const roleId = role === Role.Developer ? '00' : role === Role.SuperAdmin ? '01' : '99';
-    const mockUser: User = {
-      id: `usr-${roleId}`,
-      email: `${role.toLowerCase().replace(' ', '_')}@cs2.com`,
-      username: role.toLowerCase().replace(' ', '_'),
-      name: role === Role.Developer ? 'System Developer' : role === Role.SuperAdmin ? 'Executive Director' : 'Operational Staff',
-      role,
-      isActive: true,
-      permissions: ['all'],
-      startDate: new Date().toISOString().split('T')[0],
-      salary: role === Role.Developer ? 120000 : 85000,
-    };
-    
-    setUser(mockUser);
-    setOriginalRole(role);
-    localStorage.setItem('cs2_user_session', JSON.stringify(mockUser));
-    localStorage.setItem('cs2_original_role', role);
-  };
+  // ฟังก์ชันดึงข้อมูล Profile แยกมาจากตาราง profiles ที่สร้างจาก Trigger
+  const fetchUserProfile = async (uid: string, email?: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', uid)
+        .maybeSingle();
 
-  const switchPerspective = (newUser: User) => {
-    setUser(newUser);
-    localStorage.setItem('cs2_user_session', JSON.stringify(newUser));
-  };
+      if (error) throw error;
 
-  const restoreOriginalRole = () => {
-    if (originalRole) {
-      login(originalRole);
+      if (profile) {
+        // แมปข้อมูลจาก DB กลับเข้าสู่ Interface User ของเรา
+        const appUser: User = {
+          id: profile.id,
+          name: profile.name,
+          username: profile.username || '',
+          email: email,
+          role: (profile.role as Role) || Role.Staff,
+          teamId: profile.team_id,
+          department: profile.department,
+          group: profile.group,
+          salary: profile.salary,
+          isActive: profile.is_active,
+        };
+        setUser(appUser);
+      }
+    } catch (e: any) {
+      console.error('Failed to fetch user profile:', e);
+      
+      // 🛡️ ป้องกันบั๊กในโหมด Dev (React Strict Mode) ที่การดึงข้อมูลชนกัน (Race condition)
+      // ทำให้โยน AbortError/Lock ออกมา ซึ่งถ้าเราเผลอไป setUser(null) จะทำให้โดนเตะออกจากระบบ
+      const isTransientError = e?.message?.includes('Lock') || e?.name === 'AbortError';
+      if (!isTransientError) {
+        setUser(null);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setOriginalRole(null);
-    localStorage.removeItem('cs2_user_session');
-    localStorage.removeItem('cs2_original_role');
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
+  // แม้กำลังโหลด ก็แสดงผล SplashScreen เพื่อให้ UI Smooth
   if (isLoading) {
     return (
-      <div className="h-screen w-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
-        {/* Spinner */}
-        <div className="animate-spin text-blue-500">
-           <svg className="w-8 h-8" viewBox="0 0 24 24">
+      <div className="h-screen w-screen bg-[#054ab3] flex flex-col items-center justify-center gap-4">
+        <div className="animate-spin text-white">
+           <svg className="w-10 h-10" viewBox="0 0 24 24">
              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
            </svg>
         </div>
+        <p className="text-white/50 text-xs tracking-widest font-bold uppercase animate-pulse">Authenticating</p>
       </div>
     );
   }
@@ -94,12 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{ 
       user, 
-      originalRole, 
-      isAuthenticated: !!user, 
-      login, 
-      logout,
-      switchPerspective,
-      restoreOriginalRole
+      isAuthenticated: !!user && user.isActive === true, // 🛡️ ตรวจสอบ is_active ด้วย
+      isLoading,
+      logout
     }}>
       {children}
     </AuthContext.Provider>

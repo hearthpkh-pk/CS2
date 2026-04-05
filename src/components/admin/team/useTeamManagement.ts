@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { User, Team, Role, SalaryAdjustment } from '@/types';
+import { useState, useEffect } from 'react';
+import { User, Team, Role } from '@/types';
 import { personnelService } from '@/services/personnelService';
 
 export const useTeamManagement = (
@@ -9,31 +9,31 @@ export const useTeamManagement = (
   setExternalUsers?: (users: User[]) => void,
   viewerRole?: Role
 ) => {
-  // --- Centralized State Sync ---
+  const [users, setUsers] = useState<User[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [stats, setStats] = useState({ total: 0, managers: 0, active: 0, activeTeams: 0 });
+
+  // ล้างการใช้ useMemo แล้วเปลี่ยนเป็น useEffect เพื่อโหลดข้อมูล Async จาก Service
   const [personnelVersion, setPersonnelVersion] = useState(0);
   const sync = () => setPersonnelVersion(v => v + 1);
 
-  const users = useMemo(() => {
-    const dataSource = externalUsers || personnelService.getAvailableUsers(viewerRole);
-    if (!viewerRole || viewerRole === Role.SuperAdmin) return dataSource;
-    
-    // Explicit RBAC filtering for external data
-    if (viewerRole === Role.Admin) {
-      return dataSource.filter(u => u.role !== Role.SuperAdmin);
-    }
-    if (viewerRole === Role.Manager) {
-      return dataSource.filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin);
-    }
-    return dataSource.filter(u => u.role === Role.Staff);
+  useEffect(() => {
+    const fetchData = async () => {
+      // โหลดพนักงาน
+      if (externalUsers) {
+        setUsers(externalUsers);
+      } else {
+        const fetchedUsers = await personnelService.getAvailableUsers(viewerRole);
+        setUsers(fetchedUsers);
+      }
+
+      // โหลดทีม และ สถิติ
+      setTeams(await personnelService.getTeams());
+      setStats(await personnelService.getPersonnelStats());
+    };
+
+    fetchData();
   }, [externalUsers, viewerRole, personnelVersion]);
-
-  const teams = useMemo(() => {
-    return personnelService.getTeams();
-  }, [personnelVersion]);
-
-  const stats = useMemo(() => {
-    return personnelService.getPersonnelStats();
-  }, [personnelVersion]);
 
   // --- UI State ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,65 +47,62 @@ export const useTeamManagement = (
   });
 
   // --- Search & Filter Logic ---
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            user.email?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRole = roleFilter === 'All' || user.role === roleFilter;
-      return matchesSearch && matchesRole;
-    });
-  }, [users, searchQuery, roleFilter]);
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'All' || user.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
-  // --- Handlers (Delegated to Service) ---
-  const handleSaveUser = (userData: User) => {
+  // --- Handlers ---
+  const handleSaveUser = async (userData: User) => {
     if (setExternalUsers) {
       setExternalUsers(users.map(u => u.id === userData.id ? userData : u));
     } else {
-      personnelService.saveUser(userData);
+      await personnelService.saveUser(userData);
       sync();
     }
     setEditingUser(null);
   };
 
-  const handleCreateTeam = (name: string) => {
+  const handleCreateTeam = async (name: string) => {
     const newTeam: Team = {
-      id: `team-${Date.now()}`,
+      id: '', // ให้ Supabase ใส่ UUID
       name,
-      createdAt: new Date().toISOString()
     };
-    personnelService.saveTeam(newTeam);
+    await personnelService.saveTeam(newTeam);
     sync();
   };
 
-  const handleDeleteTeam = (id: string) => {
-    personnelService.deleteTeam(id);
+  const handleDeleteTeam = async (id: string) => {
+    await personnelService.deleteTeam(id);
     sync();
   };
 
-  const handleConfirmSalary = () => {
+  const handleConfirmSalary = async () => {
     if (!editingUser) return;
-    
-    const newAdjustment: SalaryAdjustment = {
-      id: `adj-${Date.now()}`,
-      newSalary: salaryForm.amount,
-      reason: salaryForm.reason,
-      effectiveDate: salaryForm.effectiveDate,
-      createdAt: new Date().toISOString()
-    };
 
+    // 1. บันทึกเงินเดือนใหม่ใน Profile หลัก
     const updatedUser = {
       ...editingUser,
       salary: salaryForm.amount,
-      salaryHistory: [newAdjustment, ...(editingUser.salaryHistory || [])]
     };
+    await handleSaveUser(updatedUser);
 
-    handleSaveUser(updatedUser);
+    // 2. บันทึกเหตุผลการขึ้นเงินเดือนลงในตาราง salary_adjustments
+    await personnelService.recordSalaryAdjustment(
+      editingUser.id, 
+      salaryForm.amount, 
+      salaryForm.reason, 
+      salaryForm.effectiveDate
+    );
+
     setIsAdjustingSalary(false);
     setSalaryForm({ amount: 0, reason: '', effectiveDate: new Date().toISOString().split('T')[0] });
   };
 
-  const handleUpdateTeam = (id: string, name: string) => {
-    personnelService.updateTeam(id, name);
+  const handleUpdateTeam = async (id: string, name: string) => {
+    await personnelService.updateTeam(id, name);
     sync();
   };
 

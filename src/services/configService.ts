@@ -1,6 +1,7 @@
 import { Brand, CompanyConfig, CompanyRule, Announcement, GroupDefinition, Role } from '../types';
+import { supabase } from '@/lib/supabaseClient';
 
-const STORAGE_KEY = 'cs_company_config';
+const DEFAULT_CONFIG_ID = 'core-config';
 
 const DEFAULT_BRANDS: Brand[] = [
   { id: "brand-1774793169256", name: "USE99", isActive: true },
@@ -9,94 +10,19 @@ const DEFAULT_BRANDS: Brand[] = [
   { id: "brand-1774793221874", name: "ZEED777", isActive: true }
 ];
 
-const DEFAULT_RULES: CompanyRule[] = [
-  {
-    id: "rule-general",
-    title: "กฎระเบียบทั่วไป (General Rules)",
-    content: "พนักงานทุกคนต้องปฏิบัติตามกฎระเบียบอย่างเคร่งครัด เพื่อรักษามาตรฐานการทำงานและวัฒนธรรมองค์กรที่ดี\n\n- วันทำงานคือวันจันทร์ - อาทิตย์ (หากไม่มีการแจ้งล่วงหน้า)\n- การลางานต้องแจ้งล่วงหน้าอย่างน้อย 24 ชั่วโมงผ่านระบบปฏิทิน\n- ห้ามนำข้อมูลลูกค้าหรือข้อมูลเพจไปเผยแพร่ภายนอกโดยไม่ได้รับอนุญาต",
-    category: "General" as any,
-    lastUpdated: "2026-03-28T09:48:37.136Z",
-    order: 1
-  },
-  {
-    id: "rule-responsibilities",
-    title: "หน้าที่รับผิดชอบ (Responsibilities)",
-    content: "- หาฟุตเทจ ตัดต่อคลิปสั้น (Reels/Shorts) ความยาว 1-5 นาที\n- แทรกแบนเนอร์โฆษณาลงคลิปตามรูปแบบที่กำหนด\n- โพสต์ลงเพจ Facebook / Social Media ที่ได้รับมอบหมาย (ดูแลขั้นต่ำ 10 เพจ)",
-    category: "Operation" as any,
-    order: 2,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin],
-    lastUpdated: "2026-03-29T07:59:40.349Z"
-  },
-  {
-    id: "rule-submissions",
-    title: "กฎระเบียบการส่งงาน (Submissions)",
-    content: "พนักงานต้องส่งงานผ่านระบบ \"ส่งคลิปงานรายวัน\" ทุกวันทำงาน\n\n- จำนวนขั้นต่ำ: 10 เพจ / วัน\n- จำนวนคลิป: 4 คลิป / เพจ (รวม 40 คลิป/วัน)\n\n⚠️ หากส่งไม่ครบถ้วนตามกำหนด ระบบจะถือว่าขาดงาน (Absent)",
-    category: "Compliance" as any,
-    order: 4,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: "2026-03-29T08:13:00.637Z"
-  },
-  {
-    id: "rule-commission",
-    title: "โครงสร้างค่าคอมมิชชัน (Commission)",
-    content: "- Tier 1 (Standard): 1,000 THB ต่อยอดวิวทุก 10,000,000 Views\n- Tier 2 (Super Bonus): 1,500 THB ต่อยอดวิวทุก 10,000,000 Views (เมื่อครบ 100M)",
-    category: "Finance" as any,
-    order: 4,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: "2026-03-29T08:13:00.637Z"
-  },
-  {
-    id: "rule-penalties",
-    title: "กฎการหักเงิน (Penalties)",
-    content: "หากยอดวิวรวม (Views) ของพนักงานในเดือนนั้น ไม่ถึงเกณฑ์ขั้นต่ำ (10,000,000 Views) จะมีมาตรการหักเงินเดือน -2,000 THB\n\n- หยุดงานหักตามค่าแรง เช่น 12,000 หยุดหัก 400\n\n- ส่งงานไม่ครบ 40 คลิปต่อวันหัก 20 บาท/คลิป\n\n- ส่งลิงก์ซ้ำหัก 50 บาท/คลิป\n\nหากขาดงานจะถูกหักเป็น 2 แรง",
-    category: "Safety" as any,
-    order: 5,
-    targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin, Role.Developer],
-    lastUpdated: "2026-03-29T08:13:00.637Z"
-  },
-  {
-    id: "rule-culture",
-    title: "วัฒนธรรมองค์กร (Culture)",
-    content: "เราเน้นการทำงานที่รับผิดชอบตนเองเป็นหลัก (High Responsibility) และการวัดผลด้วยความสำเร็จ (Result-Oriented)\n\nCore Values: Honesty, Transparency, Prosperity",
-    category: "General" as any,
-    lastUpdated: "2026-03-28T09:48:37.136Z",
-    order: 6
-  }
-];
-
-const DEFAULT_HOLIDAYS = [
-  { id: 'h-nye', name: 'วันสิ้นปี (New Year\'s Eve)', date: '12-31', multiplier: 2, isRecurring: true },
-  { id: 'h-nyd', name: 'วันขึ้นปีใหม่ (New Year\'s Day)', date: '01-01', multiplier: 2, isRecurring: true },
-  { id: 'h-labour', name: 'วันแรงงานแห่งชาติ (Labour Day)', date: '05-01', multiplier: 2, isRecurring: true },
-  { id: 'h-sk1', name: 'วันสงกรานต์ (Songkran)', date: '04-13', multiplier: 2, isRecurring: true },
-  { id: 'h-sk2', name: 'วันสงกรานต์ (Songkran)', date: '04-14', multiplier: 2, isRecurring: true },
-  { id: 'h-sk3', name: 'วันสงกรานต์ (Songkran)', date: '04-15', multiplier: 2, isRecurring: true }
-];
+const DEFAULT_RULES: CompanyRule[] = []; // Migrated into DB, simplified default.
+const DEFAULT_HOLIDAYS: any[] = [];
 
 const DEFAULT_CONFIG: CompanyConfig = {
-  id: "company-editor",
+  id: DEFAULT_CONFIG_ID,
   name: "Editor Platform HQ",
   brands: DEFAULT_BRANDS,
   rules: DEFAULT_RULES,
   groups: [
-    { id: "news", name: "กลุ่มข่าวสาร", description: "กลุ่มเน้นงานปริมาณข่าวสารรายวัน", policy: { groupId: "news", minPagesPerDay: 5, minClipsPerPage: 8 }, isDefault: false },
-    { id: "movies", name: "กลุ่มหนัง", description: "กลุ่มงานคุณภาพภาพยนตร์", policy: { groupId: "movies", minPagesPerDay: 10, minClipsPerPage: 4 }, isDefault: false },
-    { id: "shows", name: "กลุ่มรายการ", description: "กลุ่มวาไรตี้และรายการทีวี", policy: { groupId: "shows", minPagesPerDay: 10, minClipsPerPage: 4 }, isDefault: true }
+    { id: "news", name: "กลุ่มข่าวสาร", policy: { groupId: "news", minPagesPerDay: 5, minClipsPerPage: 8 }, isDefault: false },
+    { id: "shows", name: "กลุ่มรายการ", policy: { groupId: "shows", minPagesPerDay: 10, minClipsPerPage: 4 }, isDefault: true }
   ],
-  announcements: [
-    {
-      id: "ann-1774791920928",
-      message: "ฟหกฟดฟดฟหด",
-      type: "warning",
-      isActive: true,
-      startDate: "2026-03-28T17:00:00.000Z",
-      endDate: "2026-03-30T17:00:00.000Z",
-      targetRoles: [Role.Staff, Role.Manager, Role.SuperAdmin],
-      targetGroups: ["news", "shows", "movies"],
-      targetTeams: [],
-      targetUsers: []
-    }
-  ],
+  announcements: [],
   performancePolicy: {
     minViewTarget: 5000000,
     penaltyAmount: 2000,
@@ -105,103 +31,97 @@ const DEFAULT_CONFIG: CompanyConfig = {
     bonusStep2: 1500,
     requiredPagesPerDay: 4,
     clipsPerPageInLog: 4,
-    groupPolicies: [
-      { groupId: "news", minPagesPerDay: 5, minClipsPerPage: 8 },
-      { groupId: "movies", minPagesPerDay: 10, minClipsPerPage: 4 },
-      { groupId: "shows", minPagesPerDay: 10, minClipsPerPage: 4 }
-    ]
+    groupPolicies: []
   },
   holidays: DEFAULT_HOLIDAYS
 };
 
-const loadConfig = (): CompanyConfig => {
-  if (typeof window === 'undefined') return DEFAULT_CONFIG;
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return DEFAULT_CONFIG;
-  try {
-    const parsed = JSON.parse(stored);
-    
-    // Migration: Merge rules and filter out deprecated ones (Work Format, Training)
-    const deprecatedIds = ['rule-work-format', 'rule-training'];
-    const currentRules = (parsed.rules || []).filter((r: CompanyRule) => !deprecatedIds.includes(r.id));
-    
-    const mergedRules = [...currentRules];
-    DEFAULT_RULES.forEach(defaultRule => {
-      const idx = mergedRules.findIndex(r => r.id === defaultRule.id);
-      if (idx < 0) {
-        mergedRules.push(defaultRule);
-      } else if (!mergedRules[idx].order || !mergedRules[idx].targetRoles) {
-        // Force refresh if missing new properties
-        mergedRules[idx] = defaultRule;
-      }
-    });
+export const configService = {
+  getConfig: async (): Promise<CompanyConfig> => {
+    const { data, error } = await supabase
+      .from('company_configs')
+      .select('*')
+      .eq('id', DEFAULT_CONFIG_ID)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.warn('Failed to load remote config or missing, using local default:', error);
+      return DEFAULT_CONFIG;
+    }
 
     return {
-      ...DEFAULT_CONFIG,
-      ...parsed,
-      rules: mergedRules,
-      announcements: (parsed.announcements !== undefined) ? parsed.announcements : DEFAULT_CONFIG.announcements,
-      brands: (parsed.brands !== undefined) ? parsed.brands : DEFAULT_CONFIG.brands,
-      groups: (parsed.groups !== undefined) ? parsed.groups : DEFAULT_CONFIG.groups,
-      holidays: (parsed.holidays !== undefined) ? parsed.holidays : DEFAULT_CONFIG.holidays,
+      id: data.id,
+      name: DEFAULT_CONFIG.name, // Static title for now
+      brands: Array.isArray(data.brands) ? data.brands : DEFAULT_CONFIG.brands,
+      rules: Array.isArray(data.rules) ? data.rules : DEFAULT_CONFIG.rules,
+      groups: Array.isArray(data.groups) ? data.groups : DEFAULT_CONFIG.groups,
+      announcements: Array.isArray(data.announcements) ? data.announcements : DEFAULT_CONFIG.announcements,
+      holidays: Array.isArray(data.holidays) ? data.holidays : DEFAULT_CONFIG.holidays,
       performancePolicy: {
         ...DEFAULT_CONFIG.performancePolicy,
-        ...(parsed.performancePolicy || {})
+        ...(data.performance_policy || {})
       }
     };
-  } catch (e) {
-    console.error('Failed to parse company config:', e);
-    return DEFAULT_CONFIG;
-  }
-};
-
-export const configService = {
-  getConfig: (): CompanyConfig => {
-    return loadConfig();
   },
 
-  updateConfig: (config: Partial<CompanyConfig>): CompanyConfig => {
-    const current = configService.getConfig();
-    const updated = { ...current, ...config };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  updateConfig: async (payload: Partial<CompanyConfig>): Promise<CompanyConfig> => {
+    const current = await configService.getConfig();
+    const updated = { ...current, ...payload };
+
+    // Map TS obj to Postgres JSONB column names
+    const dbPayload: any = {};
+    if (payload.brands) dbPayload.brands = payload.brands;
+    if (payload.rules) dbPayload.rules = payload.rules;
+    if (payload.groups) dbPayload.groups = payload.groups;
+    if (payload.announcements) dbPayload.announcements = payload.announcements;
+    if (payload.holidays) dbPayload.holidays = payload.holidays;
+    if (payload.performancePolicy) dbPayload.performance_policy = payload.performancePolicy;
+
+    const { error } = await supabase
+      .from('company_configs')
+      .update(dbPayload)
+      .eq('id', DEFAULT_CONFIG_ID);
+
+    if (error) {
+       console.error('Failed to update config in Supabase:', error);
+       throw error;
+    }
+    
     return updated;
   },
 
-  // Brand Helpers
-  saveBrand: (brand: Brand): CompanyConfig => {
-    const config = configService.getConfig();
+  saveBrand: async (brand: Brand): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     const idx = config.brands.findIndex(b => b.id === brand.id);
     if (idx >= 0) config.brands[idx] = brand;
     else config.brands.push(brand);
-    return configService.updateConfig({ brands: config.brands });
+    return await configService.updateConfig({ brands: config.brands });
   },
 
-  deleteBrand: (id: string): CompanyConfig => {
-    const config = configService.getConfig();
+  deleteBrand: async (id: string): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     const filtered = config.brands.filter(b => b.id !== id);
-    return configService.updateConfig({ brands: filtered });
+    return await configService.updateConfig({ brands: filtered });
   },
 
-  // Rules Helpers
-  saveRule(rule: CompanyRule): CompanyConfig {
-    const config = this.getConfig();
+  saveRule: async (rule: CompanyRule): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     const rules = [...config.rules];
     const index = rules.findIndex(r => r.id === rule.id);
     if (index >= 0) rules[index] = rule;
     else rules.push(rule);
-    return this.updateConfig({ ...config, rules });
+    return await configService.updateConfig({ rules });
   },
 
-  deleteRule(id: string): CompanyConfig {
-    const config = this.getConfig();
-    return this.updateConfig({ ...config, rules: config.rules.filter(r => r.id !== id) });
+  deleteRule: async (id: string): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
+    return await configService.updateConfig({ rules: config.rules.filter(r => r.id !== id) });
   },
 
-  saveGroup(group: GroupDefinition): CompanyConfig {
-    const config = this.getConfig();
+  saveGroup: async (group: GroupDefinition): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     let groups = [...config.groups];
 
-    // If setting a new default, ensure all others are set to false
     if (group.isDefault) {
       groups = groups.map(g => ({ ...g, isDefault: false }));
     }
@@ -210,53 +130,48 @@ export const configService = {
     if (index >= 0) groups[index] = group;
     else groups.push(group);
     
-    return this.updateConfig({ ...config, groups });
+    return await configService.updateConfig({ groups });
   },
 
-  deleteGroup(id: string): CompanyConfig {
-    const config = this.getConfig();
-    return this.updateConfig({ ...config, groups: config.groups.filter(g => g.id !== id) });
+  deleteGroup: async (id: string): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
+    return await configService.updateConfig({ groups: config.groups.filter(g => g.id !== id) });
   },
 
-  saveAnnouncement(ann: Announcement): CompanyConfig {
-    const config = this.getConfig();
+  saveAnnouncement: async (ann: Announcement): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     const announcements = [...config.announcements];
     const index = announcements.findIndex(a => a.id === ann.id);
     if (index >= 0) announcements[index] = ann;
     else announcements.push(ann);
-    return this.updateConfig({ ...config, announcements });
+    return await configService.updateConfig({ announcements });
   },
 
-  deleteAnnouncement(id: string): CompanyConfig {
-    const config = this.getConfig();
-    return this.updateConfig({ ...config, announcements: config.announcements.filter(a => a.id !== id) });
+  deleteAnnouncement: async (id: string): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
+    return await configService.updateConfig({ announcements: config.announcements.filter(a => a.id !== id) });
   },
 
-  saveHoliday(holiday: any): CompanyConfig {
-    const config = this.getConfig();
+  saveHoliday: async (holiday: any): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     const holidays = [...config.holidays];
     const index = holidays.findIndex(h => h.id === holiday.id);
     if (index >= 0) holidays[index] = holiday;
     else holidays.push(holiday);
-    return this.updateConfig({ ...config, holidays });
+    return await configService.updateConfig({ holidays });
   },
 
-  deleteHoliday(id: string): CompanyConfig {
-    const config = this.getConfig();
-    return this.updateConfig({ ...config, holidays: config.holidays.filter(h => h.id !== id) });
+  deleteHoliday: async (id: string): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
+    return await configService.updateConfig({ holidays: config.holidays.filter(h => h.id !== id) });
   },
 
-  reorderRules(ruleIds: string[]): CompanyConfig {
-    const config = this.getConfig();
+  reorderRules: async (ruleIds: string[]): Promise<CompanyConfig> => {
+    const config = await configService.getConfig();
     const updatedRules = config.rules.map(rule => {
       const newOrder = ruleIds.indexOf(rule.id);
       return { ...rule, order: newOrder >= 0 ? newOrder + 1 : 999 };
     });
-    return this.updateConfig({ ...config, rules: updatedRules.sort((a, b) => a.order - b.order) });
-  },
-
-  resetConfig(): CompanyConfig {
-    localStorage.removeItem(STORAGE_KEY);
-    return DEFAULT_CONFIG;
+    return await configService.updateConfig({ rules: updatedRules.sort((a, b) => a.order - b.order) });
   }
 };

@@ -16,6 +16,7 @@ import { ReportsView } from '@/features/reports/components/ReportsView';
 import { TeamManagementView } from '@/components/admin/TeamManagementView';
 import { CompanySettingsView } from '@/features/company/components/CompanySettingsView';
 import { PolicyCenterView } from '@/features/company/components/PolicyCenterView';
+import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
 import { PlaceholderView } from '@/components/ui/PlaceholderView';
 import { Toast } from '@/components/ui/Toast';
 import { dataService } from '@/services/dataService';
@@ -45,16 +46,20 @@ export default function CreatorApp() {
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
-  const policyConfig = configService.getConfig().performancePolicy;
+  const { config } = useCompanyConfig();
+  const policyConfig = config.performancePolicy;
 
   // Load Initial Data - Reactive to currentUser
   useEffect(() => {
-    if (currentUser) {
-      setPages(dataService.getPages(currentUser));
-      setAccounts(dataService.getAccounts(currentUser));
-      setLogs(dataService.getLogs());
-      setUsers(personnelService.getAvailableUsers(currentUser.role));
-    }
+    const fetchInitialData = async () => {
+      if (currentUser) {
+        setPages(await dataService.getPages()); // ไม่ต้องส่ง currentUser แล้ว RLS จัดการให้
+        setAccounts(await dataService.getAccounts(currentUser));
+        setLogs(await dataService.getLogs());
+        setUsers(await personnelService.getAvailableUsers(currentUser.role));
+      }
+    };
+    fetchInitialData();
   }, [currentUser]);
 
   const handleUpdateUsers = (newUsers: User[]) => {
@@ -73,94 +78,99 @@ export default function CreatorApp() {
   };
 
   // --- Handlers ---
-  const handleSaveLogs = (newLogs: DailyLog[]) => {
-    dataService.saveLogs(newLogs);
-    setLogs(dataService.getLogs());
+  const handleSaveLogs = async (newLogs: DailyLog[]) => {
+    await dataService.saveLogs(newLogs);
+    setLogs(await dataService.getLogs());
     showToast('บันทึกข้อมูลเรียบร้อย');
   };
 
-  const handleAddPage = (pageData: Omit<Page, 'id'>) => {
-    const newPage: Page = { ...pageData, id: Date.now().toString(), createdAt: new Date().toISOString() };
-    dataService.savePage(newPage);
-    setPages(dataService.getPages(currentUser));
+  const handleAddPage = async (pageData: Omit<Page, 'id'>) => {
+    const newPage: Page = { ...pageData, id: '', createdAt: new Date().toISOString() };
+    await dataService.savePage(newPage);
+    setPages(await dataService.getPages());
     showToast('เพิ่มเพจสำเร็จ');
   };
 
-  const handleUpdatePage = (updatedPage: Page) => {
-    dataService.savePage(updatedPage);
-    setPages(dataService.getPages(currentUser));
+  const handleUpdatePage = async (updatedPage: Page) => {
+    await dataService.savePage(updatedPage);
+    setPages(await dataService.getPages());
     showToast('อัปเดตข้อมูลเรียบร้อย');
   };
 
-  const handleTrashPage = (id: string) => {
+  const handleTrashPage = async (id: string) => {
     const page = pages.find(p => p.id === id);
     if (page) {
-      dataService.savePage({ ...page, isDeleted: true, deletedAt: new Date().toISOString() });
-      setPages(dataService.getPages(currentUser));
+      await dataService.savePage({ ...page, isDeleted: true, deletedAt: new Date().toISOString() });
+      setPages(await dataService.getPages());
       showToast('ย้ายเพจลงถังขยะเรียบร้อย');
     }
   };
 
-  const handleRestorePage = (id: string) => {
+  const handleRestorePage = async (id: string) => {
     const page = pages.find(p => p.id === id);
     if (page) {
-      dataService.savePage({ ...page, isDeleted: false, deletedAt: undefined });
-      setPages(dataService.getPages(currentUser));
+      await dataService.savePage({ ...page, isDeleted: false, deletedAt: undefined });
+      setPages(await dataService.getPages());
       showToast('กู้คืนเพจเรียบร้อย');
     }
   };
 
-  const handlePermanentDeletePage = (id: string) => {
-    dataService.deletePage(id);
-    setPages(dataService.getPages(currentUser));
-    setLogs(dataService.getLogs());
+  const handlePermanentDeletePage = async (id: string) => {
+    await dataService.deletePage(id);
+    setPages(await dataService.getPages());
+    setLogs(await dataService.getLogs());
     showToast('ลบเพจถาวรเรียบร้อย');
   };
 
-  const handleAddAccount = (accData: Omit<FBAccount, 'id'>) => {
+  const handleAddAccount = async (accData: Omit<FBAccount, 'id'>) => {
     const newAcc: FBAccount = { ...accData, id: `acc-${Date.now()}`, createdAt: new Date().toISOString() };
-    dataService.saveAccount(newAcc);
-    setAccounts(dataService.getAccounts(currentUser));
+    await dataService.saveAccount(newAcc);
+    setAccounts(await dataService.getAccounts(currentUser));
     showToast('เพิ่มบัญชีสำเร็จ');
   };
 
-  const handleUpdateAccount = (updatedAcc: FBAccount) => {
-    dataService.saveAccount(updatedAcc);
-    setAccounts(dataService.getAccounts(currentUser));
+  const handleUpdateAccount = async (updatedAcc: FBAccount) => {
+    await dataService.saveAccount(updatedAcc);
+    setAccounts(await dataService.getAccounts(currentUser));
     showToast('อัปเดตบัญชีเรียบร้อย');
   };
 
-  const handleTrashAccount = (id: string) => {
+  const handleTrashAccount = async (id: string) => {
     const acc = accounts.find(a => a.id === id);
     if (acc) {
-      dataService.saveAccount({ ...acc, isDeleted: true, deletedAt: new Date().toISOString() });
-      setAccounts(dataService.getAccounts(currentUser));
+      await dataService.saveAccount({ ...acc, isDeleted: true, deletedAt: new Date().toISOString() });
+      setAccounts(await dataService.getAccounts(currentUser));
       showToast('ย้ายบัญชีลงถังขยะเรียบร้อย');
     }
   };
 
-  const handleRestoreAccount = (id: string) => {
+  const handleRestoreAccount = async (id: string) => {
     const acc = accounts.find(a => a.id === id);
     if (acc) {
-      dataService.saveAccount({ ...acc, isDeleted: false, deletedAt: undefined });
-      setAccounts(dataService.getAccounts(currentUser));
+      await dataService.saveAccount({ ...acc, isDeleted: false, deletedAt: undefined });
+      setAccounts(await dataService.getAccounts(currentUser));
       showToast('กู้คืนบัญชีเรียบร้อย');
     }
   };
 
-  const handlePermanentDeleteAccount = (id: string) => {
-    dataService.deleteAccount(id);
-    setAccounts(dataService.getAccounts(currentUser));
+  const handlePermanentDeleteAccount = async (id: string) => {
+    await dataService.deleteAccount(id);
+    setAccounts(await dataService.getAccounts(currentUser));
     showToast('ลบบัญชีถาวรเรียบร้อย');
   };
 
-  const handleClearTrash = () => {
+  const handleClearTrash = async () => {
     const deletedPages = pages.filter(p => p.isDeleted);
     const deletedAccounts = accounts.filter(a => a.isDeleted);
-    deletedPages.forEach(p => dataService.deletePage(p.id));
-    deletedAccounts.forEach(a => dataService.deleteAccount(a.id));
-    setPages(dataService.getPages(currentUser));
-    setAccounts(dataService.getAccounts(currentUser));
+    
+    // Process async deletions
+    await Promise.all([
+      ...deletedPages.map(p => dataService.deletePage(p.id)),
+      ...deletedAccounts.map(a => dataService.deleteAccount(a.id))
+    ]);
+
+    setPages(await dataService.getPages());
+    setAccounts(await dataService.getAccounts(currentUser));
     showToast('ล้างถังขยะเรียบร้อย');
   };
 
@@ -170,8 +180,8 @@ export default function CreatorApp() {
     const page = pages.find(p => p.id === id);
     if (page) {
       const updatedPage = { ...page, facebookData: meta as any };
-      dataService.savePage(updatedPage);
-      setPages(dataService.getPages(currentUser));
+      await dataService.savePage(updatedPage);
+      setPages(await dataService.getPages());
       showToast('ซิงค์ข้อมูลสำเร็จ');
     }
   };

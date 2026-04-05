@@ -39,12 +39,7 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 4. เปิดใช้งาน RLS (Row Level Security)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- 🛡️ นโยบายความปลอดภัยสูงสุด: พนักงานที่ 'is_active = false' จะมองไม่เห็นข้อมูลใดๆ เลย (รวมถึงของตัวเอง)
-CREATE POLICY "Active users only" ON public.profiles
+-- 🛡️ นโยบาย: พนักงานเห็นเฉพาะ Profile ของตัวเอง (หลีกเลี่ยง Infinite Recursion)
+CREATE POLICY "Users can see own profile" ON public.profiles
 FOR SELECT TO authenticated
-USING (
-  (SELECT is_active FROM public.profiles WHERE id = auth.uid()) = true
-);
+USING ( id = auth.uid() );

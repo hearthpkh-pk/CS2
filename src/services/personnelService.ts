@@ -1,96 +1,27 @@
-import { initialUsers, initialTeams } from '@/data/mockUsers';
 import { User, Team, Role } from '@/types';
-
-const STORAGE_KEYS = {
-  USERS: 'cs_personnel_users',
-  TEAMS: 'cs_personnel_teams'
-};
-
-const getStoredUsers = (): User[] => {
-  if (typeof window === 'undefined') return initialUsers;
-  const saved = localStorage.getItem(STORAGE_KEYS.USERS);
-  if (!saved) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(initialUsers));
-    return initialUsers;
-  }
-  return JSON.parse(saved);
-};
-
-const getStoredTeams = (): Team[] => {
-  if (typeof window === 'undefined') return initialTeams;
-  const saved = localStorage.getItem(STORAGE_KEYS.TEAMS);
-  if (!saved) {
-    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(initialTeams));
-    return initialTeams;
-  }
-  return JSON.parse(saved);
-};
+import { supabase } from '@/lib/supabaseClient';
 
 export const personnelService = {
-  // --- Data Access ---
-  getUsers: () => getStoredUsers(),
-  getTeams: () => getStoredTeams(),
-
-  // --- Persistence Logic ---
-  saveUser: (user: User) => {
-    const users = getStoredUsers();
-    const exists = users.findIndex(u => u.id === user.id);
-    if (exists >= 0) {
-      users[exists] = user;
-    } else {
-      users.push(user);
+  getAvailableUsers: async (viewerRole?: Role): Promise<User[]> => {
+    const { data: profiles, error } = await supabase.from('profiles').select('*');
+    if (error) {
+      console.error('Error fetching users:', error);
+      return [];
     }
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return users;
-  },
 
-  deleteUser: (userId: string) => {
-    const users = getStoredUsers().filter(u => u.id !== userId);
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return users;
-  },
+    const users: User[] = (profiles || []).map(p => ({
+      id: p.id,
+      name: p.name,
+      username: p.username || '',
+      role: (p.role as Role) || Role.Staff,
+      teamId: p.team_id,
+      salary: Number(p.salary) || 0,
+      department: p.department,
+      group: p.group,
+      isActive: p.is_active,
+    }));
 
-  saveTeam: (team: Team) => {
-    const teams = getStoredTeams();
-    const exists = teams.findIndex(t => t.id === team.id);
-    if (exists >= 0) {
-      teams[exists] = team;
-    } else {
-      teams.push(team);
-    }
-    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
-    return teams;
-  },
-
-  updateTeam: (id: string, name: string) => {
-    const teams = getStoredTeams().map(t => t.id === id ? { ...t, name } : t);
-    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
-    return teams;
-  },
-
-  deleteTeam: (teamId: string) => {
-    const teams = getStoredTeams().filter(t => t.id !== teamId);
-    const users = getStoredUsers().map(u => u.teamId === teamId ? { ...u, teamId: undefined } : u);
-    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return { teams, users };
-  },
-
-  // --- Aggregation Logic (Shared Brain) ---
-  getPersonnelStats: () => {
-    const users = getStoredUsers();
-    const teams = getStoredTeams();
-    const total = users.length;
-    const managers = users.filter(u => u.role === Role.Manager || u.role === Role.Admin).length;
-    const active = users.filter(u => u.isActive).length;
-    const activeTeams = teams.length;
-    return { total, managers, active, activeTeams };
-  },
-
-  getAvailableUsers: (viewerRole?: Role) => {
-    const users = getStoredUsers();
-    if (!viewerRole) return users;
-    if (viewerRole === Role.SuperAdmin || viewerRole === Role.Developer) return users;
+    if (!viewerRole || viewerRole === Role.SuperAdmin || viewerRole === Role.Developer) return users;
     
     if (viewerRole === Role.Admin) {
       return users.filter(u => u.role !== Role.SuperAdmin);
@@ -99,5 +30,75 @@ export const personnelService = {
       return users.filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin);
     }
     return users.filter(u => u.role === Role.Staff);
+  },
+
+  getTeams: async (): Promise<Team[]> => {
+    const { data: teams, error } = await supabase.from('teams').select('*').order('created_at', { ascending: true });
+    if (error) {
+      console.error('Error fetching teams:', error);
+      return [];
+    }
+    return (teams || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      createdAt: t.created_at
+    }));
+  },
+
+  getPersonnelStats: async () => {
+    const users = await personnelService.getAvailableUsers(Role.SuperAdmin);
+    const teams = await personnelService.getTeams();
+    const total = users.length;
+    const managers = users.filter(u => u.role === Role.Manager || u.role === Role.Admin).length;
+    const active = users.filter(u => u.isActive).length;
+    return { total, managers, active, activeTeams: teams.length };
+  },
+
+  saveUser: async (user: User): Promise<void> => {
+    const payload = {
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      team_id: user.teamId,
+      salary: user.salary,
+      department: user.department,
+      "group": user.group,
+      is_active: user.isActive
+    };
+    const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
+    if (error) console.error('Error updating user:', error);
+  },
+
+  saveTeam: async (team: Team): Promise<void> => {
+    if (team.id && (!team.id.startsWith('team-') && team.id.trim() !== '')) {
+      const { error } = await supabase.from('teams').update({ name: team.name }).eq('id', team.id);
+      if (error) console.error('Error updating team:', error);
+    } else {
+      const { error } = await supabase.from('teams').insert({ name: team.name });
+      if (error) console.error('Error adding team:', error);
+    }
+  },
+
+  updateTeam: async (id: string, name: string): Promise<void> => {
+    const { error } = await supabase.from('teams').update({ name }).eq('id', id);
+    if (error) console.error('Error updating team:', error);
+  },
+
+  deleteTeam: async (teamId: string): Promise<void> => {
+    const { error } = await supabase.from('teams').delete().eq('id', teamId);
+    if (error) console.error('Error deleting team:', error);
+  },
+
+  recordSalaryAdjustment: async (staffId: string, amount: number, reason: string, effectiveDate: string): Promise<void> => {
+    const { error } = await supabase.from('salary_adjustments').insert({
+      staff_id: staffId,
+      new_salary: amount,
+      reason: reason,
+      effective_date: effectiveDate
+    });
+    if (error) {
+       console.error('Error recording salary adjustment:', error);
+       throw error;
+    }
   }
 };

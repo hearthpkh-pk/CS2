@@ -22,6 +22,9 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   const payrollData = useMemo(() => {
+    // 🛡️ หาก policy ยังไม่มา ให้คืนค่าเป็นชุดข้อมูลว่างก่อนกันแครช
+    if (!policy) return { financials: [], growth: { views: { label: 'Views', currentValue: 0, previousValue: 0, growthPercentage: 0 }, followers: { label: 'Followers', currentValue: 0, previousValue: 0, growthPercentage: 0 }, assets: { label: 'Assets', currentValue: 0, previousValue: 0, growthPercentage: 0 } }, teamBreakdown: [] };
+    
     return reportService.getMonthlyReport(
       currentUser,
       allMockUsers,

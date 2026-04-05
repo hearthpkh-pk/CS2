@@ -30,7 +30,7 @@ const StatCards: React.FC<StatCardsProps> = ({ stats }) => {
           
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-bold text-slate-800 font-inter tracking-tight leading-none">
-              {stat.value.toLocaleString()}
+              {(stat.value || 0).toLocaleString()}
             </span>
           </div>
         </div>

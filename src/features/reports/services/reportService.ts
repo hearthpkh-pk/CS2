@@ -85,17 +85,24 @@ export const reportService = {
       let bonus = 0;
       let penalty = 0;
 
-      if (totalViews < policy.minViewTarget) {
-        penalty = policy.penaltyAmount;
-      } else if (totalViews >= policy.superBonusThreshold) {
-        bonus = policy.bonusStep2;
-      } else if (totalViews >= policy.minViewTarget) {
-        bonus = policy.bonusStep1;
+      // 🛡️ Bulletproof Protection: หาก policy ยังไม่มา (Async) ป้องกันการแครช
+      const minViewTarget = policy?.minViewTarget ?? 5000000;
+      const penaltyAmount = policy?.penaltyAmount ?? 0;
+      const superBonusThreshold = policy?.superBonusThreshold ?? 100000000;
+      const bonusStep1 = policy?.bonusStep1 ?? 0;
+      const bonusStep2 = policy?.bonusStep2 ?? 0;
+
+      if (totalViews < minViewTarget) {
+        penalty = penaltyAmount;
+      } else if (totalViews >= superBonusThreshold) {
+        bonus = bonusStep2;
+      } else if (totalViews >= minViewTarget) {
+        bonus = bonusStep1;
       }
 
       const baseSalary = user.salary || 0;
       const netPay = baseSalary + bonus - penalty;
-      const attainmentPercentage = policy.minViewTarget > 0 ? (totalViews / policy.minViewTarget) * 100 : 0;
+      const attainmentPercentage = minViewTarget > 0 ? (totalViews / minViewTarget) * 100 : 0;
 
       return {
         userId: user.id,

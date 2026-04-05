@@ -1,50 +1,84 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Lock, User, Terminal, ChevronRight, Activity, ArrowRight, Info } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { Role } from '@/types';
-import { cn } from '@/lib/utils';
+import { Lock, User, Activity, ChevronRight, Info, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 export const LoginPage = () => {
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  
+  // Easter egg states (for UI fun, no longer bypasses security)
   const [logoClicks, setLogoClicks] = useState(0);
-  const [pinInput, setPinInput] = useState('');
-  const [showPinPrompt, setShowPinPrompt] = useState(false);
   const [showDevTools, setShowDevTools] = useState(false);
-
-  const SECRET_PIN = '777';
 
   useEffect(() => {
     if (logoClicks >= 5) {
-      setShowPinPrompt(true);
+      setShowDevTools(true);
       const timer = setTimeout(() => {
-        if (!showDevTools) {
-           setLogoClicks(0);
-           setShowPinPrompt(false);
-           setPinInput('');
-        }
-      }, 15000);
+         setLogoClicks(0);
+         setShowDevTools(false);
+      }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [logoClicks, showDevTools]);
+  }, [logoClicks]);
 
-  useEffect(() => {
-    if (pinInput === SECRET_PIN) {
-      setShowDevTools(true);
-      setShowPinPrompt(false);
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setErrorMessage('Please enter both email and password.');
+      return;
     }
-  }, [pinInput]);
 
-  const handleDirectLogin = (role: Role) => {
-    login(role);
+    setIsAuthenticating(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      if (isSignUpMode) {
+        // โหมดสมัครสมาชิก (Request Access)
+        const { error, data } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+        } else {
+          setSuccessMessage('Access request sent! Please check your email to confirm your identity.');
+          setIsSignUpMode(false);
+          setPassword('');
+        }
+      } else {
+        // โหมดเข้าสู่ระบบ (Login)
+        const { error, data } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+             setErrorMessage('Invalid email or password, or your account has not been approved yet.');
+          } else {
+             setErrorMessage(error.message);
+          }
+        }
+      }
+    } catch (err) {
+      setErrorMessage('Failed to connect to authentication server.');
+      console.error(err);
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   return (
     <div className="min-h-screen w-full bg-[#054ab3] flex items-center justify-center p-8 font-noto antialiased overflow-hidden text-white relative">
-      {/* Subtle Depth Layers (Mirroring the Truvio focus) */}
+      {/* Subtle Depth Layers */}
       <div className="fixed inset-0 pointer-events-none">
          <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] bg-white/5 rounded-full blur-[140px]" />
          <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-400/10 rounded-full blur-[120px]" />
@@ -52,30 +86,45 @@ export const LoginPage = () => {
 
       <div className="w-full max-w-[420px] flex flex-col items-center relative z-10 animate-in fade-in zoom-in-95 duration-1000">
         
-        {/* BRAND IDENTITY: EDITOR (TRUVIO STYLE) */}
-        <div className="mb-16 flex flex-col items-center group">
+        {/* BRAND IDENTITY */}
+        <div className="mb-14 flex flex-col items-center group">
            <button 
              onClick={() => setLogoClicks(prev => prev + 1)}
              className="mb-2 select-none active:scale-95 transition-transform duration-300"
            >
               <h1 className="text-6xl font-bold font-outfit tracking-tighter lowercase text-white">Editor</h1>
            </button>
-           <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.6em] mt-1 opacity-60">Command Matrix</p>
+           <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.6em] mt-1 opacity-60">HQ Terminal</p>
         </div>
 
-        {/* ACCESS INTERFACE (Pill-shaped, White on Blue) */}
-        <form className="w-full space-y-4" onSubmit={(e) => { e.preventDefault(); handleDirectLogin(Role.SuperAdmin); }}>
+        {/* ACCESS INTERFACE */}
+        <form className="w-full space-y-4" onSubmit={handleAuth}>
            
+           {errorMessage && (
+             <div className="p-4 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+               <AlertCircle size={16} className="text-red-300 shrink-0 mt-0.5" />
+               <p className="text-sm font-medium text-red-200">{errorMessage}</p>
+             </div>
+           )}
+
+           {successMessage && (
+             <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+               <Info size={16} className="text-emerald-300 shrink-0 mt-0.5" />
+               <p className="text-sm font-medium text-emerald-200">{successMessage}</p>
+             </div>
+           )}
+
            <div className="relative group/field shadow-2xl shadow-black/10">
               <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
                  <User size={18} strokeWidth={2.5} />
               </div>
               <input 
                 type="email" 
-                placeholder="Enter your username ..."
+                placeholder="Work Email ..."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white border-0 rounded-full pl-16 pr-8 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter"
+                disabled={isAuthenticating}
+                className="w-full bg-white border-0 rounded-full pl-16 pr-8 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter disabled:opacity-50"
               />
            </div>
 
@@ -85,70 +134,66 @@ export const LoginPage = () => {
               </div>
               <input 
                 type="password" 
-                placeholder="Enter your password ..."
+                placeholder="Password ..."
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white border-0 rounded-full pl-16 pr-8 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter"
+                disabled={isAuthenticating}
+                className="w-full bg-white border-0 rounded-full pl-16 pr-8 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter disabled:opacity-50"
               />
            </div>
 
            <button 
              type="submit" 
-             className="w-full py-5 bg-white text-[#054ab3] rounded-full font-black text-xs tracking-[0.2em] shadow-2xl shadow-black/10 hover:bg-white/95 hover:shadow-white/10 transition-all hover:-translate-y-0.5 active:scale-[0.98] mt-10 uppercase"
+             disabled={isAuthenticating}
+             className="w-full py-5 bg-white text-[#054ab3] rounded-full font-black text-xs tracking-[0.2em] shadow-2xl shadow-black/10 hover:bg-white/95 hover:shadow-white/10 transition-all active:scale-[0.98] mt-10 uppercase disabled:opacity-70 flex justify-center items-center gap-2"
            >
-              SIGN IN
+              {isAuthenticating ? (
+                <>
+                  <Activity size={16} className="animate-spin" />
+                  PROCESSING...
+                </>
+              ) : (isSignUpMode ? 'REQUEST ACCESS' : 'SIGN IN')}
            </button>
         </form>
 
         {/* METADATA INTERACTION */}
-        <div className="mt-10 text-center">
-           <button className="text-[11px] font-bold text-white/40 hover:text-white transition-all lowercase tracking-normal opacity-80 hover:opacity-100">
-              forget your password?
+        <div className="mt-8 flex flex-col items-center gap-3">
+           <button 
+             onClick={() => { setIsSignUpMode(!isSignUpMode); setErrorMessage(''); setSuccessMessage(''); }}
+             className="text-[11px] font-bold text-white hover:text-emerald-300 transition-all uppercase tracking-widest opacity-90"
+           >
+              {isSignUpMode ? 'return to login' : 'new staff? request access'}
            </button>
+           
+           {!isSignUpMode && (
+             <button className="text-[10px] font-bold text-white/40 hover:text-white transition-all lowercase tracking-normal opacity-80 hover:opacity-100">
+                forgot password?
+             </button>
+           )}
         </div>
 
-        {/* HIDDEN OPERATOR CONSOLE (REDUCED FOR DEV ONLY) */}
+        {/* EASTER EGG (Visual Only) */}
         <div className="w-full">
-           {showPinPrompt && !showDevTools && (
-             <div className="mt-10 p-8 bg-black/20 backdrop-blur-xl rounded-[2.5rem] border border-white/10 animate-in fade-in slide-in-from-top-4 duration-500 shadow-3xl">
-                <div className="flex items-center gap-3 mb-6 px-1">
-                   <div className="w-2 h-2 rounded-full bg-blue-300 animate-pulse" />
-                   <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.3em]">Identity Verification Required</p>
-                </div>
-                <input 
-                  type="password" 
-                  autoFocus
-                  placeholder="******"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  className="w-full bg-white/5 border border-white/5 rounded-full px-6 py-4 text-white text-center text-[15px] font-black focus:outline-none focus:border-blue-300/40 transition-all font-inter placeholder:text-white/5"
-                />
-             </div>
-           )}
-
            {showDevTools && (
              <div className="mt-10 p-8 bg-black/30 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 animate-in fade-in slide-in-from-top-4 duration-500 shadow-3xl">
                 <div className="flex items-center justify-between mb-6 px-1">
                    <div className="flex items-center gap-3">
-                      <Activity size={14} className="text-blue-300 animate-pulse" />
-                      <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Developer Portal</p>
+                      <Activity size={14} className="text-emerald-400 animate-pulse" />
+                      <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">SECURE CHANNEL</p>
                    </div>
-                   <button onClick={() => { setShowDevTools(false); setLogoClicks(0); setPinInput(''); }} className="text-white/20 hover:text-white transition-colors">
-                      <ChevronRight size={16} className="rotate-90" />
-                   </button>
                 </div>
                 <div className="space-y-3">
-                   <button onClick={() => handleDirectLogin(Role.Developer)} className="w-full p-4 rounded-full bg-[#054ab3] text-white shadow-xl shadow-[#054ab3]/20 transition-all text-center group active:scale-95">
-                      <span className="text-[11px] font-bold tracking-widest uppercase">Enter Developer POV</span>
-                   </button>
-                   <p className="text-[9px] text-white/20 text-center uppercase tracking-widest font-medium">Bypass authentication for testing only</p>
+                   <p className="text-[9px] text-white/40 text-center uppercase tracking-widest font-medium leading-loose">
+                     Direct bypass removed.<br/>
+                     Supabase Enterprise Auth Enabled.
+                   </p>
                 </div>
              </div>
            )}
         </div>
 
         {/* SECURITY FOOTER */}
-        <div className="mt-24 flex flex-col items-center opacity-10 hover:opacity-30 transition-opacity duration-700 group cursor-default">
+        <div className="mt-16 flex flex-col items-center opacity-10 hover:opacity-30 transition-opacity duration-700 group cursor-default">
            <Info size={16} className="mb-3 transition-transform group-hover:scale-110 text-white" />
            <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em] text-center leading-loose">
               Editor Operations <br />

@@ -1,95 +1,76 @@
-'use client';
-
 import { LeaveRequest, LeaveType } from '@/types';
-
-const LEAVES_KEY_PREFIX = 'hris_leave_requests_';
+import { supabase } from '@/lib/supabaseClient';
 
 /**
- * LeaveService (Data Layer Only)
+ * LeaveService (Supabase Data Layer)
  * 
- * Handles CRUD for leave records. Pure data operations — no UI logic.
- * 
- * Business Rules:
- * - Leave is "Recorded" immediately when staff creates it (no approval gate).
- * - Data is forwarded to Super Admin for acknowledgment and payroll calculation.
- * - Dates are stored as ISO strings; startDate and endDate are inclusive.
+ * Handles CRUD for leave records.
+ * Uses public.leave_requests table in Supabase.
  */
 export const leaveService = {
 
-  getLeaves(userId: string): LeaveRequest[] {
-    if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem(`${LEAVES_KEY_PREFIX}${userId}`);
-    if (!data) return [];
-    try {
-      return JSON.parse(data);
-    } catch (e) {
-      console.error('Failed to parse leave requests', e);
+  getLeaves: async (userId?: string): Promise<LeaveRequest[]> => {
+    let query = supabase.from('leave_requests').select('*').order('start_date', { ascending: false });
+    
+    // ถ้ามีการระบุ userId ค่อยฟิลเตอร์ ถ้าไม่ระบุ (เช่น Super Admin โหลดทั้งหมด) RLS จะทำงานดักให้เอง
+    if (userId) {
+      query = query.eq('staff_id', userId);
+    }
+    
+    const { data: leaves, error } = await query;
+
+    if (error) {
+      console.error('Error fetching leaves:', error);
       return [];
     }
+
+    return (leaves || []).map(l => ({
+      id: l.id,
+      staffId: l.staff_id,
+      staffName: l.staff_id, // TODO: เรายังไม่ได้ join กับ profile 
+      startDate: l.start_date,
+      endDate: l.end_date,
+      type: l.type,
+      reason: l.reason,
+      status: l.is_cancelled ? 'Cancelled' : 'Recorded',
+      createdAt: l.created_at,
+    }));
   },
 
-  /**
-   * Record a new leave. Status is always 'Recorded' — no approval needed.
-   */
-  createLeave(userId: string, leave: {
-    staffName: string;
+  createLeave: async (userId: string, leave: {
     startDate: string;
     endDate: string;
     reason: string;
     type?: LeaveType;
-  }): LeaveRequest {
-    const newLeave: LeaveRequest = {
-      id: Math.random().toString(36).substr(2, 9),
-      staffId: userId,
-      staffName: leave.staffName,
-      startDate: leave.startDate,
-      endDate: leave.endDate,
+    totalDays: number;
+  }): Promise<void> => {
+    const { error } = await supabase.from('leave_requests').insert({
+      staff_id: userId,
       type: leave.type || 'Personal',
+      start_date: leave.startDate.split('T')[0], // Extract just the date part (YYYY-MM-DD)
+      end_date: leave.endDate.split('T')[0],
+      total_days: leave.totalDays,
       reason: leave.reason,
-      status: 'Recorded',
-      createdAt: new Date().toISOString(),
-    };
-
-    const leaves = this.getLeaves(userId);
-    leaves.unshift(newLeave);
-    this._persist(userId, leaves);
-    return newLeave;
-  },
-
-  /**
-   * Check if a specific date has a leave record.
-   */
-  getLeaveOnDate(userId: string, date: Date): LeaveRequest | undefined {
-    const leaves = this.getLeaves(userId);
-    return leaves.find(l => {
-      const start = new Date(l.startDate); start.setHours(0, 0, 0, 0);
-      const end = new Date(l.endDate); end.setHours(23, 59, 59, 999);
-      const d = new Date(date); d.setHours(12, 0, 0, 0);
-      return d >= start && d <= end;
+      is_cancelled: false
     });
+
+    if (error) {
+      console.error('Error creating leave:', error);
+      throw error;
+    }
   },
 
-  /**
-   * Get all leaves overlapping a given month.
-   */
-  getLeavesInMonth(userId: string, year: number, month: number): LeaveRequest[] {
-    const leaves = this.getLeaves(userId);
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
-    return leaves.filter(l => {
-      const start = new Date(l.startDate);
-      const end = new Date(l.endDate);
-      return start <= monthEnd && end >= monthStart;
-    });
-  },
+  deleteLeave: async (userId: string, leaveId: string): Promise<void> => {
+    // ตาม Business Rule ใหม่: สั่งลบไม่ได้ถ้าไม่ใช่ Super Admin 
+    // แต่ "ยกเลิก" ใบลาตัวเองได้ (update is_cancelled = true)
+    const { error } = await supabase.from('leave_requests')
+      .update({ is_cancelled: true })
+      .eq('id', leaveId)
+      .eq('staff_id', userId);
 
-  deleteLeave(userId: string, leaveId: string): void {
-    const leaves = this.getLeaves(userId);
-    this._persist(userId, leaves.filter(l => l.id !== leaveId));
-  },
-
-  _persist(userId: string, leaves: LeaveRequest[]): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(`${LEAVES_KEY_PREFIX}${userId}`, JSON.stringify(leaves));
+    if (error) {
+      console.error('Error cancelling leave:', error);
+      throw error;
+    }
   }
 };

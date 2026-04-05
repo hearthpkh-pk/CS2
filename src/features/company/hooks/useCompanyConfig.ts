@@ -2,33 +2,100 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { configService } from '@/services/configService';
-import { Announcement, CompanyConfig, GroupDefinition, GroupPolicy, Role, User, PolicyConfiguration } from '@/types';
+import { Announcement, CompanyConfig, GroupDefinition, Role, User, PolicyConfiguration, Brand, CompanyRule } from '@/types';
+
+// Create a fallback config so we always have valid data shape during initial render
+const FALLBACK_CONFIG: CompanyConfig = {
+  id: 'core-config',
+  name: "Editor Platform HQ",
+  brands: [],
+  rules: [],
+  groups: [],
+  announcements: [],
+  holidays: [],
+  performancePolicy: {
+    minViewTarget: 5000000,
+    penaltyAmount: 2000,
+    bonusStep1: 1000,
+    superBonusThreshold: 100000000,
+    bonusStep2: 1500,
+    requiredPagesPerDay: 4,
+    clipsPerPageInLog: 4,
+    groupPolicies: []
+  }
+};
 
 export const useCompanyConfig = () => {
-  const [config, setConfig] = useState<CompanyConfig>(configService.getConfig());
+  const [config, setConfig] = useState<CompanyConfig>(FALLBACK_CONFIG);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refreshConfig = useCallback(() => {
-    setConfig(configService.getConfig());
+  const refreshConfig = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await configService.getConfig();
+      setConfig(data);
+    } catch (e) {
+      console.error('Failed to load config', e);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshConfig();
+  }, [refreshConfig]);
 
   // --- Group Management ---
-  const saveGroup = useCallback((group: GroupDefinition) => {
-    const updated = configService.saveGroup(group);
+  const saveGroup = useCallback(async (group: GroupDefinition) => {
+    const updated = await configService.saveGroup(group);
     setConfig(updated);
     return updated;
   }, []);
 
-  const deleteGroup = useCallback((id: string) => {
-    const updated = configService.deleteGroup(id);
+  const deleteGroup = useCallback(async (id: string) => {
+    const updated = await configService.deleteGroup(id);
     setConfig(updated);
     return updated;
   }, []);
+
+  // --- Brand Management ---
+  const saveBrand = useCallback(async (brand: Brand) => {
+    const updated = await configService.saveBrand(brand);
+    setConfig(updated);
+    return updated;
+  }, []);
+
+  const deleteBrand = useCallback(async (id: string) => {
+    const updated = await configService.deleteBrand(id);
+    setConfig(updated);
+    return updated;
+  }, []);
+
+  // --- Rules Management ---
+  const saveRule = useCallback(async (rule: CompanyRule) => {
+    const updated = await configService.saveRule(rule);
+    setConfig(updated);
+    return updated;
+  }, []);
+
+  const deleteRule = useCallback(async (id: string) => {
+    const updated = await configService.deleteRule(id);
+    setConfig(updated);
+    return updated;
+  }, []);
+
+  const reorderRules = useCallback(async (ruleIds: string[]) => {
+    const updated = await configService.reorderRules(ruleIds);
+    setConfig(updated);
+    return updated;
+  }, []);
+
 
   // --- Performance Policy ---
-  const updatePerformancePolicy = useCallback((policy: Partial<PolicyConfiguration>) => {
-    const currentConfig = configService.getConfig();
+  const updatePerformancePolicy = useCallback(async (policy: Partial<PolicyConfiguration>) => {
+    const currentConfig = await configService.getConfig();
     const updatedPolicy = { ...currentConfig.performancePolicy, ...policy };
-    const updatedConfig = configService.updateConfig({ performancePolicy: updatedPolicy });
+    const updatedConfig = await configService.updateConfig({ performancePolicy: updatedPolicy });
     setConfig(updatedConfig);
     return updatedConfig;
   }, []);
@@ -80,32 +147,39 @@ export const useCompanyConfig = () => {
     });
   }, [config.announcements]);
 
-  const saveAnnouncement = useCallback((ann: Announcement) => {
-    const updated = configService.saveAnnouncement(ann);
+  const saveAnnouncement = useCallback(async (ann: Announcement) => {
+    const updated = await configService.saveAnnouncement(ann);
     setConfig(updated);
     return updated;
   }, []);
 
-  const deleteAnnouncement = useCallback((id: string) => {
-    const updated = configService.deleteAnnouncement(id);
+  const deleteAnnouncement = useCallback(async (id: string) => {
+    const updated = await configService.deleteAnnouncement(id);
     setConfig(updated);
     return updated;
   }, []);
 
-  const saveHoliday = useCallback((holiday: any) => {
-    const updated = configService.saveHoliday(holiday);
+  const saveHoliday = useCallback(async (holiday: any) => {
+    const updated = await configService.saveHoliday(holiday);
     setConfig(updated);
     return updated;
   }, []);
 
-  const deleteHoliday = useCallback((id: string) => {
-    const updated = configService.deleteHoliday(id);
+  const deleteHoliday = useCallback(async (id: string) => {
+    const updated = await configService.deleteHoliday(id);
     setConfig(updated);
     return updated;
   }, []);
 
   return {
     config,
+    isLoading,
+    refreshConfig,
+    saveBrand,
+    deleteBrand,
+    saveRule,
+    deleteRule,
+    reorderRules,
     saveGroup,
     deleteGroup,
     getPolicyForUser,
@@ -115,6 +189,5 @@ export const useCompanyConfig = () => {
     saveHoliday,
     deleteHoliday,
     updatePerformancePolicy,
-    refreshConfig
   };
 };

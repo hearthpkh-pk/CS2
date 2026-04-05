@@ -37,7 +37,7 @@ interface CompanySettingsViewProps {
 }
 
 export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ currentUser, initialTab }) => {
-  const { config, updatePerformancePolicy, refreshConfig } = useCompanyConfig();
+  const { config, updatePerformancePolicy, refreshConfig, saveBrand, deleteBrand, isLoading } = useCompanyConfig();
   const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups' | 'holidays'>(initialTab || 'announcements');
   const [isSaved, setIsSaved] = useState(false);
 
@@ -51,22 +51,20 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
   const [newBrand, setNewBrand] = useState('');
   const [isAddingBrand, setIsAddingBrand] = useState(false);
 
-  const handleAddBrand = () => {
+  const handleAddBrand = async () => {
     if (!newBrand) return;
     setIsAddingBrand(true);
     try {
       const brand: Brand = { id: `brand-${Date.now()}`, name: newBrand, isActive: true };
-      configService.saveBrand(brand);
-      refreshConfig();
+      await saveBrand(brand);
       setNewBrand('');
     } finally {
       setIsAddingBrand(false);
     }
   };
 
-  const handleDeleteBrand = (id: string) => {
-    configService.deleteBrand(id);
-    refreshConfig();
+  const handleDeleteBrand = async (id: string) => {
+    await deleteBrand(id);
   };
 
   const handleCommit = () => {
@@ -90,6 +88,19 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
     { id: 'policy', label: 'KPI Matrix', icon: Settings2, desc: 'Financial Matrix' },
     { id: 'holidays', label: 'Holidays', icon: CalendarDays, desc: 'Public Holiday Rules' },
   ] as const;
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="animate-spin text-blue-500">
+           <svg className="w-8 h-8" viewBox="0 0 24 24">
+             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+           </svg>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4 animate-in fade-in duration-700">

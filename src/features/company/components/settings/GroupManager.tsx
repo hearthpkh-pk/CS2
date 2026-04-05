@@ -35,7 +35,7 @@ export const GroupManager: React.FC = () => {
     isDefault: false
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newGroup.id || !newGroup.name) return;
 
     const group: GroupDefinition = {
@@ -50,10 +50,10 @@ export const GroupManager: React.FC = () => {
       }
     };
 
-    saveGroup(group);
+    await saveGroup(group);
     
     // Sync to legacy groupPolicies
-    const currentConfig = configService.getConfig();
+    const currentConfig = await configService.getConfig();
     const updatedPolicies = [...(currentConfig.performancePolicy.groupPolicies || [])];
     const existingIdx = updatedPolicies.findIndex(p => p.groupId === group.id);
     
@@ -63,8 +63,7 @@ export const GroupManager: React.FC = () => {
       updatedPolicies.push(group.policy);
     }
 
-    configService.updateConfig({
-      ...currentConfig,
+    await configService.updateConfig({
       performancePolicy: {
         ...currentConfig.performancePolicy,
         groupPolicies: updatedPolicies
@@ -76,16 +75,15 @@ export const GroupManager: React.FC = () => {
     setNewGroup({ id: '', name: '', description: '', minPagesPerDay: 10, minClipsPerPage: 4, isDefault: false });
   };
 
-  const handleSetDefault = (group: GroupDefinition) => {
-    saveGroup({ ...group, isDefault: true });
+  const handleSetDefault = async (group: GroupDefinition) => {
+    await saveGroup({ ...group, isDefault: true });
     refreshConfig();
   };
 
-  const handleDelete = (id: string) => {
-    deleteGroup(id);
-    const currentConfig = configService.getConfig();
-    configService.updateConfig({
-      ...currentConfig,
+  const handleDelete = async (id: string) => {
+    await deleteGroup(id);
+    const currentConfig = await configService.getConfig();
+    await configService.updateConfig({
       performancePolicy: {
         ...currentConfig.performancePolicy,
         groupPolicies: (currentConfig.performancePolicy.groupPolicies || []).filter(p => p.groupId !== id)

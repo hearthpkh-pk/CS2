@@ -9,7 +9,7 @@ export enum Role {
 export type LeaveType = 'Sick' | 'Vacation' | 'Personal' | 'Business';
 // Leave doesn't require approval; it's recorded and forwarded to Super Admin
 // for acknowledgment and payroll calculation.
-export type LeaveStatus = 'Recorded' | 'Acknowledged';
+export type LeaveStatus = 'Recorded' | 'Cancelled';
 
 export interface LeaveRequest {
   id: string;

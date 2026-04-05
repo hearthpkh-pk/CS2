@@ -32,7 +32,7 @@ export const HolidayManager: React.FC = () => {
     isRecurring: true
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newHoliday.name || !newHoliday.date) return;
     
     const holiday: PublicHoliday = {
@@ -43,14 +43,14 @@ export const HolidayManager: React.FC = () => {
       isRecurring: !!newHoliday.isRecurring
     };
 
-    saveHoliday(holiday);
+    await saveHoliday(holiday);
     setIsAdding(false);
     setNewHoliday({ name: '', date: '', multiplier: 2.0, isRecurring: true });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (holidayToDelete) {
-      deleteHoliday(holidayToDelete);
+      await deleteHoliday(holidayToDelete);
       setHolidayToDelete(null);
     }
   };

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Outfit, Noto_Sans_Thai, Kanit, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import { DevPerspectiveFAB } from "@/components/dev/DevPerspectiveFAB";
 import { GlobalAnnouncement } from "@/features/company/components/GlobalAnnouncement";
 
 const outfit = Outfit({ 
@@ -42,7 +41,6 @@ export default function RootLayout({
         <AuthProvider>
           <GlobalAnnouncement />
           {children}
-          <DevPerspectiveFAB />
         </AuthProvider>
       </body>
     </html>

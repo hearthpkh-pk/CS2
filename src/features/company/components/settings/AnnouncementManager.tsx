@@ -179,7 +179,7 @@ export const AnnouncementManager: React.FC = () => {
     targetUsers: []
   });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newAnn.message) return;
 
     const announcement: Announcement = {
@@ -195,7 +195,7 @@ export const AnnouncementManager: React.FC = () => {
       targetUsers: newAnn.targetUsers
     };
 
-    saveAnnouncement(announcement);
+    await saveAnnouncement(announcement);
     setIsAdding(false);
     setNewAnn({
       message: '',

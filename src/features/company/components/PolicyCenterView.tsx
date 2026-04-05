@@ -44,7 +44,7 @@ interface PolicyCenterViewProps {
 }
 
 export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser, onNavigate }) => {
-   const { config, getPolicyForUser, refreshConfig } = useCompanyConfig();
+   const { config, getPolicyForUser, refreshConfig, saveRule, reorderRules } = useCompanyConfig();
    const userPolicy = getPolicyForUser(currentUser);
    const userGroup = config.groups.find(g => g.id === currentUser.group);
 
@@ -101,8 +101,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
       if (!editForm || !editForm.id) return;
       setIsSaving(true);
       try {
-         configService.saveRule(editForm as CompanyRule);
-         refreshConfig();
+         await saveRule(editForm as CompanyRule);
          setIsEditMode(false);
          setEditForm(null);
       } finally {
@@ -110,7 +109,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
       }
    };
 
-   const handleMoveRule = (ruleId: string, direction: 'up' | 'down') => {
+   const handleMoveRule = async (ruleId: string, direction: 'up' | 'down') => {
       const currentIds = config.rules.sort((a, b) => (a.order || 0) - (b.order || 0)).map(r => r.id);
       const index = currentIds.indexOf(ruleId);
       if (index < 0) return;
@@ -121,8 +120,7 @@ export const PolicyCenterView: React.FC<PolicyCenterViewProps> = ({ currentUser,
       const newOrder = [...currentIds];
       [newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]];
 
-      configService.reorderRules(newOrder);
-      refreshConfig();
+      await reorderRules(newOrder);
    };
 
    const toggleRoleTarget = (role: Role) => {
