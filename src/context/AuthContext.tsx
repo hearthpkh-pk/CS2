@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Role } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -16,53 +16,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isInitializedRef = useRef(false); // 🛡️ Track if auth has completed (avoids stale closure)
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      // 🛡️ Safety Timeout: ใช้ Ref เพื่อเช็คค่าจริง ไม่ใช่ค่าเก่าจาก Closure
-      const timeoutId = setTimeout(() => {
-        if (!isInitializedRef.current) {
-          console.warn('⚠️ Auth Timeout reached (5s). Forcing to Login screen.');
-          isInitializedRef.current = true;
-          setIsLoading(false);
-        }
-      }, 5000);
-
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) throw error;
-
+    // 🛡️ ใช้ onAuthStateChange + INITIAL_SESSION (Supabase Official Pattern)
+    // ไม่ต้องเรียก getSession() แยก → ลด Race Condition
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'INITIAL_SESSION') {
         if (session?.user) {
           await fetchUserProfile(session.user.id, session.user.email);
         } else {
           setIsLoading(false);
         }
-      } catch (err) {
-        console.error('❌ Auth Initialization Error:', err);
-        setIsLoading(false);
-      } finally {
-        isInitializedRef.current = true;
-        clearTimeout(timeoutId);
-      }
-    };
-
-    initializeAuth();
-
-    // 2. ดักฟัง Event เมื่อมีการ Login หรือ Logout 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (event === 'SIGNED_IN' && session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setIsLoading(false);
-        } else if (event === 'INITIAL_SESSION' && !session) {
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error('❌ Auth State Change Error:', err);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        await fetchUserProfile(session.user.id, session.user.email);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
         setIsLoading(false);
       }
     });
@@ -72,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // ฟังก์ชันดึงข้อมูล Profile แยกมาจากตาราง profiles ที่สร้างจาก Trigger
   const fetchUserProfile = async (uid: string, email?: string) => {
     try {
       const { data: profile, error } = await supabase
@@ -84,7 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (profile) {
-        // แมปข้อมูลจาก DB กลับเข้าสู่ Interface User ของเรา
         const appUser: User = {
           id: profile.id,
           name: profile.name,
@@ -101,13 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e: any) {
       console.error('Failed to fetch user profile:', e);
-      
-      // 🛡️ ป้องกันบั๊กในโหมด Dev (React Strict Mode) ที่การดึงข้อมูลชนกัน (Race condition)
-      // ทำให้โยน AbortError/Lock ออกมา ซึ่งถ้าเราเผลอไป setUser(null) จะทำให้โดนเตะออกจากระบบ
-      const isTransientError = e?.message?.includes('Lock') || e?.name === 'AbortError';
-      if (!isTransientError) {
-        setUser(null);
-      }
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
-  // แม้กำลังโหลด ก็แสดงผล SplashScreen เพื่อให้ UI Smooth
   if (isLoading) {
     return (
       <div className="h-screen w-screen bg-[#054ab3] flex flex-col items-center justify-center gap-4">
@@ -135,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{ 
       user, 
-      isAuthenticated: !!user && user.isActive === true, // 🛡️ ตรวจสอบ is_active ด้วย
+      isAuthenticated: !!user && user.isActive === true,
       isLoading,
       logout
     }}>
