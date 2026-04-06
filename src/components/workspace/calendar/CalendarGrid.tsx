@@ -19,7 +19,7 @@ interface CalendarGridProps {
   monthStart: Date;
   weekDayNamesThai: string[];
   config: any; // Using any for simplicity now, should match CompanyConfig
-  getLeaveForDay: (day: Date) => LeaveRequest | undefined;
+  getLeavesForDay: (day: Date) => LeaveRequest[];
   onAddLeaveClick: () => void;
   tasks: PersonalTask[];
   isTaskOnDay: (task: PersonalTask, day: Date) => boolean;
@@ -38,7 +38,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   monthStart,
   weekDayNamesThai,
   config,
-  getLeaveForDay,
+  getLeavesForDay,
   onAddLeaveClick,
   tasks,
   isTaskOnDay,
@@ -80,9 +80,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   };
 
   return (
-    <div className="bg-white text-slate-900 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col relative transition-all">
+    <div className="bg-white text-slate-900 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col relative transition-all xl:h-[calc(100vh-200px)]">
       {/* 📍 PROXIMITY UX CONTROLS (Month Nav & Action) */}
-      <div className="px-8 py-6 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#fcfcfd]/50">
+      <div className="px-8 py-6 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#fcfcfd]/50 shrink-0">
         <div className="flex-1 hidden sm:block">
           <h3 className="text-lg font-bold font-outfit uppercase tracking-tight text-slate-800">
             {format(viewDate, 'yyyy')} Agenda
@@ -116,9 +116,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       </div>
 
       {/* Weekday Labels (Minimalist) */}
-      <div className="grid grid-cols-7 border-b border-slate-50/50">
+      <div className="grid grid-cols-7 border-b border-slate-50/50 shrink-0 hidden md:grid">
         {weekDayNamesThai.map((day, i) => (
-          <div key={day} className="py-5 text-center">
+          <div key={day} className="py-4 xl:py-5 text-center">
             <span className={cn(
               "text-[10px] font-black uppercase tracking-[0.25em] font-noto",
               i === 0 ? "text-rose-400" : i === 6 ? "text-blue-400" : "text-slate-300"
@@ -128,7 +128,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       </div>
 
       {/* Date Grid */}
-      <div className="grid grid-cols-7 auto-rows-fr">
+      <div className="grid grid-cols-7 flex-1 auto-rows-fr overflow-y-auto min-h-[500px] xl:min-h-0">
         {calendarDays.map((day) => {
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isTodayDate = isToday(day);
@@ -144,7 +144,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, day)}
               className={cn(
-                "relative border-r border-b border-slate-50 last:border-r-0 group transition-all duration-300 outline-none flex flex-col p-4 text-left min-h-[110px]",
+                "relative border-r border-b border-slate-50 last:border-r-0 group transition-all duration-300 outline-none flex flex-col p-2 xl:p-4 text-left min-h-[100px] xl:min-h-0 h-full overflow-hidden",
                 !isCurrentMonth ? "bg-slate-50/20 opacity-30" : "bg-white hover:bg-slate-50/50",
                 draggedOverDate === day.toISOString() && isCurrentMonth ? "bg-blue-50/40 ring-2 ring-inset ring-[var(--primary-theme)]/30" : ""
               )}
@@ -170,17 +170,18 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                    </div>
                  )}
                  {(() => {
-                   const leave = getLeaveForDay(day);
-                   return leave && isCurrentMonth ? (
-                     <div className={cn(
+                   const dayLeaves = getLeavesForDay(day);
+                   if (!isCurrentMonth || dayLeaves.length === 0) return null;
+                   return dayLeaves.map(leave => (
+                     <div key={leave.id} className={cn(
                        "px-2 py-1 rounded-md max-w-full",
-                       leave.status === 'Acknowledged' ? "bg-blue-600" : "bg-amber-500"
+                       leave.status === 'Cancelled' ? "bg-slate-400" : "bg-amber-500"
                      )}>
                        <p className="text-[10px] text-white font-noto truncate">
-                         {leave.status === 'Acknowledged' ? 'รับทราบแล้ว' : 'แจ้งลาแล้ว'}
+                         {leave.staffName} • {leave.status === 'Cancelled' ? 'ยกเลิก' : 'ลางาน'}
                        </p>
                      </div>
-                   ) : null;
+                   ));
                  })()}
 
                  {/* Tasks Indicator */}

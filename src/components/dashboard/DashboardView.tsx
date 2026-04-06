@@ -7,7 +7,6 @@ import { PerformanceChart } from './PerformanceChart';
 import { ActivePagesSection } from './ActivePagesSection';
 import { ExecutiveQuotaBrief } from './ExecutiveQuotaBrief';
 import { PerformanceMatrixTable } from './PerformanceMatrixTable';
-import { buildFakeDatabase } from '@/data/mockDashboardData';
 import { aggregateDashboardMetrics } from '@/services/dashboardMetricsService';
 
 interface Props {
@@ -41,18 +40,9 @@ export const DashboardView = ({
   onNavigateToTask, currentUser, onSyncPage,
   allPages, allLogs, policy
 }: Props) => {
-  const [isDemoMode, setIsDemoMode] = React.useState(false);
-
-  // --- Real vs Fake Database Interception ---
-  const { fakePages, fakeLogs } = useMemo(() => buildFakeDatabase(selectedYear), [selectedYear]);
-  
-  const workingPages = isDemoMode ? fakePages : pages;
-  const workingAllPages = isDemoMode ? fakePages : allPages;
-  const workingAllLogs = isDemoMode ? fakeLogs : allLogs;
-
   const payload = useMemo(() => {
-    return aggregateDashboardMetrics(workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage, policy);
-  }, [workingAllPages, workingAllLogs, selectedYear, selectedMonth, selectedPage, policy]);
+    return aggregateDashboardMetrics(allPages, allLogs, selectedYear, selectedMonth, selectedPage, policy);
+  }, [allPages, allLogs, selectedYear, selectedMonth, selectedPage, policy]);
 
   const { chartData, totals, matrixData, quotaData } = payload;
 
@@ -71,27 +61,12 @@ export const DashboardView = ({
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          {/* Data Mode Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto">
-            <button
-              onClick={() => setIsDemoMode(false)}
-              className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all ${!isDemoMode ? 'bg-white text-[var(--primary-theme)] shadow-sm' : 'text-slate-400 hover:text-[var(--primary-theme)]'}`}
-            >
-              REAL
-            </button>
-            <button
-              onClick={() => setIsDemoMode(true)}
-              className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-[9px] font-bold uppercase tracking-[0.15em] transition-all ${isDemoMode ? 'bg-white text-[var(--primary-theme)] shadow-sm' : 'text-slate-400 hover:text-[var(--primary-theme)]'}`}
-            >
-              MOCKUP
-            </button>
-          </div>
 
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl py-2 px-3 w-full sm:w-auto shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
             <Filter size={14} />
             <select value={selectedPage} onChange={e => setSelectedPage(e.target.value)} className="bg-transparent text-inherit text-xs font-bold font-noto outline-none flex-1 cursor-pointer">
               <option value="all">ทุกเพจ</option>
-              {workingPages.map(p => (
+              {pages.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>

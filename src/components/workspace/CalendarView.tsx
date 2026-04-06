@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, PersonalTask } from '@/types';
+import { User, PersonalTask, LeaveRequest } from '@/types';
 import { useCalendarLogic } from '@/hooks/useCalendarLogic';
 import { CalendarGrid } from './calendar/CalendarGrid';
 import { UnifiedAgenda } from './calendar/UnifiedAgenda';
@@ -39,8 +39,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
     isTaskOnDay,
 
     // Leave operations
+    leaves,
     recordLeave,
-    getLeaveForDay,
+    deleteLeave,
+    getLeavesForDay,
   } = useCalendarLogic(currentUser);
 
   // local UI states
@@ -98,7 +100,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
               monthStart={monthStart}
               weekDayNamesThai={weekDayNamesThai}
               config={config}
-              getLeaveForDay={getLeaveForDay}
+              getLeavesForDay={getLeavesForDay}
               onAddLeaveClick={() => setShowLeaveModal(true)}
               tasks={tasks}
               isTaskOnDay={isTaskOnDay}
@@ -120,6 +122,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
               deleteTask={deleteTask}
               isTaskOnDay={isTaskOnDay}
               onTaskClick={setEditingTask}
+              leaves={leaves}
+              getLeavesForDay={getLeavesForDay}
+              onCancelLeave={deleteLeave}
+              currentUser={currentUser}
            />
         </div>
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { PersonalTask } from '@/types';
+import { PersonalTask, LeaveRequest, Role, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { ConfirmationModal } from '@/components/kanban/ConfirmationModal';
 
@@ -18,6 +18,10 @@ interface UnifiedAgendaProps {
   deleteTask: (taskId: string) => void;
   isTaskOnDay: (task: PersonalTask, day: Date) => boolean;
   onTaskClick: (task: PersonalTask) => void;
+  leaves?: LeaveRequest[];
+  getLeavesForDay?: (day: Date) => LeaveRequest[];
+  onCancelLeave?: (leaveId: string) => void;
+  currentUser?: User;
 }
 
 export const UnifiedAgenda: React.FC<UnifiedAgendaProps> = ({
@@ -31,14 +35,26 @@ export const UnifiedAgenda: React.FC<UnifiedAgendaProps> = ({
   deleteTask,
   isTaskOnDay,
   onTaskClick,
+  leaves = [],
+  getLeavesForDay,
+  onCancelLeave,
+  currentUser,
 }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<PersonalTask | null>(null);
+  const [leaveToCancel, setLeaveToCancel] = useState<LeaveRequest | null>(null);
 
   const handleDeleteConfirm = () => {
     if (taskToDelete) {
       deleteTask(taskToDelete.id);
       setTaskToDelete(null);
+    }
+  };
+
+  const handleCancelLeaveConfirm = () => {
+    if (leaveToCancel && onCancelLeave) {
+      onCancelLeave(leaveToCancel.id);
+      setLeaveToCancel(null);
     }
   };
 
@@ -141,6 +157,54 @@ export const UnifiedAgenda: React.FC<UnifiedAgendaProps> = ({
           )}
         </div>
 
+        {/* ── Section 1.5: Leaves ── */}
+        <div className="px-8 py-5">
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-4 font-noto">
+            ลางาน — {format(selectedDate, 'MMM d')}
+          </p>
+          {(() => {
+            const dayLeaves = getLeavesForDay ? getLeavesForDay(selectedDate) : [];
+            if (dayLeaves.length === 0) return <p className="text-sm text-slate-300 font-noto py-2">ไม่มีผู้ลางานวันนี้</p>;
+            
+            return (
+              <div className="space-y-2">
+                {dayLeaves.map(leave => {
+                  const isOwnLeave = leave.staffId === currentUser?.id;
+                  const isElevatedRole = currentUser?.role === Role.SuperAdmin || currentUser?.role === Role.Admin || currentUser?.role === Role.Developer;
+                  const canCancel = leave.status !== 'Cancelled' && (isOwnLeave || isElevatedRole);
+
+                  return (
+                    <div key={leave.id} className="flex justify-between items-center bg-slate-50 border border-slate-100 rounded-2xl p-4 gap-3">
+                      <div className="flex-1 flex flex-col items-start min-w-0">
+                        <div className="flex items-center gap-2 mb-1 max-w-full">
+                           <span className={cn(
+                             "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0",
+                             leave.status === 'Cancelled' ? "bg-slate-200 text-slate-500" : "bg-blue-100 text-blue-700"
+                           )}>
+                             {leave.status === 'Cancelled' ? 'ยกเลิก' : 'ลาหยุด'}
+                           </span>
+                           <h4 className="font-bold text-sm text-slate-800 font-noto truncate">{leave.staffName}</h4>
+                        </div>
+                        <p className="text-xs text-slate-500 font-noto truncate w-full">{leave.reason}</p>
+                      </div>
+                      
+                      {canCancel && (
+                        <button 
+                          onClick={() => setLeaveToCancel(leave)}
+                          className="shrink-0 p-2 text-rose-400 hover:text-white hover:bg-rose-500 rounded-xl transition-all shadow-sm bg-white"
+                          title="ยกเลิกใบลา"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+
         {/* ── Section 2: All Tasks ── */}
         <div className="px-8 py-5">
           <p className="text-xs text-slate-400 uppercase tracking-wider mb-4 font-noto">งานทั้งหมด</p>
@@ -219,16 +283,31 @@ export const UnifiedAgenda: React.FC<UnifiedAgendaProps> = ({
         </div>
       </div>
 
-      <ConfirmationModal
-        isOpen={!!taskToDelete}
-        onClose={() => setTaskToDelete(null)}
-        onConfirm={handleDeleteConfirm}
-        title="ลบงาน"
-        message={`คุณต้องการลบงาน "${taskToDelete?.title}" ออกจากระบบใช่หรือไม่ การกระทำนี้ไม่สามารถย้อนกลับได้`}
-        confirmLabel="ยืนยันการลบ"
-        cancelLabel="ยกเลิก"
-        variant="danger"
-      />
+      {!!taskToDelete && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setTaskToDelete(null)}
+          onConfirm={handleDeleteConfirm}
+          title="ลบงาน"
+          message={`คุณต้องการลบงาน "${taskToDelete?.title}" ออกจากระบบใช่หรือไม่ การกระทำนี้ไม่สามารถย้อนกลับได้`}
+          confirmLabel="ยืนยันการลบ"
+          cancelLabel="ยกเลิก"
+          variant="danger"
+        />
+      )}
+
+      {!!leaveToCancel && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setLeaveToCancel(null)}
+          onConfirm={handleCancelLeaveConfirm}
+          title="ยกเลิกการลา"
+          message={`คุณยืนยันที่จะยกเลิกใบลาของ "${leaveToCancel?.staffName || 'พนักงาน'}" สำหรับวันที่ ${format(selectedDate, 'EEEE, d MMM yyyy')} ใช่หรือไม่? (สามารถกดยืนยันด้วยปุ่ม Enter ได้ทันที)`}
+          confirmLabel="ยืนยันยกเลิก"
+          cancelLabel="กลับ"
+          variant="warning"
+        />
+      )}
     </div>
   );
 };

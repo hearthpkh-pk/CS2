@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { User, PersonalTask, LeaveRequest, LeaveType } from '@/types';
+import { User, PersonalTask, LeaveRequest, LeaveType, Role } from '@/types';
 import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
 import { holidayService } from '@/services/holidayService';
 import { taskService } from '@/services/taskService';
@@ -102,38 +102,52 @@ export function useCalendarLogic(currentUser: User) {
 
   // ─── 3. Leave CRUD ───
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const isElevatedRole = currentUser.role === Role.SuperAdmin || currentUser.role === Role.Admin || currentUser.role === Role.Developer;
 
   useEffect(() => {
     const fetchLeaves = async () => {
-      setLeaves(await leaveService.getLeaves(currentUser.id));
+      // 🛡️ Super Admin/Admin เห็นใบลาพนักงานทั้งหมด, Staff เห็นแค่ของตนเอง
+      const userId = isElevatedRole ? undefined : currentUser.id;
+      setLeaves(await leaveService.getLeaves(userId));
     };
     fetchLeaves();
-  }, [currentUser.id]);
+  }, [currentUser.id, isElevatedRole]);
 
   const recordLeave = useCallback(async (reason: string, date: Date, type?: LeaveType) => {
+    // 🛡️ Timezone-safe: ใช้ format() แทน toISOString() เพื่อป้องกัน UTC shift
+    // เช่น วันที่ 18 เม.ย. เวลา 20:00 UTC+7 จะถูก toISOString() แปลงเป็น 18T13:00Z
+    // แต่ถ้าเป็นเที่ยงคืนมันจะกลายเป็นวันก่อนหน้าใน UTC
+    const localDateStr = format(date, 'yyyy-MM-dd');
     await leaveService.createLeave(currentUser.id, {
-      startDate: date.toISOString(),
-      endDate: date.toISOString(),
+      startDate: localDateStr,
+      endDate: localDateStr,
       reason,
       type,
-      totalDays: 1 // ลาเต็มวัน 1 วัน (ตามปฏิทินช่องเดียว)
+      totalDays: 1
     });
-    setLeaves(await leaveService.getLeaves(currentUser.id));
-  }, [currentUser.id, currentUser.name]);
+    const userId = isElevatedRole ? undefined : currentUser.id;
+    setLeaves(await leaveService.getLeaves(userId));
+  }, [currentUser.id, isElevatedRole]);
 
   const deleteLeave = useCallback(async (leaveId: string) => {
     await leaveService.deleteLeave(currentUser.id, leaveId);
-    setLeaves(await leaveService.getLeaves(currentUser.id));
-  }, [currentUser.id]);
+    const userId = isElevatedRole ? undefined : currentUser.id;
+    setLeaves(await leaveService.getLeaves(userId));
+  }, [currentUser.id, isElevatedRole]);
 
   /**
-   * Find leave record for a specific day (used by calendar grid).
+   * Find ALL leave records for a specific day (supports multiple staff leaves)
+   * Super Admin จะเห็นหลายใบลาในวันเดียวกัน
    */
-  const getLeaveForDay = useCallback((day: Date): LeaveRequest | undefined => {
-    return leaves.find(l => {
-      const s = new Date(l.startDate); s.setHours(0, 0, 0, 0);
-      const e = new Date(l.endDate); e.setHours(23, 59, 59, 999);
-      const d = new Date(day); d.setHours(12, 0, 0, 0);
+  const getLeavesForDay = useCallback((day: Date): LeaveRequest[] => {
+    return leaves.filter(l => {
+      // 🛡️ Timezone-safe parsing: split "YYYY-MM-DD" instead of new Date("...") 
+      // to avoid UTC interpretation which causes off-by-one in UTC+7
+      const [sy, sm, sd] = l.startDate.split('-').map(Number);
+      const [ey, em, ed] = l.endDate.split('-').map(Number);
+      const s = new Date(sy, sm - 1, sd, 0, 0, 0, 0);   // Local midnight start
+      const e = new Date(ey, em - 1, ed, 23, 59, 59, 999); // Local end-of-day
+      const d = new Date(day); d.setHours(12, 0, 0, 0);  // Local noon (safe midpoint)
       return d >= s && d <= e;
     });
   }, [leaves]);
@@ -194,6 +208,6 @@ export function useCalendarLogic(currentUser: User) {
     leaves,
     recordLeave,
     deleteLeave,
-    getLeaveForDay,
+    getLeavesForDay,
   };
 }
