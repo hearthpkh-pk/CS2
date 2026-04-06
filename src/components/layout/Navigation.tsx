@@ -2,12 +2,13 @@
 
 import React from 'react';
 import {
-  Plus, Users, LayoutDashboard, FilePlus,
+  Users, LayoutDashboard, FilePlus,
   CreditCard, Activity, BarChart3,
   Building2, Calendar as CalendarIcon,
   Video as VideoIcon, Settings as SettingsIcon,
   History as HistoryIcon, HelpCircle,
-  PieChart, ChevronRight, ChevronDown, Scale, BookOpen
+  PieChart, ChevronRight, ChevronDown, Scale, BookOpen,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Role } from '@/types';
@@ -122,33 +123,40 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             </div>
           );
         })}
+
+        {/* 🛡️ PROFILE & FOOTER - Integrated into scroll sequence for more vertical breathing room */}
+        <div className="pt-10 pb-8 pr-4">
+          <div className="group/profile relative p-2 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-300">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-white/5">
+                  <span className="text-sm font-bold text-white uppercase">{currentUser.name.charAt(0)}</span>
+               </div>
+               <div className="flex-1 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden whitespace-nowrap">
+                  <p className="text-sm font-bold text-white truncate">{currentUser.name}</p>
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span className="text-[9px] text-blue-100/50 font-bold uppercase tracking-wider">{currentUser.role.replace('_', ' ')}</span>
+                  </div>
+               </div>
+               
+               <button 
+                 onClick={logout}
+                 className="opacity-0 group-hover:opacity-100 p-2 text-blue-100/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all duration-200"
+                 title="ออกจากระบบ"
+               >
+                  <LogOut size={16} />
+               </button>
+            </div>
+          </div>
+          
+          <div className="mt-4 px-2 opacity-20 group-hover:opacity-40 transition-opacity">
+             <p className="text-[10px] font-medium tracking-[0.2em] text-blue-100/60 uppercase whitespace-nowrap overflow-hidden">
+               v2.4.0 • EDITOR MATRIX
+             </p>
+          </div>
+        </div>
       </nav>
 
-      <div className="mt-auto border-t border-white/5 p-4 overflow-hidden">
-        <div className="flex items-center justify-between px-2 py-4">
-           <div className="flex items-center gap-4 text-white">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-lg">
-                <span className="text-sm font-semibold uppercase">{currentUser.name.charAt(0)}</span>
-              </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
-                <p className="text-sm font-semibold truncate">{currentUser.name}</p>
-                <p className="text-[10px] text-blue-100/60 font-medium truncate uppercase tracking-wider">{currentUser.role.replace('_', ' ')}</p>
-              </div>
-           </div>
-           
-           <button 
-             onClick={logout}
-             className="opacity-0 group-hover:opacity-100 p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded-lg transition-all"
-             title="Logout"
-           >
-              <Plus size={20} className="rotate-45" />
-           </button>
-        </div>
-      </div>
-
-      <div className="p-8 border-t border-white/5 opacity-30 overflow-hidden">
-        <p className="text-[10px] font-noto tracking-widest text-blue-100/60 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">v2.3.2 • EDITOR MATRIX</p>
-      </div>
     </aside>
   );
 };
