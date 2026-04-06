@@ -114,9 +114,18 @@ export function useCalendarLogic(currentUser: User) {
   }, [currentUser.id, isElevatedRole]);
 
   const recordLeave = useCallback(async (reason: string, date: Date, type?: LeaveType) => {
+    // 🛡️ Block Backdated Leave (ลาย้อนหลัง)
+    // สำหรับพนักงานทั่วไป ห้ามลาย้อนหลัง (วันที่เลือกต้องตั้งแต่วันนี้เป็นต้นไป)
+    const today = startOfDay(new Date());
+    const selectedDate = startOfDay(date);
+    
+    if (selectedDate < today && !isElevatedRole) {
+      const errorMsg = "ห้ามทำรายการลาย้อนหลัง กรุณาแจ้ง Admin หากมีความจำเป็นเร่งด่วน";
+      alert(errorMsg);
+      throw new Error(errorMsg);
+    }
+
     // 🛡️ Timezone-safe: ใช้ format() แทน toISOString() เพื่อป้องกัน UTC shift
-    // เช่น วันที่ 18 เม.ย. เวลา 20:00 UTC+7 จะถูก toISOString() แปลงเป็น 18T13:00Z
-    // แต่ถ้าเป็นเที่ยงคืนมันจะกลายเป็นวันก่อนหน้าใน UTC
     const localDateStr = format(date, 'yyyy-MM-dd');
     await leaveService.createLeave(currentUser.id, {
       startDate: localDateStr,

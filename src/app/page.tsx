@@ -68,6 +68,14 @@ export default function CreatorApp() {
     setUsers(newUsers);
   };
 
+  const myPages = React.useMemo(() => {
+    return pages.filter(p => p.ownerId === currentUser?.id);
+  }, [pages, currentUser?.id]);
+
+  const myLogs = React.useMemo(() => {
+    return logs.filter(l => l.staffId === currentUser?.id);
+  }, [logs, currentUser?.id]);
+
   if (!isAuthenticated || !currentUser) {
     return <LoginPage />;
   }
@@ -209,10 +217,10 @@ export default function CreatorApp() {
         <main className="flex-1 p-4 md:p-6 text-slate-900 font-noto overflow-x-hidden">
           {currentTab === 'dashboard' && (
             <DashboardView
-              pages={pages}
-              logs={logs}
-              allPages={pages}
-              allLogs={logs}
+              pages={myPages}
+              logs={myLogs}
+              allPages={myPages}
+              allLogs={myLogs}
               selectedPage={selectedPage}
               setSelectedPage={setSelectedPage}
               selectedMonth={selectedMonth}
@@ -231,7 +239,7 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'daily-task' && (
-            <DailyTaskView currentUser={currentUser} pages={pages.filter(p => !p.isDeleted && p.status === 'Active')} />
+            <DailyTaskView currentUser={currentUser} pages={myPages.filter(p => !p.isDeleted && p.status === 'Active')} />
           )}
 
           {currentTab === 'learning' && (
@@ -259,8 +267,8 @@ export default function CreatorApp() {
 
           {currentTab === 'transactions' && (
             <TransactionsView
-              pages={pages}
-              logs={logs}
+              pages={myPages}
+              logs={myLogs}
               currentUser={currentUser}
               onSave={handleSaveLogs}
             />
