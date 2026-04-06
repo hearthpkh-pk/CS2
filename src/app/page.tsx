@@ -6,6 +6,7 @@ import {
   Users, Building2, History as HistoryIcon, HelpCircle
 } from 'lucide-react';
 import { DashboardView } from '@/components/dashboard/DashboardView';
+import { WorkspaceFAB } from '@/components/dashboard/WorkspaceFAB';
 import { TransactionsView } from '@/components/forms/TransactionsView';
 import { SetupView } from '@/components/forms/SetupView';
 import { CalendarView } from '@/components/workspace/CalendarView';
@@ -46,6 +47,10 @@ export default function CreatorApp() {
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
+  // 🛡️ SuperAdmin/Dev: สามารถเลือกดู Workspace ของ User คนอื่นได้
+  // null = ดู Workspace ตัวเอง
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
+
   const { config } = useCompanyConfig();
   const policyConfig = config.performancePolicy;
 
@@ -68,13 +73,28 @@ export default function CreatorApp() {
     setUsers(newUsers);
   };
 
+  const isSuperViewer = currentUser?.role === Role.SuperAdmin || currentUser?.role === Role.Developer;
+  const effectiveUserId = (isSuperViewer && viewAsUserId) ? viewAsUserId : currentUser?.id;
+
   const myPages = React.useMemo(() => {
-    return pages.filter(p => p.ownerId === currentUser?.id);
-  }, [pages, currentUser?.id]);
+    return pages.filter(p => !p.isDeleted && p.ownerId === effectiveUserId);
+  }, [pages, effectiveUserId]);
+
+  const myWorkspacePages = React.useMemo(() => {
+    return pages.filter(p => p.ownerId === effectiveUserId);
+  }, [pages, effectiveUserId]);
+
+  const myWorkspaceAccounts = React.useMemo(() => {
+    return accounts.filter(a => a.ownerId === effectiveUserId);
+  }, [accounts, effectiveUserId]);
 
   const myLogs = React.useMemo(() => {
-    return logs.filter(l => l.staffId === currentUser?.id);
-  }, [logs, currentUser?.id]);
+    return logs.filter(l => l.staffId === effectiveUserId);
+  }, [logs, effectiveUserId]);
+
+  const allActivePages = React.useMemo(() => {
+    return pages.filter(p => !p.isDeleted);
+  }, [pages]);
 
   if (!isAuthenticated || !currentUser) {
     return <LoginPage />;
@@ -93,7 +113,7 @@ export default function CreatorApp() {
   };
 
   const handleAddPage = async (pageData: Omit<Page, 'id'>) => {
-    const newPage: Page = { ...pageData, id: '', createdAt: new Date().toISOString() };
+    const newPage: Page = { ...pageData, id: '', ownerId: effectiveUserId, createdAt: new Date().toISOString() };
     await dataService.savePage(newPage);
     setPages(await dataService.getPages());
     showToast('เพิ่มเพจสำเร็จ');
@@ -131,7 +151,7 @@ export default function CreatorApp() {
   };
 
   const handleAddAccount = async (accData: Omit<FBAccount, 'id'>) => {
-    const newAcc: FBAccount = { ...accData, id: `acc-${Date.now()}`, createdAt: new Date().toISOString() };
+    const newAcc: FBAccount = { ...accData, id: `acc-${Date.now()}`, ownerId: effectiveUserId, createdAt: new Date().toISOString() };
     await dataService.saveAccount(newAcc);
     setAccounts(await dataService.getAccounts(currentUser));
     showToast('เพิ่มบัญชีสำเร็จ');
@@ -231,6 +251,10 @@ export default function CreatorApp() {
               currentUser={currentUser}
               onSyncPage={handleSyncPage}
               policy={policyConfig}
+              isSuperViewer={isSuperViewer}
+              users={users}
+              viewAsUserId={viewAsUserId}
+              setViewAsUserId={setViewAsUserId}
             />
           )}
 
@@ -287,8 +311,8 @@ export default function CreatorApp() {
               setViewMode={setViewMode}
               currentUser={currentUser}
               users={users}
-              pages={pages}
-              accounts={accounts}
+              pages={myWorkspacePages}
+              accounts={myWorkspaceAccounts}
               onAdd={handleAddPage}
               onUpdate={handleUpdatePage}
               onDelete={handleTrashPage}
@@ -352,6 +376,15 @@ export default function CreatorApp() {
           currentTab={currentTab} 
           setCurrentTab={setCurrentTab} 
         />
+
+        {/* 🛡️ SuperAdmin/Dev: FAB Workspace Switcher (Root Level Rendering) */}
+        {isSuperViewer && users && users.length > 0 && (
+          <WorkspaceFAB
+            users={users}
+            viewAsUserId={viewAsUserId ?? null}
+            setViewAsUserId={setViewAsUserId ?? (() => {})}
+          />
+        )}
       </div>
     </div>
   );

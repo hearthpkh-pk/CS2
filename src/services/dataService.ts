@@ -152,28 +152,85 @@ export const dataService = {
     }
   },
 
-  // --- Accounts (ยังใช้ LocalStorage ชั่วคราว รอ Phase Data Migration เต็มรูปแบบ) ---
+  // --- Accounts (Supabase Migration Phase 2) ---
   getAccounts: async (user?: User): Promise<FBAccount[]> => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-    let accounts: FBAccount[] = saved ? JSON.parse(saved) : initialAccounts;
+    let query = supabase.from('facebook_accounts').select('*');
+    
+    // หากมีการส่ง user เข้ามาให้กรองข้อมูล (Role Filtering)
+    if (user) {
+      if (user.role === Role.Manager) {
+        // Manager เห็นบัญชีในทีมตัวเอง (+ของตัวเอง)
+        query = query.or(`team_id.eq.${user.teamId},owner_id.eq.${user.id}`);
+      } else if (user.role !== Role.Developer && user.role !== Role.SuperAdmin && user.role !== Role.Admin) {
+        // Staff เห็นแค่ของตัวเอง
+        query = query.eq('owner_id', user.id);
+      }
+    }
 
-    if (!user) return [];
-    if (user.role === Role.Developer || user.role === Role.SuperAdmin || user.role === Role.Admin) return accounts;
-    if (user.role === Role.Manager) return accounts.filter(a => a.teamId === user.teamId || a.ownerId === user.id);
-    return accounts.filter(a => a.ownerId === user.id);
+    const { data: accounts, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching accounts:', error);
+      return [];
+    }
+
+    return (accounts || []).map(a => ({
+      id: a.id,
+      boxId: a.box_id,
+      name: a.name,
+      uid: a.uid,
+      status: a.status,
+      ownerId: a.owner_id,
+      teamId: a.team_id,
+      password: a.password,
+      twoFactor: a.two_factor,
+      email: a.email,
+      emailPassword: a.email_password,
+      email2: a.email2,
+      profileUrl: a.profile_url,
+      cookie: a.cookie,
+      isDeleted: a.is_deleted,
+      createdAt: a.created_at,
+      deletedAt: a.deleted_at
+    }));
   },
 
   saveAccount: async (account: FBAccount): Promise<void> => {
-    const accounts = await dataService.getAccounts();
-    const existingIndex = accounts.findIndex(a => a.id === account.id);
-    if (existingIndex >= 0) accounts[existingIndex] = account;
-    else accounts.push(account);
-    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const payload = {
+      id: (!account.id || account.id === '' || account.id.startsWith('acc-')) ? undefined : account.id, // ให้ Postgres gen_random_uuid() อัตโนมัติถ้าไม่มี ID หรือเป็น ID เก่าที่จำลองมา
+      box_id: account.boxId,
+      name: account.name,
+      uid: account.uid,
+      status: account.status || 'Live',
+      owner_id: account.ownerId || user.id,
+      team_id: account.teamId,
+      password: account.password,
+      two_factor: account.twoFactor,
+      email: account.email,
+      email_password: account.emailPassword,
+      email2: account.email2,
+      profile_url: account.profileUrl,
+      cookie: account.cookie,
+      is_deleted: account.isDeleted || false,
+    };
+
+    if (account.id && !account.id.startsWith('acc-')) {
+      // Update
+      const { error } = await supabase.from('facebook_accounts').update(payload).eq('id', account.id);
+      if (error) console.error('Error updating account:', error);
+    } else {
+      // Insert
+      const { error } = await supabase.from('facebook_accounts').insert(payload);
+      if (error) console.error('Error inserting account:', error);
+    }
   },
 
   deleteAccount: async (id: string): Promise<void> => {
-    const accounts = await dataService.getAccounts();
-    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts.filter(a => a.id !== id)));
+    // ใช้ Soft Delete เพื่อเก็บบันทึกประวัติ หรือ Hard Delete ถ้าต้องการ
+    const { error } = await supabase.from('facebook_accounts').delete().eq('id', id);
+    if (error) console.error('Error deleting account:', error);
   }
 };

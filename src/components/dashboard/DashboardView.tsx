@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Users, Eye, Filter, Calendar, Activity, RefreshCw } from 'lucide-react';
-import { Page, DailyLog, User } from '@/types';
+import React, { useMemo, useState } from 'react';
+import { Users, Eye, Filter, Calendar, Activity, RefreshCw, UserCog } from 'lucide-react';
+import { Page, DailyLog, User, Role } from '@/types';
 import { PerformanceChart } from './PerformanceChart';
 import { ActivePagesSection } from './ActivePagesSection';
 import { ExecutiveQuotaBrief } from './ExecutiveQuotaBrief';
@@ -30,7 +30,13 @@ interface Props {
     superBonusThreshold: number;
     bonusStep2: number;
   };
+  // 🛡️ SuperAdmin: View any user's workspace
+  isSuperViewer?: boolean;
+  users?: User[];
+  viewAsUserId?: string | null;
+  setViewAsUserId?: (id: string | null) => void;
 }
+
 
 const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
@@ -38,7 +44,8 @@ export const DashboardView = ({
   pages, logs, selectedPage, setSelectedPage,
   selectedMonth, setSelectedMonth, selectedYear, setSelectedYear,
   onNavigateToTask, currentUser, onSyncPage,
-  allPages, allLogs, policy
+  allPages, allLogs, policy,
+  isSuperViewer, users, viewAsUserId, setViewAsUserId
 }: Props) => {
   const payload = useMemo(() => {
     return aggregateDashboardMetrics(allPages, allLogs, selectedYear, selectedMonth, selectedPage, policy);
@@ -71,6 +78,8 @@ export const DashboardView = ({
               ))}
             </select>
           </div>
+
+
 
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl py-2 px-3 w-full sm:w-auto shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
             <Calendar size={14} />

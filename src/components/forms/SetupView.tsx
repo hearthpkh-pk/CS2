@@ -268,7 +268,7 @@ export const SetupView = ({
     setEditingPage(page);
     setPageFormData({
       name: page.name,
-      url: page.url || '',
+      url: page.facebookUrl || '', // 🛡️ แก้: ใช้ facebookUrl (field จริงใน DB) ไม่ใช่ url
       category: page.category,
       status: page.status,
       boxId: page.boxId,
@@ -290,16 +290,20 @@ export const SetupView = ({
     e.preventDefault();
     if (!pageFormData.name.trim()) return;
 
+    // 🛡️ แก้: map form field 'url' กลับเป็น 'facebookUrl' ก่อนบันทึกลง DB
+    const { url, ...rest } = pageFormData;
+    const pagePayload = { ...rest, facebookUrl: url };
+
     if (editingPage) {
       if (pageFormData.status === 'Active') {
         enforceSingleActive(pageFormData.boxId, editingPage.id);
       }
-      onUpdate({ ...editingPage, ...pageFormData });
+      onUpdate({ ...editingPage, ...pagePayload });
     } else {
       if (pageFormData.status === 'Active') {
         enforceSingleActive(pageFormData.boxId);
       }
-      onAdd({ ...pageFormData });
+      onAdd({ ...pagePayload });
     }
     setIsEditorOpen(false);
   };

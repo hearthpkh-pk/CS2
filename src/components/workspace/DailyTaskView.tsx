@@ -31,10 +31,11 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
 
   // Determine how many pages this user SHOULD be working on based on their group
   const displayPages = useMemo(() => {
+    // 🛡️ เรียงลำดับจาก Box ID น้อยไปหามาก
+    const sortedPages = [...pages].sort((a, b) => (Number(a.boxId) || 0) - (Number(b.boxId) || 0));
+    
     // If user has specifically assigned pages, use them (but limit to required count if needed, or allow all)
-    // The user said "รายการ 10 เพจ, ข่าว 5 เพจ" -> This suggests we should show exactly that many inputs
-    // or at least cap/default to that.
-    return pages.slice(0, Math.max(pages.length, policy.requiredPagesPerDay));
+    return sortedPages.slice(0, Math.max(sortedPages.length, policy.requiredPagesPerDay));
   }, [pages, policy.requiredPagesPerDay]);
 
   const [submissionData, setSubmissionData] = useState<Record<string, string[]>>({});
@@ -111,7 +112,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
         return {
           id: '', // Will be assigned by DB
           pageId: page.id,
-          staffId: currentUser.id,
+          staffId: page.ownerId || currentUser.id,
           date: format(new Date(), 'yyyy-MM-dd'),
           followers: 0, // Staff only submits links, views/followers might be synced later or entered elsewhere
           views: 0,
