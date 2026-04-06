@@ -33,9 +33,12 @@ export const useCompanyConfig = () => {
     setIsLoading(true);
     try {
       const data = await configService.getConfig();
-      setConfig(data);
+      if (data) {
+        setConfig(data);
+      }
     } catch (e) {
       console.error('Failed to load config', e);
+      // FALLBACK_CONFIG ถูก set ไว้ใน useState แล้ว ไม่ต้องทำอะไรเพิ่ม
     } finally {
       setIsLoading(false);
     }

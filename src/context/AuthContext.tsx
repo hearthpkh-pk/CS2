@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User, Role } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -16,15 +16,35 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isInitializedRef = useRef(false); // 🛡️ Track if auth has completed (avoids stale closure)
 
   useEffect(() => {
-    // 1. ตรวจสอบ Session ปัจจุบันตอนโหลดแอป
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await fetchUserProfile(session.user.id, session.user.email);
-      } else {
+      // 🛡️ Safety Timeout: ใช้ Ref เพื่อเช็คค่าจริง ไม่ใช่ค่าเก่าจาก Closure
+      const timeoutId = setTimeout(() => {
+        if (!isInitializedRef.current) {
+          console.warn('⚠️ Auth Timeout reached (5s). Forcing to Login screen.');
+          isInitializedRef.current = true;
+          setIsLoading(false);
+        }
+      }, 5000);
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+
+        if (session?.user) {
+          await fetchUserProfile(session.user.id, session.user.email);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('❌ Auth Initialization Error:', err);
         setIsLoading(false);
+      } finally {
+        isInitializedRef.current = true;
+        clearTimeout(timeoutId);
       }
     };
 
@@ -32,10 +52,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. ดักฟัง Event เมื่อมีการ Login หรือ Logout 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await fetchUserProfile(session.user.id, session.user.email);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
+      try {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchUserProfile(session.user.id, session.user.email);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setIsLoading(false);
+        } else if (event === 'INITIAL_SESSION' && !session) {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('❌ Auth State Change Error:', err);
         setIsLoading(false);
       }
     });
