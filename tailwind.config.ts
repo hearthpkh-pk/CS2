@@ -24,6 +24,19 @@ const config: Config = {
       fontFamily: {
         prompt: ["var(--font-prompt)", "sans-serif"],
       },
+      keyframes: {
+        scan: {
+          '0%, 100%': { transform: 'translateY(-100%)' },
+          '50%': { transform: 'translateY(400%)' },
+        },
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' }
+        }
+      },
+      animation: {
+        scan: 'scan 3s ease-in-out infinite',
+        shimmer: 'shimmer 3s infinite'
+      }
     },
   },
   plugins: [],

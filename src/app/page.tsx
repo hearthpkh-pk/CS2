@@ -29,6 +29,7 @@ import { getFacebookPageData } from '@/utils/facebookUtils';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { PendingApprovalPage } from '@/features/auth/PendingApprovalPage';
 import { personnelService } from '@/services/personnelService';
 
 export default function CreatorApp() {
@@ -96,8 +97,13 @@ export default function CreatorApp() {
     return pages.filter(p => !p.isDeleted);
   }, [pages]);
 
-  if (!isAuthenticated || !currentUser) {
+  if (!currentUser) {
     return <LoginPage />;
+  }
+
+  // ผู้ใช้ล็อคอินแล้ว แต่บัญชียังระงับอยู่ (isActive: false)
+  if (!isAuthenticated) {
+    return <PendingApprovalPage />;
   }
 
   const showToast = (msg: string) => {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Lock, User, Activity, ChevronRight, Info, AlertCircle, Mail } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
 
 export const LoginPage = () => {
@@ -12,6 +13,7 @@ export const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   // Easter egg states (for UI fun, no longer bypasses security)
   const [logoClicks, setLogoClicks] = useState(0);
@@ -38,6 +40,11 @@ export const LoginPage = () => {
     setIsAuthenticating(true);
     setErrorMessage('');
     setSuccessMessage('');
+
+    // Trigger fly-out animation
+    setIsExiting(true);
+    // Wait for the exit animation to finish before making the auth call which might abruptly switch the page
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     try {
       if (isSignUpMode) {
@@ -73,10 +80,12 @@ export const LoginPage = () => {
           } else {
             setErrorMessage(error.message);
           }
+          setIsExiting(false); // Fly inputs back in on error
         }
       }
     } catch (err) {
       setErrorMessage('Failed to connect to authentication server.');
+      setIsExiting(false);
     } finally {
       setIsAuthenticating(false);
     }
@@ -117,10 +126,16 @@ export const LoginPage = () => {
         <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-400/10 rounded-full blur-[120px]" />
       </div>
 
-      <div className="w-full max-w-[420px] flex flex-col items-center relative z-10 animate-in fade-in zoom-in-95 duration-1000">
+      <div className={cn(
+        "w-full max-w-[420px] flex flex-col items-center relative z-10 transition-all transform ease-in-out duration-1000",
+        isExiting ? "" : "animate-in fade-in zoom-in-95"
+      )}>
 
         {/* BRAND IDENTITY */}
-        <div className="mb-14 flex flex-col items-center group">
+        <div className={cn(
+          "mb-14 flex flex-col items-center group transition-all duration-300 transform",
+          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+        )}>
           <button
             onClick={() => setLogoClicks(prev => prev + 1)}
             className="mb-2 select-none active:scale-95 transition-transform duration-300"
@@ -148,7 +163,10 @@ export const LoginPage = () => {
           )}
 
           {isSignUpMode && (
-            <div className="relative group/field shadow-2xl shadow-black/10">
+            <div className={cn(
+              "relative group/field shadow-2xl shadow-black/10 transition-all duration-300 transform delay-[50ms]",
+              isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+            )}>
               <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
                 <User size={18} strokeWidth={2.5} />
               </div>
@@ -163,7 +181,10 @@ export const LoginPage = () => {
             </div>
           )}
 
-          <div className="relative group/field shadow-2xl shadow-black/10">
+          <div className={cn(
+            "relative group/field shadow-2xl shadow-black/10 transition-all duration-300 transform delay-75",
+            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+          )}>
             <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
               <Mail size={18} strokeWidth={2.5} />
             </div>
@@ -177,7 +198,10 @@ export const LoginPage = () => {
             />
           </div>
 
-          <div className="relative group/field shadow-2xl shadow-black/10">
+          <div className={cn(
+            "relative group/field shadow-2xl shadow-black/10 transition-all duration-300 transform delay-150",
+            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+          )}>
             <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
               <Lock size={18} strokeWidth={2.5} />
             </div>
@@ -191,22 +215,30 @@ export const LoginPage = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isAuthenticating}
-            className="w-full py-5 bg-white text-[#054ab3] rounded-full font-black text-xs tracking-[0.2em] shadow-2xl shadow-black/10 hover:bg-white/95 hover:shadow-white/10 transition-all active:scale-[0.98] mt-10 uppercase disabled:opacity-70 flex justify-center items-center gap-2"
-          >
+          <div className={cn(
+            "transition-all duration-300 transform delay-[200ms]",
+            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+          )}>
+            <button
+              type="submit"
+              disabled={isAuthenticating}
+              className="w-full py-5 bg-white text-[#054ab3] rounded-full font-black text-xs tracking-[0.2em] shadow-2xl shadow-black/10 hover:bg-white/95 hover:shadow-white/10 transition-all active:scale-[0.98] mt-10 uppercase disabled:opacity-70 flex justify-center items-center gap-2"
+            >
             {isAuthenticating ? (
               <>
                 <Activity size={16} className="animate-spin" />
                 PROCESSING...
               </>
             ) : (isSignUpMode ? 'สมัครสมาชิก' : 'SIGN IN')}
-          </button>
+            </button>
+          </div>
         </form>
 
         {/* METADATA INTERACTION */}
-        <div className="mt-8 flex flex-col items-center gap-3">
+        <div className={cn(
+          "mt-8 flex flex-col items-center gap-3 transition-all duration-300 transform delay-[250ms]",
+          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+        )}>
           <button
             onClick={() => { setIsSignUpMode(!isSignUpMode); setErrorMessage(''); setSuccessMessage(''); }}
             className="text-[11px] font-bold text-white hover:text-emerald-300 transition-all uppercase tracking-widest opacity-90"
@@ -247,7 +279,10 @@ export const LoginPage = () => {
         </div>
 
         {/* SECURITY FOOTER */}
-        <div className="mt-16 flex flex-col items-center opacity-10 hover:opacity-30 transition-opacity duration-700 group cursor-default">
+        <div className={cn(
+          "mt-16 flex flex-col items-center opacity-10 hover:opacity-30 transition-all duration-700 group cursor-default transform delay-[300ms]",
+          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-10"
+        )}>
           <Info size={16} className="mb-3 transition-transform group-hover:scale-110 text-white" />
           <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em] text-center leading-loose">
             Editor Operations <br />
