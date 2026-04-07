@@ -1,9 +1,31 @@
 import { Page, DailyLog, FBAccount, User, Role } from "../types";
 import { initialPages, generateMockLogs, initialAccounts, initialUsers } from "./mockData";
 import { supabase } from '@/lib/supabaseClient';
+import { logCacheService } from './logCacheService';
 
 const STORAGE_KEYS = {
   ACCOUNTS: 'cs_accounts'
+};
+
+/**
+ * 🔄 แปลง DB Schema (snake_case) → Frontend Type (camelCase)
+ * ใช้ร่วมกันทั้ง getLogs, getTodayLogsForUser เพื่อลด code duplication
+ */
+const mapDbLogsToFrontend = (rows: any[]): DailyLog[] => {
+  return (rows || []).map(l => ({
+    id: l.id,
+    pageId: l.page_id,
+    staffId: l.staff_id,
+    date: l.date,
+    followers: l.followers,
+    views: l.views,
+    reach: l.reach,
+    engagement: l.engagement,
+    source: l.source,
+    clipsCount: l.clips_count,
+    links: l.links || [],
+    createdAt: l.created_at
+  }));
 };
 
 export const dataService = {
@@ -67,33 +89,66 @@ export const dataService = {
     if (error) console.error('Error deleting page:', error);
   },
 
-  // --- Logs (Supabase) ---
-  getLogs: async (): Promise<DailyLog[]> => {
-    const { data: logs, error } = await supabase
+  // --- Logs (Supabase + IndexedDB Cache) ---
+  // 🏗️ Zero-Cost Strategy: Delta Sync
+  // - ครั้งแรก: Full Fetch → เก็บทั้งหมดลง IndexedDB
+  // - ครั้งถัดไป: ดึงเฉพาะ rows ที่ใหม่กว่า lastSyncAt
+  // - เปิดซ้ำวันเดียวกัน: ใช้ Cache 100%
+  getLogs: async (forceRefresh = false): Promise<DailyLog[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    // 🛡️ ตรวจสอบว่า cache เป็นของ user คนปัจจุบันหรือไม่
+    const cacheValid = await logCacheService.validateForUser(user.id);
+
+    if (cacheValid && !forceRefresh) {
+      // --- Delta Sync: ดึงเฉพาะข้อมูลใหม่ ---
+      const lastSync = await logCacheService.getLastSyncAt();
+      const cachedLogs = await logCacheService.getAll();
+
+      if (lastSync && cachedLogs.length > 0) {
+        const { data: newRows, error } = await supabase
+          .from('daily_logs')
+          .select('*')
+          .gt('created_at', lastSync);
+
+        if (!error && newRows && newRows.length > 0) {
+          const mapped = mapDbLogsToFrontend(newRows);
+          await logCacheService.upsertMany(mapped);
+          console.log(`🔄 Delta Sync: +${mapped.length} new rows`);
+        } else if (!error) {
+          console.log('✅ Cache up-to-date, 0 new rows');
+        }
+
+        await logCacheService.setLastSyncAt(new Date().toISOString());
+        return await logCacheService.getAll();
+      }
+    }
+
+    // --- Full Fetch (ครั้งแรก / Force Refresh / Cache หมดอายุ) ---
+    console.log('📡 Full Fetch: Loading all logs from Supabase...');
+    const { data: allLogs, error } = await supabase
       .from('daily_logs')
       .select('*')
-      .order('date', { ascending: false })
-      .limit(100); // กั้นไว้กันดึงข้อมูลมหาศาลเกินความจำเป็น
+      .order('date', { ascending: false });
 
     if (error) {
       console.error('Error fetching logs:', error);
-      return [];
+      // Fallback: ถ้า fetch ล้มเหลว ลองใช้ cache ที่มีอยู่
+      const fallbackLogs = await logCacheService.getAll();
+      return fallbackLogs.length > 0 ? fallbackLogs : [];
     }
 
-    return (logs || []).map(l => ({
-      id: l.id,
-      pageId: l.page_id,
-      staffId: l.staff_id,
-      date: l.date,
-      followers: l.followers,
-      views: l.views,
-      reach: l.reach,
-      engagement: l.engagement,
-      source: l.source,
-      clipsCount: l.clips_count,
-      links: l.links || [],
-      createdAt: l.created_at
-    }));
+    const mapped = mapDbLogsToFrontend(allLogs || []);
+
+    // บันทึกลง IndexedDB
+    await logCacheService.clearCache();
+    await logCacheService.upsertMany(mapped);
+    await logCacheService.setCachedUserId(user.id);
+    await logCacheService.setLastSyncAt(new Date().toISOString());
+
+    console.log(`💾 Full Fetch complete: ${mapped.length} rows cached`);
+    return mapped;
   },
 
   // Targeted Query: ดึงเฉพาะของพนักงานคนเดียว ในวันที่ระบุ (รวดเร็วและ Scalable กว่า)
@@ -109,20 +164,7 @@ export const dataService = {
       return [];
     }
 
-    return (logs || []).map(l => ({
-      id: l.id,
-      pageId: l.page_id,
-      staffId: l.staff_id,
-      date: l.date,
-      followers: l.followers,
-      views: l.views,
-      reach: l.reach,
-      engagement: l.engagement,
-      source: l.source,
-      clipsCount: l.clips_count,
-      links: l.links || [],
-      createdAt: l.created_at
-    }));
+    return mapDbLogsToFrontend(logs || []);
   },
 
   saveLogs: async (newLogs: DailyLog[]): Promise<void> => {
@@ -149,7 +191,12 @@ export const dataService = {
 
     if (error) {
       console.error('Error upserting logs:', error);
+      return;
     }
+
+    // 🏗️ อัปเดต Cache ทันทีหลัง upsert สำเร็จ — ไม่ต้อง re-fetch จาก Supabase
+    await logCacheService.upsertMany(newLogs);
+    await logCacheService.setLastSyncAt(new Date().toISOString());
   },
 
   // --- Accounts (Supabase Migration Phase 2) ---

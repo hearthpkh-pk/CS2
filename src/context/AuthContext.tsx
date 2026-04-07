@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Role } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
+import { logCacheService } from '@/services/logCacheService';
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 🔄 Token ถูก Auto-refresh สำเร็จ → re-sync user profile เผื่อข้อมูลเปลี่ยน
         await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
+        // 🏗️ ล้าง IndexedDB Cache เมื่อ Logout เพื่อป้องกันข้อมูลรั่ว
+        await logCacheService.clearCache();
         setUser(null);
         setIsLoading(false);
       }
@@ -89,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    await logCacheService.clearCache();
     await supabase.auth.signOut();
   };
 

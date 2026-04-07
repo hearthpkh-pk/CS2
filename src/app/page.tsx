@@ -115,6 +115,7 @@ export default function CreatorApp() {
   // --- Handlers ---
   const handleSaveLogs = async (newLogs: DailyLog[]) => {
     await dataService.saveLogs(newLogs);
+    // 🏗️ saveLogs() อัปเดต Cache ภายในแล้ว → getLogs() จะอ่านจาก Cache (ไม่ re-fetch)
     setLogs(await dataService.getLogs());
     showToast('บันทึกข้อมูลเรียบร้อย');
   };

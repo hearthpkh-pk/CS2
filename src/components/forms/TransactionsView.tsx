@@ -90,7 +90,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   };
 
   const parseCSV = (text: string) => {
-    const lines = text.split('\n');
+    const lines = text.split(/\r?\n/);
     const dataByDate: Record<string, { followers: number; views: number }> = {};
     
     let currentMetric: 'views' | 'followers' | null = null;
@@ -99,15 +99,19 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) {
-        inDataBlock = false;
+        // 🛡️ ไม่หยุด data block เมื่อเจอบรรทัดว่าง
+        // Meta CSV อาจมี blank lines แทรกกลาง data block ได้
         continue;
       }
 
       // Check for metric indicators in lines preceding or in metadata
+      // เมื่อเจอ section header ใหม่ → reset data block (เริ่มอ่าน section ใหม่)
       if (line.includes('"ยอดดู"') || line.toLowerCase().includes('"views"')) {
         currentMetric = 'views';
+        inDataBlock = false; // รอ header row ใหม่ก่อนจะเปิด data block
       } else if (line.includes('"จำนวนการติดตามบน Facebook"') || line.toLowerCase().includes('"facebook follows"')) {
         currentMetric = 'followers';
+        inDataBlock = false;
       }
 
       // Check for header row
