@@ -14,6 +14,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // การ bypass lock นี้ปลอดภัยสำหรับ single-tab app อย่างระบบ HRIS ของเรา
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    autoRefreshToken: true,    // 🔄 บังคับ auto-refresh JWT token ก่อนหมดอายุ (default 1 ชม.)
+    persistSession: true,      // 💾 เก็บ session ใน localStorage เพื่อกู้คืนเวลา reload
     lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
       return await fn();
     },

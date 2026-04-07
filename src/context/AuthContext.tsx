@@ -29,14 +29,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else if (event === 'SIGNED_IN' && session?.user) {
         await fetchUserProfile(session.user.id, session.user.email);
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        // 🔄 Token ถูก Auto-refresh สำเร็จ → re-sync user profile เผื่อข้อมูลเปลี่ยน
+        await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsLoading(false);
       }
     });
 
+    // 🔄 Visibility Change Listener:
+    // เมื่อ user เปิดแท็บค้างนานแล้วกลับมา → force check session validity
+    // ถ้า token หมดอายุ Supabase จะ auto-refresh ให้ → ยิง TOKEN_REFRESHED event
+    // ถ้า refresh ไม่ได้ (เช่น refresh_token หมดอายุ) → ยิง SIGNED_OUT event
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

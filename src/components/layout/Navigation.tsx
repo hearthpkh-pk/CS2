@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users, LayoutDashboard, FilePlus,
   CreditCard, Activity, BarChart3,
@@ -16,6 +16,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { POCLogo } from '@/components/brand/POCLogo';
 import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
+import { supabase } from '@/lib/supabaseClient';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -29,8 +30,33 @@ interface SidebarProps {
 export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   const { user: currentUser, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   if (!currentUser) return null;
+
+  // 🔔 ดึงจำนวน user ที่รอ approve (เฉพาะ SuperAdmin/Admin/Developer)
+  const isSuperViewer = currentUser.role === Role.SuperAdmin || currentUser.role === Role.Admin || currentUser.role === Role.Developer;
+
+  useEffect(() => {
+    if (!isSuperViewer) return;
+
+    const fetchPendingCount = async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', false);
+
+      if (!error && count !== null) {
+        setPendingCount(count);
+      }
+    };
+
+    fetchPendingCount();
+
+    // 🔄 Re-check ทุก 30 วินาที เผื่ออัพเดทแบบ Real-time โดยไม่ต้องสร้าง Subscription
+    const interval = setInterval(fetchPendingCount, 30_000);
+    return () => clearInterval(interval);
+  }, [isSuperViewer]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -126,6 +152,13 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
                   )}
                   <item.icon size={19} className={cn("transition-colors flex-shrink-0", currentTab === item.id ? "text-sidebar-bg" : "group-hover/item:text-[#facc15]")} />
                   <span className="tracking-wide opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">{item.label}</span>
+
+                  {/* 🔔 Badge แจ้งเตือนจำนวน user รอ approve */}
+                  {item.id === 'team' && pendingCount > 0 && (
+                    <span className="absolute top-2 left-8 min-w-[18px] h-[18px] flex items-center justify-center bg-rose-500 text-white text-[9px] font-black rounded-full px-1 shadow-lg shadow-rose-500/30 animate-in fade-in zoom-in-50 duration-300">
+                      {pendingCount}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

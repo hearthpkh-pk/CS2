@@ -68,10 +68,11 @@ export default function CreatorApp() {
     fetchInitialData();
   }, [currentUser]);
 
-  const handleUpdateUsers = (newUsers: User[]) => {
-    // Specifically persist to the mock DB service
-    newUsers.forEach(u => personnelService.saveUser(u));
-    setUsers(newUsers);
+  const handleUpdateUsers = async (newUsers: User[]) => {
+    // 🛡️ บันทึกทุก user ลง DB พร้อมกัน แล้ว re-fetch ข้อมูลใหม่
+    await Promise.all(newUsers.map(u => personnelService.saveUser(u)));
+    const freshUsers = await personnelService.getAvailableUsers(currentUser!.role);
+    setUsers(freshUsers);
   };
 
   const isSuperViewer = currentUser?.role === Role.SuperAdmin || currentUser?.role === Role.Developer;

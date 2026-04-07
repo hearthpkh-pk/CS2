@@ -56,12 +56,22 @@ export const useTeamManagement = (
 
   // --- Handlers ---
   const handleSaveUser = async (userData: User) => {
+    // 🛡️ เสมอ: บันทึกลง DB ก่อน แล้วค่อย sync state
+    await personnelService.saveUser(userData);
+
+    // Re-fetch ข้อมูลจาก DB เพื่อให้ตรงกับ Source of Truth
+    const freshUsers = await personnelService.getAvailableUsers(viewerRole);
+    setUsers(freshUsers);
+
+    // ถ้ามี external state (page.tsx) → propagate ไปด้วย
     if (setExternalUsers) {
-      setExternalUsers(users.map(u => u.id === userData.id ? userData : u));
-    } else {
-      await personnelService.saveUser(userData);
-      sync();
+      setExternalUsers(freshUsers);
     }
+
+    // Re-sync stats (Total Personnel, Active Personnel, etc.)
+    setStats(await personnelService.getPersonnelStats());
+    setTeams(await personnelService.getTeams());
+
     setEditingUser(null);
   };
 

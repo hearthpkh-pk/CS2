@@ -81,7 +81,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                         user.role === Role.Admin ? 'bg-slate-900' : 
                         user.role === Role.Manager ? 'bg-indigo-600' : 'bg-[var(--primary-theme)]'
                       )}>
-                        {user.name.charAt(0)}
+                        {user.name.trim().slice(-1)}
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-slate-800 font-outfit tracking-tight leading-none mb-1">{user.name}</div>

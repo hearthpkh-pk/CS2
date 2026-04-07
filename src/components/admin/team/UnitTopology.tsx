@@ -129,7 +129,7 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
                         )}
                         style={{ zIndex: 10 - i }}
                       >
-                        {member.name.charAt(0)}
+                        {member.name.trim().slice(-1)}
                       </div>
                     ))}
                     {teamMembers.length > 6 && (
@@ -160,7 +160,7 @@ const UnitTopology: React.FC<UnitTopologyProps> = ({
                         "w-12 h-12 rounded-2xl text-white flex items-center justify-center text-sm font-bold shadow-md",
                         leader.role === Role.Admin ? 'bg-slate-900' : 'bg-blue-600'
                       )}>
-                        {leader.name.charAt(0)}
+                        {leader.name.trim().slice(-1)}
                       </div>
                       <div>
                         <span className="text-[13px] font-bold text-slate-800 block leading-none font-outfit mb-1.5">{leader.name}</span>
