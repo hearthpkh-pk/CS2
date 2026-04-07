@@ -10,7 +10,7 @@ export const PendingApprovalPage = () => {
 
   const handleLogout = async () => {
     setIsExiting(true);
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 600));
     logout();
   };
 
@@ -35,19 +35,25 @@ export const PendingApprovalPage = () => {
         <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-400/10 rounded-full blur-[120px]" />
       </div>
 
-      <div className="w-full max-w-[420px] flex flex-col items-center relative z-10 animate-[slide-in-right_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
+      <div className="w-full max-w-[420px] flex flex-col items-center relative z-10 transition-all duration-1000">
 
         <style>{`
            @keyframes slide-in-right {
-             0% { transform: translateX(150%); opacity: 0; }
+             0% { transform: translateX(100vw); opacity: 0; }
              100% { transform: translateX(0); opacity: 1; }
+           }
+           @keyframes slide-out-left {
+             0% { transform: translateX(0); opacity: 1; }
+             100% { transform: translateX(-100vw); opacity: 0; }
            }
         `}</style>
 
         {/* BRAND IDENTITY */}
         <div className={cn(
-          "mb-14 flex flex-col items-center group transition-all duration-300 transform",
-          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+          "mb-14 flex flex-col items-center group",
+          isExiting 
+            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both]" 
+            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
         )}>
           <h1 className="text-6xl font-bold font-outfit tracking-tighter lowercase text-white">Editor</h1>
           <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.6em] mt-1 opacity-60">HQ Terminal</p>
@@ -57,8 +63,10 @@ export const PendingApprovalPage = () => {
         <div className="w-full flex flex-col items-center space-y-12">
           
           <div className={cn(
-            "flex flex-col items-center text-center transition-all duration-300 transform delay-[50ms]",
-            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+            "flex flex-col items-center text-center",
+            isExiting 
+              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:50ms]" 
+              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:50ms]"
           )}>
             <h2 className="text-sm md:text-base font-outfit tracking-[0.3em] text-white/90 font-light uppercase">
               Authorization Pending
@@ -70,8 +78,10 @@ export const PendingApprovalPage = () => {
 
           {/* Continuous Flowing Line (replacing the progress bar/box) */}
           <div className={cn(
-            "relative w-48 mx-auto h-[1px] bg-white/5 overflow-hidden transition-all duration-300 transform delay-[100ms]",
-            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+            "relative w-48 mx-auto h-[1px] bg-white/5 overflow-hidden",
+            isExiting 
+              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:100ms]" 
+              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:100ms]"
           )}>
             <div className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-flowing-line" />
           </div>
@@ -79,16 +89,19 @@ export const PendingApprovalPage = () => {
         {/* Account Detail & Action */}
           <div className="flex flex-col items-center space-y-6">
             <div className={cn(
-              "flex items-center gap-3 text-white/30 text-[10px] tracking-widest font-outfit uppercase transition-all duration-300 transform delay-[150ms]",
-              isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+              "flex items-center gap-3 text-white/30 text-[10px] tracking-widest font-outfit uppercase",
+              isExiting 
+                ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:150ms]" 
+                : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:150ms]"
             )}>
               <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
               {user?.email || 'Validating Account'}
             </div>
 
             <div className={cn(
-              "transition-all duration-300 transform delay-[200ms]",
-              isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+              isExiting 
+                ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:200ms]" 
+                : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:200ms]"
             )}>
               <button 
                 onClick={handleLogout}
@@ -103,8 +116,10 @@ export const PendingApprovalPage = () => {
 
         {/* FOOTER */}
         <div className={cn(
-          "mt-auto pt-16 text-center opacity-40 transition-all duration-700 transform delay-[300ms]",
-          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0"
+          "mt-auto pt-16 text-center opacity-40",
+          isExiting 
+            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:300ms]" 
+            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:300ms]"
         )}>
           <div className="w-4 h-4 rounded-full border border-white/50 flex items-center justify-center mx-auto mb-3">
             <span className="text-[8px] font-bold">i</span>

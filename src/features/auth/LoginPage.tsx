@@ -43,8 +43,8 @@ export const LoginPage = () => {
 
     // Trigger fly-out animation
     setIsExiting(true);
-    // Wait for the exit animation to finish before making the auth call which might abruptly switch the page
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // Wait for the exit animation to finish entirely (longest delay 300ms + duration 300ms = 600ms)
+    await new Promise(resolve => setTimeout(resolve, 600));
 
     try {
       if (isSignUpMode) {
@@ -127,14 +127,26 @@ export const LoginPage = () => {
       </div>
 
       <div className={cn(
-        "w-full max-w-[420px] flex flex-col items-center relative z-10 transition-all transform ease-in-out duration-1000",
-        isExiting ? "" : "animate-in fade-in zoom-in-95"
+        "w-full max-w-[420px] flex flex-col items-center relative z-10 transition-all transform ease-in-out duration-1000"
       )}>
+        
+        <style>{`
+           @keyframes slide-in-right {
+             0% { transform: translateX(100vw); opacity: 0; }
+             100% { transform: translateX(0); opacity: 1; }
+           }
+           @keyframes slide-out-left {
+             0% { transform: translateX(0); opacity: 1; }
+             100% { transform: translateX(-100vw); opacity: 0; }
+           }
+        `}</style>
 
         {/* BRAND IDENTITY */}
         <div className={cn(
-          "mb-14 flex flex-col items-center group transition-all duration-300 transform",
-          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+          "mb-14 flex flex-col items-center group",
+          isExiting 
+            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both]" 
+            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
         )}>
           <button
             onClick={() => setLogoClicks(prev => prev + 1)}
@@ -164,8 +176,10 @@ export const LoginPage = () => {
 
           {isSignUpMode && (
             <div className={cn(
-              "relative group/field shadow-2xl shadow-black/10 transition-all duration-300 transform delay-[50ms]",
-              isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+              "relative group/field shadow-2xl shadow-black/10",
+              isExiting 
+                ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:50ms]" 
+                : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:50ms]"
             )}>
               <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
                 <User size={18} strokeWidth={2.5} />
@@ -182,8 +196,10 @@ export const LoginPage = () => {
           )}
 
           <div className={cn(
-            "relative group/field shadow-2xl shadow-black/10 transition-all duration-300 transform delay-75",
-            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+            "relative group/field shadow-2xl shadow-black/10",
+            isExiting 
+              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:75ms]" 
+              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:75ms]"
           )}>
             <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
               <Mail size={18} strokeWidth={2.5} />
@@ -199,8 +215,10 @@ export const LoginPage = () => {
           </div>
 
           <div className={cn(
-            "relative group/field shadow-2xl shadow-black/10 transition-all duration-300 transform delay-150",
-            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+            "relative group/field shadow-2xl shadow-black/10",
+            isExiting 
+              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:150ms]" 
+              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:150ms]"
           )}>
             <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
               <Lock size={18} strokeWidth={2.5} />
@@ -216,8 +234,9 @@ export const LoginPage = () => {
           </div>
 
           <div className={cn(
-            "transition-all duration-300 transform delay-[200ms]",
-            isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+            isExiting 
+              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:200ms]" 
+              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:200ms]"
           )}>
             <button
               type="submit"
@@ -236,8 +255,10 @@ export const LoginPage = () => {
 
         {/* METADATA INTERACTION */}
         <div className={cn(
-          "mt-8 flex flex-col items-center gap-3 transition-all duration-300 transform delay-[250ms]",
-          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-100"
+          "mt-8 flex flex-col items-center gap-3",
+          isExiting 
+            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:250ms]" 
+            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:250ms]"
         )}>
           <button
             onClick={() => { setIsSignUpMode(!isSignUpMode); setErrorMessage(''); setSuccessMessage(''); }}
@@ -280,8 +301,10 @@ export const LoginPage = () => {
 
         {/* SECURITY FOOTER */}
         <div className={cn(
-          "mt-16 flex flex-col items-center opacity-10 hover:opacity-30 transition-all duration-700 group cursor-default transform delay-[300ms]",
-          isExiting ? "-translate-x-[150vw] opacity-0" : "translate-x-0 opacity-10"
+          "mt-16 flex flex-col items-center opacity-10 hover:opacity-30 group cursor-default",
+          isExiting 
+            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:300ms]" 
+            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:300ms]"
         )}>
           <Info size={16} className="mb-3 transition-transform group-hover:scale-110 text-white" />
           <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em] text-center leading-loose">
