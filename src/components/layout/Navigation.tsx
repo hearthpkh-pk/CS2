@@ -28,8 +28,16 @@ interface SidebarProps {
 
 export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   const { user: currentUser, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   if (!currentUser) return null;
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    // Wait for the blue wipe animation to fully cover the screen
+    await new Promise(resolve => setTimeout(resolve, 700));
+    logout();
+  };
 
   const menuGroups = [
     {
@@ -80,7 +88,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       <div className="p-6 mb-6 overflow-hidden">
         <div className="flex items-center gap-4 cursor-pointer min-w-[200px]">
           <div className="transition-transform duration-500 group-hover:rotate-3">
-             <POCLogo size={40} />
+            <POCLogo size={40} />
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden whitespace-nowrap">
             <h1 className="text-xl font-semibold tracking-tight font-outfit uppercase text-white">Editor</h1>
@@ -128,29 +136,38 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       {/* 🛡️ REVERTED: Profile fixed at bottom with discrete styling */}
       <div className="mt-auto border-t border-white/5 p-4">
         <div className="group/profile flex items-center gap-3 px-2 py-4 transition-all duration-300">
-           <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 shadow-inner">
-              <span className="text-sm font-bold text-white/50 uppercase">
-                {currentUser.name.trim().slice(-1)}
-              </span>
-           </div>
-           <div className="flex-1 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden whitespace-nowrap">
-              <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-              <p className="text-[9px] text-blue-100/30 font-bold uppercase tracking-widest">{currentUser.role.replace('_', ' ')}</p>
-           </div>
-           
-           <button 
-             onClick={logout}
-             className="opacity-0 group-hover:opacity-100 p-2 text-white/10 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-             title="ออกจากระบบ"
-           >
-              <LogOut size={16} />
-           </button>
+          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 shadow-inner">
+            <span className="text-sm font-bold text-white/50 uppercase">
+              {currentUser.name.trim().slice(-1)}
+            </span>
+          </div>
+          <div className="flex-1 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden whitespace-nowrap">
+            <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+            <p className="text-[9px] text-blue-100/30 font-bold uppercase tracking-widest">{currentUser.role.replace('_', ' ')}</p>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="opacity-0 group-hover:opacity-100 p-2 text-white/10 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all disabled:opacity-50"
+            title="ออกจากระบบ"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
-        
+
         <div className="px-2 pb-2 opacity-10 whitespace-nowrap overflow-hidden">
-           <p className="text-[9px] font-medium tracking-[0.2em] text-blue-100/40 uppercase">v2.4.1 • EDITOR MATRIX</p>
+          <p className="text-[9px] font-medium tracking-[0.2em] text-blue-100/40 uppercase">v2.4.1 • EDITOR MATRIX</p>
         </div>
       </div>
+
+      {/* 🎬 Blue Wipe Out Effect */}
+      <div
+        className={cn(
+          "fixed inset-0 bg-[#054ab3] z-[100] origin-left transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none",
+          isLoggingOut ? "scale-x-100" : "scale-x-0"
+        )}
+      />
     </aside>
   );
 };
@@ -164,7 +181,7 @@ export const MobileHeader = () => (
 
 export const MobileBottomNav = ({ currentTab, setCurrentTab }: Omit<SidebarProps, ''>) => {
   const { user: currentUser } = useAuth();
-  
+
   if (!currentUser) return null;
 
   const menuItems = [

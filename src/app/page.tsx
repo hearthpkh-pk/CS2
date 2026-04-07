@@ -221,7 +221,7 @@ export default function CreatorApp() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-prompt">
+    <div className="flex min-h-screen bg-[#054ab3] font-prompt">
       {toast && <Toast message={toast} />}
 
       <Sidebar
@@ -230,14 +230,15 @@ export default function CreatorApp() {
       />
 
       <div className={cn(
-        "flex-1 md:pl-20 flex flex-col min-h-screen relative transition-colors duration-500"
-        /* 
-           🛡️ THEME ISOLATION NOTE: 
-           เราไม่ใส่ theme-pages/theme-accounts ที่ระดับ Global ตรงนี้แล้วนะครับ 
-           เพื่อป้องกัน "สีรั่ว" (Theme Bleeding) ไปหน้าอื่น เช่น Calendar หรือ Dashboard 
-           ให้แต่ละ View (เช่น SetupView) จัดการ Theme ของตัวเองภายใน Component เท่านั้น
-        */
+        "flex-1 md:pl-20 flex flex-col min-h-screen relative transition-colors duration-500 bg-slate-50 overflow-hidden",
+        "animate-[dashboard-reveal_1s_cubic-bezier(0.16,1,0.3,1)_both]"
       )}>
+        <style>{`
+          @keyframes dashboard-reveal {
+            0% { clip-path: circle(0% at 100% 0); }
+            100% { clip-path: circle(150% at 100% 0); }
+          }
+        `}</style>
         <MobileHeader />
 
         <main className="flex-1 p-4 md:p-6 text-slate-900 font-noto overflow-x-hidden">
