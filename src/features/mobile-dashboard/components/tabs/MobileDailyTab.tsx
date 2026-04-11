@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
-import { MobileHistoryBlock } from '../shared/MobileHistoryBlock';
+import { MobileHistoryBlock } from '@/features/mobile-dashboard/components/shared/MobileHistoryBlock';
 
 export const MobileDailyTab = ({ 
   staffData, 
