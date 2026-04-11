@@ -63,26 +63,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
   };
 
   // --- Render Helpers ---
-  const renderHeader = () => (
-    <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6 transition-all duration-500">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
-            CALENDAR & LEAVE
-          </h2>
-        </div>
-        <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
-          ตารางบริหารจัดการเวลาและระบบลางานออนไลน์ • <span className="text-[var(--primary-theme)] font-bold">Premium Workspace</span>
-        </p>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-8 animate-in fade-in duration-1000 min-h-screen">
-      
-      {/* 🏛️ STANDARDIZED PAGE HEADER */}
-      {renderHeader()}
+    <div className="w-full flex flex-col gap-8 animate-fade-in min-h-[calc(100vh-200px)]">
 
       <div className="flex flex-col xl:flex-row gap-8">
         

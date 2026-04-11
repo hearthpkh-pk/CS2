@@ -136,28 +136,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   }
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 space-y-8">
-      {/* --- PAGE HEADER (Mode 1: Standard) --- */}
-      <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
-              DAILY SUBMISSION
-            </h2>
-          </div>
-          <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
-            บันทึกรายได้และลิงก์งานประจำวันตามกลุ่ม • <span className="text-[var(--primary-theme)] font-bold">{currentUser.department || 'General Operation'}</span>
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm">
-           <div className="w-2 h-2 rounded-full bg-[var(--primary-theme)] animate-pulse" />
-           <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest font-inter">
-             {format(new Date(), 'dd MMM yyyy')}
-           </span>
-        </div>
-      </div>
-
+    <div className="w-full space-y-8 animate-fade-in">
       {/* Target & Progress Monitoring */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm relative flex flex-col justify-center">

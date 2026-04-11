@@ -70,8 +70,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       title: 'Workspace',
       items: [
         { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'calendar', icon: CalendarIcon, label: 'ปฏิทินงาน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'daily-task', icon: VideoIcon, label: 'ส่งงานรายวัน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'workspace', icon: CalendarIcon, label: 'ตารางงาน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
         { id: 'setup', icon: SettingsIcon, label: 'จัดการเพจและบัญชี', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
         { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
       ]

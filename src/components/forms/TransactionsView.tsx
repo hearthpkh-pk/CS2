@@ -34,30 +34,28 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
         const boxA = a.boxId || 0;
         const boxB = b.boxId || 0;
         if (boxA !== boxB) return boxA - boxB;
-        
+
         // 2. Sort by Status (Active first)
         if (a.status === 'Active' && b.status !== 'Active') return -1;
         if (a.status !== 'Active' && b.status === 'Active') return 1;
-        
+
         // 3. Sort by Name
         return a.name.localeCompare(b.name);
       });
   }, [pages]);
 
   const rollingDates = useMemo(() => {
-    const d1Obj = new Date(logDate);
-    
-    // We parse logic accurately so dates roll backwards natively via Date
-    const d2Obj = new Date(d1Obj);
-    d2Obj.setDate(d2Obj.getDate() - 1);
-    const d3Obj = new Date(d1Obj);
-    d3Obj.setDate(d3Obj.getDate() - 2);
+    const dates = [];
+    const baseDate = new Date(logDate);
 
-    return [
-      d3Obj.toISOString().split('T')[0],
-      d2Obj.toISOString().split('T')[0],
-      d1Obj.toISOString().split('T')[0]
-    ];
+    // We want 5 days ending on `baseDate` (so `baseDate - 4 days` to `baseDate`)
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+
+    return dates;
   }, [logDate]);
 
   useEffect(() => {
@@ -92,7 +90,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const parseCSV = (text: string) => {
     const lines = text.split(/\r?\n/);
     const dataByDate: Record<string, { followers: number; views: number }> = {};
-    
+
     let currentMetric: 'views' | 'followers' | null = null;
     let inDataBlock = false;
 
@@ -116,7 +114,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
 
       // Check for header row
       const isHeader = (line.includes('"Date"') || line.includes('"วันที่"')) && line.includes('"Primary"');
-      
+
       if (isHeader) {
         inDataBlock = true;
         continue;
@@ -186,7 +184,7 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
     const newLogs = rows.map(r => {
       // Find existing log to merge data
       const existingLog = logs.find(l => l.pageId === pageId && l.date === r.date);
-      
+
       return {
         id: `log-${pageId}-${r.date}`,
         pageId: pageId,
@@ -244,178 +242,191 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 animate-fade-in flex flex-col gap-8">
-        <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Transactions</h2>
-            </div>
-            <p className="text-slate-400 font-noto text-[11px] mt-1.5">
-              กรอกข้อมูล 3 วันย้อนหลัง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span>
-            </p>
+      <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Transactions</h2>
+          </div>
+          <p className="text-slate-400 font-noto text-[11px] mt-1.5">
+            กรอกข้อมูล 5 วันย้อนหลัง • <span className="text-[var(--primary-blue)] font-bold">Real-time update</span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Date Picker (Left) */}
+          <div className="flex items-center py-2.5 px-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
+            <input
+              type="date"
+              value={logDate}
+              onChange={e => setLogDate(e.target.value)}
+              className="text-inherit font-bold outline-none bg-transparent font-noto text-sm cursor-pointer w-full"
+            />
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Date Picker (Left) */}
-            <div className="flex items-center py-2.5 px-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-[var(--primary-blue)] focus-within:border-[var(--primary-blue)] focus-within:ring-4 focus-within:ring-blue-50 transition-all text-slate-500 hover:text-[var(--primary-blue)]">
-              <input
-                type="date"
-                value={logDate}
-                onChange={e => setLogDate(e.target.value)}
-                className="text-inherit font-bold outline-none bg-transparent font-noto text-sm cursor-pointer w-full"
-              />
-            </div>
+          {/* CSV Import Button (Middle) */}
+          <input
+            type="file"
+            id="csvInput"
+            accept=".csv"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <button
+            type="button"
+            onClick={() => document.getElementById('csvInput')?.click()}
+            className="p-3 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-blue)] hover:border-[var(--primary-blue)] rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
+            title="Import Meta CSV"
+          >
+            <FilePlus size={18} />
+          </button>
 
-            {/* CSV Import Button (Middle) */}
-            <input
-              type="file"
-              id="csvInput"
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileUpload}
+          {/* Toggle Mode Panel (Right) */}
+          <div className="relative flex items-center bg-[#054ab3] p-1 rounded-2xl shadow-md border border-white/10 overflow-hidden">
+            <div
+              className={cn(
+                "absolute top-1 bottom-1 w-[40px] bg-white rounded-xl shadow-sm transition-all duration-300 ease-in-out",
+                activeMode === 'views' ? "left-1" : "left-[45px]"
+              )}
             />
             <button
               type="button"
-              onClick={() => document.getElementById('csvInput')?.click()}
-              className="p-3 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-[var(--primary-blue)] hover:border-[var(--primary-blue)] rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex-shrink-0"
-              title="Import Meta CSV"
+              onClick={() => setActiveMode('views')}
+              className={cn(
+                "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-colors duration-300",
+                activeMode === 'views' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
+              )}
+              title="โหมดยอดวิว"
             >
-              <FilePlus size={18} /> 
+              <Eye size={16} strokeWidth={2.5} />
             </button>
-
-            {/* Toggle Mode Panel (Right) */}
-            <div className="relative flex items-center bg-[#054ab3] p-1 rounded-2xl shadow-md border border-white/10 overflow-hidden">
-              <div
-                className={cn(
-                  "absolute top-1 bottom-1 w-[40px] bg-white rounded-xl shadow-sm transition-all duration-300 ease-in-out",
-                  activeMode === 'views' ? "left-1" : "left-[45px]"
-                )}
-              />
-              <button
-                type="button"
-                onClick={() => setActiveMode('views')}
-                className={cn(
-                  "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-colors duration-300",
-                  activeMode === 'views' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
-                )}
-                title="โหมดยอดวิว"
-              >
-                <Eye size={16} strokeWidth={2.5} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMode('followers')}
-                className={cn(
-                  "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-colors duration-300",
-                  activeMode === 'followers' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
-                )}
-                title="โหมดยอดผู้ติดตาม"
-              >
-                <Users size={16} strokeWidth={2.5} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveMode('followers')}
+              className={cn(
+                "relative z-10 w-[40px] h-[32px] flex items-center justify-center rounded-xl transition-colors duration-300",
+                activeMode === 'followers' ? "text-[#054ab3]" : "text-white/70 hover:text-white"
+              )}
+              title="โหมดยอดผู้ติดตาม"
+            >
+              <Users size={16} strokeWidth={2.5} />
+            </button>
           </div>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto w-1/4">ชื่อเพจ / หมวดหมู่</th>
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center w-24">สถานะ</th>
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">{rollingDates[0].split('-').slice(1).reverse().join('/')} (2 วันก่อน)</th>
-                  <th className="p-6 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center">{rollingDates[1].split('-').slice(1).reverse().join('/')} (เมื่อวาน)</th>
-                  <th className="p-6 text-[var(--primary-blue)] font-black text-[10px] uppercase tracking-[0.15em] font-noto text-center bg-blue-50/30">{rollingDates[2].split('-').slice(1).reverse().join('/')} (วันนี้)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {sortedPages.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/20 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50/50 border border-blue-100/50 flex flex-col items-center justify-center flex-shrink-0 shadow-sm">
-                          <span className="text-[8px] text-blue-400 font-bold uppercase tracking-wider leading-none mb-0.5">Box</span>
-                          <span className="text-xs font-black text-[var(--primary-blue)] font-inter leading-none">{p.boxId || '#'}</span>
-                        </div>
-                        <div>
-                          <div className="font-bold text-primary-navy text-sm font-noto mb-0.5">{p.name}</div>
-                          <div className="text-[10px] text-slate-400 font-noto flex items-center gap-2">
-                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            {p.category}
-                          </div>
+      <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="p-4 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto w-1/4">ชื่อเพจ / หมวดหมู่</th>
+                <th className="p-4 text-slate-400 font-bold text-[10px] uppercase tracking-[0.15em] font-noto text-center w-12" title="สถานะ">STATUS</th>
+                {rollingDates.map((date, idx) => (
+                  <th key={date} className={cn(
+                    "p-3 font-bold text-[10px] uppercase tracking-widest font-noto text-center transition-colors break-words w-[14%]",
+                    idx === 4 ? "text-[#054ab3] font-black bg-blue-100/80 border-b-2 border-[#054ab3]" : "text-slate-400"
+                  )}>
+                    {date.split('-').slice(1).reverse().join('/')}
+                    {idx === 4 && (
+                      <div className="text-[8px] opacity-70 tracking-normal mt-0.5">
+                        (วันนี้)
+                      </div>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {sortedPages.map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50/20 transition-colors">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50/50 border border-blue-100/50 flex flex-col items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-[8px] text-blue-400 font-bold uppercase tracking-wider leading-none mb-0.5">Box</span>
+                        <span className="text-xs font-black text-[var(--primary-blue)] font-inter leading-none">{p.boxId || '#'}</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-primary-navy text-sm font-noto mb-0.5">{p.name}</div>
+                        <div className="text-[10px] text-slate-400 font-noto flex items-center gap-2">
+                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                          {p.category}
                         </div>
                       </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex justify-center items-center w-full h-full">
+                      <div
+                        className={cn(
+                          "w-2.5 h-2.5 rounded-full shadow-sm",
+                          p.status === 'Active' ? "bg-emerald-500 shadow-emerald-500/30" :
+                            p.status === 'Rest' ? "bg-slate-400 shadow-slate-400/30" : "bg-red-500 shadow-red-500/30"
+                        )}
+                        title={`Status: ${p.status}`}
+                      />
+                    </div>
+                  </td>
+
+                  {rollingDates.map((date, idx) => (
+                    <td key={date} className={cn("p-2 align-middle transition-colors", idx === 4 ? "bg-blue-50" : "")}>
+                      <div className="relative group mx-auto w-full max-w-[110px]">
+                        {activeMode === 'views' ? (
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={inputData[p.id]?.[date]?.views || ''}
+                            onChange={e => setInputData(prev => ({
+                              ...prev,
+                              [p.id]: {
+                                ...prev[p.id],
+                                [date]: { ...(prev[p.id]?.[date] || {}), views: e.target.value }
+                              }
+                            }))}
+                            className={cn(
+                              "w-full border rounded-xl px-2 py-2.5 text-xs font-bold font-inter outline-none transition-all text-center placeholder:text-slate-300",
+                              idx === 4
+                                ? "bg-white border-[#054ab3]/40 text-[#054ab3] focus:border-[#054ab3] focus:ring-4 focus:ring-blue-100 shadow-md shadow-blue-100/50"
+                                : "bg-slate-50/50 border-slate-100 text-slate-700 hover:bg-slate-50/80 focus:border-[#054ab3] focus:bg-white focus:shadow-sm"
+                            )}
+                          />
+                        ) : (
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={inputData[p.id]?.[date]?.followers || ''}
+                            onChange={e => setInputData(prev => ({
+                              ...prev,
+                              [p.id]: {
+                                ...prev[p.id],
+                                [date]: { ...(prev[p.id]?.[date] || {}), followers: e.target.value }
+                              }
+                            }))}
+                            className={cn(
+                              "w-full border rounded-xl px-2 py-2.5 text-xs font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
+                              idx === 4
+                                ? "bg-emerald-50/30 border-emerald-200 text-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm"
+                                : "bg-slate-50/50 border-slate-100 text-slate-700 hover:bg-slate-50/80 focus:border-emerald-500 focus:bg-white focus:shadow-sm"
+                            )}
+                          />
+                        )}
+                      </div>
                     </td>
-                    <td className="p-4 text-center">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider font-noto shadow-sm",
-                        p.status === 'Active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                          p.status === 'Rest' ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-red-50 text-red-600 border border-red-100"
-                      )}>
-                        {p.status}
-                      </span>
-                    </td>
-                    
-                    {rollingDates.map((date, idx) => (
-                      <td key={date} className={cn("p-4 px-3", idx === 2 ? "bg-blue-50/10" : "")}>
-                        <div className="relative group mx-auto max-w-[140px]">
-                          {activeMode === 'views' ? (
-                            <input
-                              type="number"
-                              placeholder="0"
-                              value={inputData[p.id]?.[date]?.views || ''}
-                              onChange={e => setInputData(prev => ({ 
-                                ...prev, 
-                                [p.id]: { 
-                                  ...prev[p.id], 
-                                  [date]: { ...(prev[p.id]?.[date] || {}), views: e.target.value } 
-                                } 
-                              }))}
-                              className={cn(
-                                "w-full border rounded-xl px-4 py-3 text-sm font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
-                                idx === 2 
-                                  ? "bg-white border-blue-200 text-[#054ab3] focus:border-[#054ab3] focus:ring-4 focus:ring-blue-50 shadow-sm hover:border-[#054ab3]/50" 
-                                  : "bg-slate-50/50 border-slate-100 text-slate-700 focus:border-[#054ab3] focus:bg-white focus:shadow-sm hover:bg-white"
-                              )}
-                            />
-                          ) : (
-                            <input
-                              type="number"
-                              placeholder="0"
-                              value={inputData[p.id]?.[date]?.followers || ''}
-                              onChange={e => setInputData(prev => ({ 
-                                ...prev, 
-                                [p.id]: { 
-                                  ...prev[p.id], 
-                                  [date]: { ...(prev[p.id]?.[date] || {}), followers: e.target.value } 
-                                } 
-                              }))}
-                              className={cn(
-                                "w-full border rounded-xl px-4 py-3 text-sm font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
-                                idx === 2 
-                                  ? "bg-emerald-50/30 border-emerald-200 text-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm hover:border-emerald-500/50" 
-                                  : "bg-slate-50/50 border-slate-100 text-slate-700 focus:border-emerald-500 focus:bg-white focus:shadow-sm hover:bg-white"
-                              )}
-                            />
-                          )}
-                        </div>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-8 bg-slate-50/30 flex justify-end border-t border-slate-100">
-            <button
-              type="submit"
-              className="bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-8 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100/50 text-sm active:scale-95"
-            >
-              <Save size={18} />
-              <span>บันทึกข้อมูล</span>
-            </button>
-          </div>
-        </form>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="p-8 bg-slate-50/30 flex justify-end border-t border-slate-100">
+          <button
+            type="submit"
+            className="bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-8 py-3 rounded-2xl font-bold font-noto flex items-center gap-2 transition-all shadow-lg shadow-blue-100/50 text-sm active:scale-95"
+          >
+            <Save size={18} />
+            <span>บันทึกข้อมูล</span>
+          </button>
+        </div>
+      </form>
 
       {/* Import Modal */}
       {isImportModalOpen && (
@@ -498,12 +509,12 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-6">
                     <p className="text-sm text-slate-600 font-medium">พบข้อมูลรวม <span className="text-blue-600 font-black">{importSummary.days} วัน</span></p>
                     <div className="flex items-center justify-center gap-2 mt-2">
-                       {importSummary.hasFollowers && (
-                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-bold rounded-lg border border-emerald-100">ผู้ติดตาม</span>
-                       )}
-                       {importSummary.hasViews && (
-                         <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-bold rounded-lg border border-blue-100">ยอดดู</span>
-                       )}
+                      {importSummary.hasFollowers && (
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-bold rounded-lg border border-emerald-100">ผู้ติดตาม</span>
+                      )}
+                      {importSummary.hasViews && (
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-bold rounded-lg border border-blue-100">ยอดดู</span>
+                      )}
                     </div>
                     <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-widest font-bold border-t border-slate-100 pt-3">ไปยังเพจ: {pages.find(p => p.id === selectedTargetPageId)?.name}</p>
                   </div>

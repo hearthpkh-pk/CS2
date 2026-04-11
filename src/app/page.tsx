@@ -11,6 +11,7 @@ import { TransactionsView } from '@/components/forms/TransactionsView';
 import { SetupView } from '@/components/forms/SetupView';
 import { CalendarView } from '@/components/workspace/CalendarView';
 import { DailyTaskView } from '@/components/workspace/DailyTaskView';
+import { WorkspaceTerminal } from '@/components/workspace/WorkspaceTerminal';
 import { LearningCenterView } from '@/components/workspace/LearningCenterView';
 import { HQDashboardView } from '@/features/hq-dashboard/components/HQDashboardView';
 import { ReportsView } from '@/features/reports/components/ReportsView';
@@ -36,7 +37,7 @@ import { ProfileManager } from '@/features/company/components/settings/ProfileMa
 export default function CreatorApp() {
   const { user: currentUser, isAuthenticated } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState('workspace');
   const [viewMode, setViewMode] = useState<'pages' | 'accounts'>('pages');
   const [pages, setPages] = useState<Page[]>([]);
   const [accounts, setAccounts] = useState<FBAccount[]>([]);
@@ -288,12 +289,8 @@ export default function CreatorApp() {
             />
           )}
 
-          {currentTab === 'calendar' && (
-            <CalendarView currentUser={currentUser} />
-          )}
-
-          {currentTab === 'daily-task' && (
-            <DailyTaskView currentUser={currentUser} pages={myPages.filter(p => !p.isDeleted && p.status === 'Active')} />
+          {currentTab === 'workspace' && (
+            <WorkspaceTerminal currentUser={currentUser} pages={myPages.filter(p => !p.isDeleted && p.status === 'Active')} />
           )}
 
           {currentTab === 'learning' && (
