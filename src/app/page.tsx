@@ -31,6 +31,7 @@ import { useAuth } from '@/context/AuthContext';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { PendingApprovalPage } from '@/features/auth/PendingApprovalPage';
 import { personnelService } from '@/services/personnelService';
+import { ProfileManager } from '@/features/company/components/settings/ProfileManager';
 
 export default function CreatorApp() {
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -375,6 +376,10 @@ export default function CreatorApp() {
               currentUser={currentUser}
               policy={policyConfig}
             />
+          )}
+
+          {currentTab === 'profile' && (
+            <ProfileManager />
           )}
 
           {currentTab === 'settings' && (

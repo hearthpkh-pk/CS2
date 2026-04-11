@@ -22,7 +22,8 @@ import {
   LayoutGrid,
   BellRing,
   CalendarDays,
-  Briefcase
+  Briefcase,
+  User as UserIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand, PolicyConfiguration, Role, User } from '@/types';
@@ -39,7 +40,10 @@ interface CompanySettingsViewProps {
 
 export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ currentUser, initialTab }) => {
   const { config, updatePerformancePolicy, refreshConfig, saveBrand, deleteBrand, isLoading } = useCompanyConfig();
-  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups' | 'holidays'>(initialTab || 'announcements');
+  
+  const [activeTab, setActiveTab] = useState<'brands' | 'policy' | 'announcements' | 'groups' | 'holidays'>(
+    initialTab || 'announcements'
+  );
   const [isSaved, setIsSaved] = useState(false);
 
   // Sync initialTab when it changes from props
@@ -106,14 +110,15 @@ export const CompanySettingsView: React.FC<CompanySettingsViewProps> = ({ curren
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4">
       
-      {/* HQ COMPANY SETTINGS HEADER (Mode 2) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
+      {/* HQ COMPANY SETTINGS HEADER (Mode 1: Standard Upgrade) */}
+      <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
-            Company Settings
-          </h1>
-          <p className="text-[11px] text-slate-400 font-medium font-noto uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+              Company Settings
+            </h2>
+          </div>
+          <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
             Admin Console & Operational Matrix • <span className="text-[var(--primary-theme)] font-bold">Enterprise View</span>
           </p>
         </div>

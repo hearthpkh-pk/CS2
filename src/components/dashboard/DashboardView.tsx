@@ -62,8 +62,8 @@ export const DashboardView = ({
               DASHBOARD
             </h2>
           </div>
-          <p className="text-slate-400 font-noto text-[11px] mt-1.5">
-            รายงานข้อมูลเพจภาพรวม • <span className="text-[var(--primary-theme)] font-bold">Analytics</span>
+          <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
+            รายงานข้อมูลเพจภาพรวมและสถิติยอดการรับชม • <span className="text-[var(--primary-theme)] font-bold">Analytics Matrix</span>
           </p>
         </div>
 

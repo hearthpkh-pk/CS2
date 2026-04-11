@@ -32,10 +32,12 @@ export const KanbanHeader = ({
     <div className="sticky top-0 z-40 bg-slate-50 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 pb-6 mb-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-y-4 md:gap-x-12 shadow-sm">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">Facebok Page Setup</h2>
+          <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+            Facebook Page Setup
+          </h2>
         </div>
-        <p className="text-slate-400 font-noto text-[11px] mt-1.5">
-          {viewMode === 'pages' ? "One Active per box • 20 Units Max" : "Manage Facebook Credentials for each box"}
+        <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
+          {viewMode === 'pages' ? "One Active per box • 20 Units Max" : "Manage Facebook Credentials for each box"} • <span className="text-[var(--primary-theme)] font-bold">Deployment Hub</span>
         </p>
       </div>
 

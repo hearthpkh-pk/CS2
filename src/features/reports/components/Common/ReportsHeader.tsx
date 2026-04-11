@@ -25,9 +25,8 @@ export const ReportsHeader: React.FC<ReportsHeaderProps> = ({
             REPORTS & STATISTICS
           </h2>
         </div>
-        <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2 uppercase tracking-[0.2em]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary-theme)] animate-pulse"></span>
-          รายงานและสถิติการปฏิบัติงาน • <span className="text-[var(--primary-theme)] font-bold">Command Console</span>
+        <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
+          รายงานและสถิติการปฏิบัติงานรายบุคคล • <span className="text-[var(--primary-theme)] font-bold">Command Console</span>
         </p>
       </div>
 

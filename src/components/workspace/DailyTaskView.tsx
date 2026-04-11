@@ -29,12 +29,8 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   // 🎯 Resolve dynamic policy for this user
   const policy = useMemo(() => getPolicyForUser(currentUser), [getPolicyForUser, currentUser]);
 
-  // Determine how many pages this user SHOULD be working on based on their group
   const displayPages = useMemo(() => {
-    // 🛡️ เรียงลำดับจาก Box ID น้อยไปหามาก
     const sortedPages = [...pages].sort((a, b) => (Number(a.boxId) || 0) - (Number(b.boxId) || 0));
-    
-    // If user has specifically assigned pages, use them (but limit to required count if needed, or allow all)
     return sortedPages.slice(0, Math.max(sortedPages.length, policy.requiredPagesPerDay));
   }, [pages, policy.requiredPagesPerDay]);
 
@@ -43,14 +39,12 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Initialize and load today's submission data when policy or pages load (Targeted Load)
   useEffect(() => {
     if (isConfigLoading) return;
 
     const loadTodayData = async () => {
       try {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
-        // Targeted Query: Fetch ONLY this user's logs for today
         const myTodayLogs = await dataService.getTodayLogsForUser(currentUser.id, todayStr);
 
         const initial: Record<string, string[]> = {};
@@ -61,8 +55,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
         
         setSubmissionData(initial);
       } catch (error) {
-        console.error("Failed to fetch today's logs (Optimized Query):", error);
-        // Fallback to empty setup
+        console.error("Failed to fetch today's logs:", error);
         const initial: Record<string, string[]> = {};
         displayPages.forEach(p => initial[p.id] = []);
         setSubmissionData(initial);
@@ -76,7 +69,6 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
     const val = (currentInputs[pageId] || '').trim();
     if (!val) return;
 
-    // Prevent duplicate links across all pages
     const isDuplicate = Object.values(submissionData).some(pageLinks => 
       pageLinks.some(link => link.trim().toLowerCase() === val.toLowerCase())
     );
@@ -110,11 +102,11 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
       const logs: DailyLog[] = displayPages.map(page => {
         const links = (submissionData[page.id] || []).filter(l => l.trim() !== '');
         return {
-          id: '', // Will be assigned by DB
+          id: '',
           pageId: page.id,
           staffId: page.ownerId || currentUser.id,
           date: format(new Date(), 'yyyy-MM-dd'),
-          followers: 0, // Staff only submits links, views/followers might be synced later or entered elsewhere
+          followers: 0,
           views: 0,
           clipsCount: links.length,
           links: links,
@@ -145,22 +137,24 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pt-4 pb-6 mb-6 gap-4">
+      {/* --- PAGE HEADER (Mode 1: Standard) --- */}
+      <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
-            DAILY SUBMISSION
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+              DAILY SUBMISSION
+            </h2>
+          </div>
           <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
-            บันทึกการส่งงานตามกลุ่ม <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-600 font-bold uppercase">{currentUser.department || 'General'}</span>
+            บันทึกรายได้และลิงก์งานประจำวันตามกลุ่ม • <span className="text-[var(--primary-theme)] font-bold">{currentUser.department || 'General Operation'}</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md shrink-0">
-          <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest font-noto">
-            {format(new Date(), 'dd MMM yyyy')}
-          </span>
+        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm">
+           <div className="w-2 h-2 rounded-full bg-[var(--primary-theme)] animate-pulse" />
+           <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest font-inter">
+             {format(new Date(), 'dd MMM yyyy')}
+           </span>
         </div>
       </div>
 
@@ -228,7 +222,6 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
                     <button
                       onClick={handleSubmit}
                       disabled={isSubmitting || totalLinksFilled < totalRequired}
-                      title="Validate & Submit Work"
                       className={cn(
                         "h-7 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm shrink-0 border group",
                         totalLinksFilled < totalRequired
@@ -290,7 +283,6 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
                   </td>
                   <td className="p-4 pl-6 w-full max-w-[200px] md:max-w-[300px] xl:max-w-none">
                     <div className="flex flex-nowrap gap-3 items-center w-full overflow-x-auto custom-scrollbar pb-3 pt-1">
-                      {/* Left: Input Box */}
                       <div className="flex bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-4 ring-blue-50 focus-within:border-blue-300 transition-all shadow-sm w-[260px] xl:w-[320px] shrink-0">
                         <div className="pl-3.5 flex items-center text-slate-400 border-r border-slate-200/60 pr-2.5 mr-1 bg-white">
                           <LinkIcon size={14} strokeWidth={2.5} />
@@ -316,7 +308,6 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
                         </button>
                       </div>
 
-                      {/* Right: Saved Links Chips (Compact & Scrollable) */}
                       {(submissionData[page.id] || []).filter(l => l.trim() !== '').map((link, i) => (
                         <div key={i} className="flex items-center gap-1.5 bg-blue-50/50 border border-blue-100 rounded-lg pl-2.5 pr-1 py-1.5 shrink-0 group/pill shadow-sm hover:shadow-md transition-all" title={link}>
                           <LinkIcon size={10} strokeWidth={3} className="text-blue-500 shrink-0" />
@@ -342,7 +333,9 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
 
       {/* Footer Info */}
       <div className="flex items-start gap-3 mt-4 px-2 opacity-60 hover:opacity-100 transition-opacity">
-        <Info className="text-slate-400 shrink-0 mt-0.5" size={14} />
+        <span className="text-slate-400 shrink-0 mt-0.5">
+          <Info size={14} />
+        </span>
         <p className="text-[10px] text-slate-500 leading-relaxed font-noto">
           <strong className="text-slate-700">Audit Condition:</strong> การส่งงานต้องครบเป้าหมายของกลุ่ม ({policy.requiredPagesPerDay} เพจ) ระบบจะบันทึกประวัติเพื่อประมวลผลการทำงานอัตโนมัติ
         </p>

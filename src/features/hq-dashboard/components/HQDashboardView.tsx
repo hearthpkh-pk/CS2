@@ -87,17 +87,17 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-4">
       
-      {/* 1. HQ COMMAND HEADER (Mode 2) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pt-4 pb-5 mb-5">
+      {/* --- PAGE HEADER (Mode 1: Standard) --- */}
+      <div className="flex justify-between items-center border-b border-slate-200 pt-4 pb-6 mb-6">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
-            HQ Control Center
-          </h1>
-          <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em] mt-1.5">
-            <span className="font-outfit font-bold tracking-[0.25em]">Enterprise Management</span>
-            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-[var(--primary-theme)] font-prompt font-bold">{dashboardData.scope} Executive Console</span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[#0f172a] font-outfit uppercase tracking-tight leading-none">
+              HQ CONTROL CENTER
+            </h2>
           </div>
+          <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
+            ศูนย์ควบคุมปฏิบัติการและวิเคราะห์ข้อมูลองค์กร • <span className="text-[var(--primary-theme)] font-bold">{dashboardData.scope} Executive Console</span>
+          </p>
         </div>
 
         <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-xl px-3 py-1.5 shadow-sm hover:border-slate-200 transition-colors">

@@ -8,7 +8,7 @@ import {
   Video as VideoIcon, Settings as SettingsIcon,
   History as HistoryIcon, HelpCircle,
   PieChart, ChevronRight, ChevronDown, Scale, BookOpen,
-  LogOut
+  LogOut, User as UserIcon
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Role } from '@/types';
@@ -95,6 +95,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
     {
       title: 'System',
       items: [
+        { id: 'profile', icon: UserIcon, label: 'ข้อมูลส่วนตัว', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
         { id: 'learning', icon: BookOpen, label: 'ศูนย์การเรียนรู้', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
         { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
         { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
