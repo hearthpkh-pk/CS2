@@ -70,6 +70,7 @@ export interface User {
   bankAccount?: string;
   permissions?: string[]; // Array of module keys e.g. ['dashboard', 'setup', 'hq-dashboard']
   isActive?: boolean;
+  avatarUrl?: string;
 }
 
 export interface FacebookPageMeta {
@@ -240,6 +241,7 @@ export interface DailyReport {
   yearlyLeaves: number[];
   yearlyActivePages: number[];
   yearlyPosts: number[];
+  avatarUrl?: string;
 }
 
 export interface FinancialMetric {

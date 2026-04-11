@@ -27,6 +27,7 @@ export const personnelService = {
       startDate: p.enlistment_date,
       probationDate: p.clearance_date,
       isActive: p.is_active,
+      avatarUrl: p.avatar_url,
     }));
 
     if (!viewerRole || viewerRole === Role.SuperAdmin || viewerRole === Role.Developer) return users;

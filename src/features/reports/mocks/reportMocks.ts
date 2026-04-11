@@ -47,7 +47,8 @@ export const mockReports: DailyReport[] = initialUsers
       yearlyViews: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 80000000) + 10000000),
       yearlyLeaves: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 3)),
       yearlyActivePages: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 8) + 5),
-      yearlyPosts: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 150) + 50)
+      yearlyPosts: Array.from({ length: 12 }).map(() => Math.floor(Math.random() * 150) + 50),
+      avatarUrl: user.avatarUrl
     };
   });
 

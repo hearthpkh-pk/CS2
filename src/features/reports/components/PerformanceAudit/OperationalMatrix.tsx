@@ -136,8 +136,12 @@ export const OperationalMatrix: React.FC<OperationalMatrixProps> = ({
                         <Target size={13} className={pinnedIds.has(report.id) ? 'fill-[var(--primary-theme)]' : ''} />
                       </button>
 
-                      <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-900 flex items-center justify-center text-white group-hover:bg-blue-600 group-hover:border-blue-600 transition-all shadow-sm shrink-0">
-                        <span className="text-xs font-bold leading-none">{report.userName.charAt(0)}</span>
+                      <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-900 flex items-center justify-center text-white group-hover:bg-blue-600 group-hover:border-blue-600 transition-all shadow-sm shrink-0 overflow-hidden">
+                        {report.avatarUrl ? (
+                          <img src={report.avatarUrl} alt={report.userName} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-bold leading-none">{report.userName.charAt(0)}</span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="text-[14px] font-bold text-slate-900 font-noto tracking-tight truncate leading-none mb-2">

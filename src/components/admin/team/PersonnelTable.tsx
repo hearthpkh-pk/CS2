@@ -77,11 +77,15 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
                       <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm transition-transform group-hover:scale-110",
+                        "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm transition-transform group-hover:scale-110 overflow-hidden",
                         user.role === Role.Admin ? 'bg-slate-900' : 
                         user.role === Role.Manager ? 'bg-indigo-600' : 'bg-[var(--primary-theme)]'
                       )}>
-                        {user.name.trim().slice(-1)}
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          user.name.trim().slice(-1)
+                        )}
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-slate-800 font-outfit tracking-tight leading-none mb-1">{user.name}</div>

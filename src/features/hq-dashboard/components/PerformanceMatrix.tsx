@@ -44,8 +44,19 @@ export const PerformanceMatrix: React.FC<PerformanceMatrixProps> = ({
                     isExpanded && "bg-slate-50/80"
                   )}>
                     <td className="px-8 py-4">
-                      <p className="text-sm font-medium text-slate-700 font-prompt">{staff.name}</p>
-                      <p className="text-[10px] text-slate-400 font-medium">{staff.teamId}</p>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400 overflow-hidden shrink-0 border border-slate-50 shadow-sm">
+                          {staff.avatarUrl ? (
+                            <img src={staff.avatarUrl} alt={staff.name} className="w-full h-full object-cover" />
+                          ) : (
+                            staff.name?.charAt(0) || '?'
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-700 font-prompt leading-none mb-1">{staff.name}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{staff.teamId}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-8 py-4 text-center">
                       <div className="flex flex-col items-center gap-1">

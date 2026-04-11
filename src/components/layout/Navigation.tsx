@@ -169,10 +169,14 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       {/* 🛡️ REVERTED: Profile fixed at bottom with discrete styling */}
       <div className="mt-auto border-t border-white/5 p-4">
         <div className="group/profile flex items-center gap-3 px-2 py-4 transition-all duration-300">
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 shadow-inner">
-            <span className="text-sm font-bold text-white/50 uppercase">
-              {currentUser.name.trim().slice(-1)}
-            </span>
+          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 shadow-inner overflow-hidden">
+            {currentUser.avatarUrl ? (
+              <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-bold text-white/50 uppercase">
+                {currentUser.name.trim().slice(-1)}
+              </span>
+            )}
           </div>
           <div className="flex-1 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden whitespace-nowrap">
             <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>

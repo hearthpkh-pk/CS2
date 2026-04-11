@@ -11,7 +11,8 @@ export const mockDashboardUsers: User[] = Array.from({ length: 20 }).map((_, i) 
   role: Role.Staff,
   teamId: i < 10 ? 'Team Alpha' : 'Team Beta',
   brand: brands[i % brands.length],
-  isActive: true
+  isActive: true,
+  avatarUrl: `https://i.pravatar.cc/150?u=${i + 1}`
 }));
 
 // Add Admin & Super Admin

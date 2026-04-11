@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           group: profile.group,
           salary: profile.salary,
           isActive: profile.is_active,
+          avatarUrl: profile.avatar_url,
         };
         setUser(appUser);
       }

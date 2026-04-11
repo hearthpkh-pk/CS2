@@ -65,7 +65,27 @@ export default function CreatorApp() {
         setUsers(await personnelService.getAvailableUsers(currentUser.role));
       }
     };
+    
     fetchInitialData();
+
+    // 🚀 Auto-Hydration: Background sync when returning to active tab or coming back online
+    const handleReactivation = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        fetchInitialData();
+      }
+    };
+
+    const handleOnline = () => {
+      fetchInitialData();
+    };
+
+    document.addEventListener('visibilitychange', handleReactivation);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleReactivation);
+      window.removeEventListener('online', handleOnline);
+    };
   }, [currentUser]);
 
   const handleUpdateUsers = async (newUsers: User[]) => {

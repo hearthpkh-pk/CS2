@@ -9,6 +9,7 @@ export interface LeaderboardEntry {
   pagesCount: number;
   projectedBonus?: number;
   penaltyRisk?: number;
+  avatarUrl?: string;
 }
 
 export interface RiskRadarEntry {
@@ -79,6 +80,7 @@ export const hqDashboardService = {
         totalViews,
         viewsGrowth: 0,
         pagesCount: myPages.length,
+        avatarUrl: staff.avatarUrl,
       };
     });
 
