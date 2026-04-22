@@ -20,6 +20,7 @@ interface PageEditorDrawerProps {
     status: Page['status'];
     boxId: number;
     adminIds: string[];
+    notes?: string;
   };
   setFormData: (data: any) => void;
   onSubmit: (e: React.FormEvent) => void;
