@@ -31,7 +31,7 @@ export const WorkspaceTerminal: React.FC<WorkspaceTerminalProps> = ({ currentUse
   const { recordLeave } = useCalendarLogic(currentUser);
 
   const handleQuickLeave = () => {
-    recordLeave(new Date(), 'Sick', leaveReason);
+    recordLeave(leaveReason, new Date(), 'Sick');
     setShowLeaveModal(false);
     setLeaveReason('');
   };
