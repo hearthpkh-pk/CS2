@@ -52,31 +52,33 @@ export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
             value={formData.boxId}
             onChange={e => {
               const newBoxId = parseInt(e.target.value);
-              const update: any = { boxId: newBoxId };
-              if (newBoxId === 0) update.status = 'Admin';
-              setFormData({...formData, ...update});
+              setFormData({...formData, boxId: newBoxId});
             }}
-            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-xs font-bold font-noto"
+            disabled={formData.boxId === 0}
+            className={cn(
+              "w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-xs font-bold font-noto",
+              formData.boxId === 0 ? "bg-slate-100 text-slate-500 opacity-80" : "bg-slate-50"
+            )}
           >
-            <option value={0}>Admin Box (พิเศษ)</option>
-            {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => (
-              <option key={n} value={n}>{n}</option>
-            ))}
+            {formData.boxId === 0 ? (
+              <option value={0}>Admin Box (พิเศษ)</option>
+            ) : (
+              [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))
+            )}
           </select>
         </div>
 
         <div className="space-y-2 pt-1 flex-1">
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">สถานะปัจจุบัน</label>
           <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
-            {(['Live', 'Check', 'Die', 'Admin'] as FBAccount['status'][]).map(s => (
+            {(['Live', 'Check', 'Die'] as FBAccount['status'][]).map(s => (
               <button
                 key={s}
                 type="button"
                 onClick={() => {
-                  const update: any = { status: s };
-                  if (s === 'Admin') update.boxId = 0;
-                  else if (formData.boxId === 0) update.boxId = 1;
-                  setFormData({...formData, ...update});
+                  setFormData({...formData, status: s});
                 }}
                 className={cn(
                   "flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-all",
@@ -85,7 +87,6 @@ export const IdentitySection = ({ formData, setFormData }: SectionProps) => (
                         "text-white shadow-lg",
                         s === 'Live' ? "bg-emerald-500 shadow-emerald-100" :
                         s === 'Check' ? "bg-amber-500 shadow-amber-100" :
-                        s === 'Admin' ? "bg-[var(--primary-theme)] shadow-slate-200/50" :
                         "bg-red-500 shadow-red-100"
                       )
                     : "text-slate-400 hover:text-slate-600"
@@ -213,6 +214,17 @@ export const BrowserSection = ({ formData, setFormData }: SectionProps) => (
         placeholder="c_user=...; xs=...;"
         rows={3}
         className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-[10px] font-inter resize-none h-24"
+      />
+    </div>
+
+    <div className="space-y-1 relative pt-2">
+      <label className="absolute -top-1 left-3 px-1.5 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-widest z-10">Notes / Comments</label>
+      <textarea 
+        value={formData.notes || ''}
+        onChange={e => setFormData({...formData, notes: e.target.value})}
+        placeholder="บันทึกย่อ หรือ หมายเหตุสำหรับบัญชีนี้..."
+        rows={3}
+        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-noto resize-none h-24"
       />
     </div>
   </div>

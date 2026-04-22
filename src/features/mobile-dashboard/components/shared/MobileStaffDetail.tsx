@@ -286,7 +286,7 @@ export const MobileStaffDetail = ({
 
             {/* Quick Templates */}
             <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden mb-6 pb-2">
-              {['เปลี่ยนเพจด่วน', 'แก้ลิงก์เพจใหม่', 'เปลื่ยนแบนเนอร์', 'แก้สถานะเพจ', 'ตรวจสอบยอดวิว'].map(tmpl => (
+              {['เปลี่ยนเพจด่วน', 'แก้ลิงก์เพจใหม่', 'เปลื่ยนแบนเนอร์', 'ตรวจสอบยอดวิว', 'แก้สถานะเพจ'].map(tmpl => (
                 <button
                   key={tmpl}
                   onClick={() => setTagMessage(tmpl)}

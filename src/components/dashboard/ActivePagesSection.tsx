@@ -1,13 +1,96 @@
 import React from 'react';
-import { Activity, RefreshCw } from 'lucide-react';
+import { Activity, RefreshCw, StickyNote, FolderOpen, Box, Shield, Settings } from 'lucide-react';
 import { Page } from '@/types';
 
 interface ActivePagesSectionProps {
   pages: Page[];
   selectedPage: string;
+  onNavigateToSetup?: () => void;
 }
 
-export const ActivePagesSection: React.FC<ActivePagesSectionProps> = ({ pages, selectedPage }) => {
+// Hover tooltip popover component
+const PageTooltip: React.FC<{ page: Page; onNavigateToSetup?: () => void }> = ({ page, onNavigateToSetup }) => {
+  const hasNotes = page.notes && page.notes.trim().length > 0;
+  const hasAdmins = page.adminIds && page.adminIds.length > 0;
+
+  return (
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-[280px] opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-slate-200/80 border border-slate-100 overflow-hidden">
+        {/* Tooltip Header */}
+        <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Page Details</p>
+          <p className="text-xs font-bold text-slate-700 mt-0.5 truncate font-noto">{page.name}</p>
+        </div>
+
+        {/* Tooltip Body */}
+        <div className="p-4 space-y-3">
+          {/* Category & Box */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-slate-500">
+              <FolderOpen size={11} />
+              <span className="text-[10px] font-bold">{page.category || '-'}</span>
+            </div>
+            <div className="w-px h-3 bg-slate-200" />
+            <div className="flex items-center gap-1.5 text-slate-500">
+              <Box size={11} />
+              <span className="text-[10px] font-bold">Box {page.boxId}</span>
+            </div>
+          </div>
+
+          {/* Admin IDs */}
+          {hasAdmins && (
+            <div className="flex items-start gap-2">
+              <Shield size={11} className="text-indigo-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest mb-1">Linked Admin</p>
+                <p className="text-[10px] text-slate-500 font-noto">{page.adminIds!.length} Admin Account(s)</p>
+              </div>
+            </div>
+          )}
+
+          {/* ⭐ Notes/Comments — PROMINENT CARD */}
+          <div className={`rounded-xl p-3 border ${
+            hasNotes
+              ? 'bg-amber-50 border-amber-200'
+              : 'bg-slate-50 border-slate-100'
+          }`}>
+            <div className="flex items-center gap-1.5 mb-2">
+              <StickyNote size={12} className={hasNotes ? 'text-amber-500' : 'text-slate-300'} />
+              <p className={`text-[9px] font-black uppercase tracking-widest ${
+                hasNotes ? 'text-amber-600' : 'text-slate-400'
+              }`}>Notes / Comments</p>
+            </div>
+            {hasNotes ? (
+              <p className="text-[11px] text-amber-900 font-noto leading-relaxed line-clamp-5 whitespace-pre-wrap font-medium">
+                {page.notes}
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-300 font-noto italic">ยังไม่มีโน้ตสำหรับเพจนี้</p>
+            )}
+          </div>
+        </div>
+
+        {/* Tooltip Footer — Action Buttons */}
+        <div className="px-4 py-3 bg-slate-50/60 border-t border-slate-100 flex items-center gap-2">
+          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex-1">คลิกเพื่อเปิดเพจ →</span>
+          {onNavigateToSetup && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigateToSetup(); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shrink-0"
+            >
+              <Settings size={10} />
+              จัดการเพจ
+            </button>
+          )}
+        </div>
+      </div>
+      {/* Arrow */}
+      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45" />
+    </div>
+  );
+};
+
+export const ActivePagesSection: React.FC<ActivePagesSectionProps> = ({ pages, selectedPage, onNavigateToSetup }) => {
   return (
     <div className="mt-12">
       <div className="mb-6 flex items-center justify-between">
@@ -30,12 +113,15 @@ export const ActivePagesSection: React.FC<ActivePagesSectionProps> = ({ pages, s
               href={page.facebookUrl || page.url || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-white rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden flex flex-col min-h-[300px] cursor-pointer"
+              className="bg-white rounded-[1.25rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-visible flex flex-col min-h-[300px] cursor-pointer"
             >
+              {/* Hover Tooltip */}
+              <PageTooltip page={page} onNavigateToSetup={onNavigateToSetup} />
+
               {!page.facebookData ? (
                 <>
                   {/* Top Image Section - Subtle Gray */}
-                  <div className="relative h-36 w-full bg-slate-50 border-b border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                  <div className="relative h-36 w-full bg-slate-50 border-b border-slate-100 overflow-hidden shrink-0 flex items-center justify-center rounded-t-[1.25rem]">
                     {/* Index Number */}
                     <div className="absolute top-4 left-4 flex items-center justify-center w-5 h-5 rounded-full bg-black/5 border border-black/5 z-10">
                       <span className="text-[9px] font-bold text-slate-400">{idx + 1}</span>
@@ -70,7 +156,7 @@ export const ActivePagesSection: React.FC<ActivePagesSectionProps> = ({ pages, s
               ) : (
                 <>
                   {/* Top Image Section */}
-                  <div className="relative h-36 w-full bg-slate-100 overflow-hidden shrink-0">
+                  <div className="relative h-36 w-full bg-slate-100 overflow-hidden shrink-0 rounded-t-[1.25rem]">
                     {/* Index Number */}
                     <div className="absolute top-4 left-4 flex items-center justify-center w-5 h-5 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 z-10">
                       <span className="text-[9px] font-bold text-white/90">{idx + 1}</span>

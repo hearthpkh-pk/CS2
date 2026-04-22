@@ -113,6 +113,7 @@ export interface Page {
   lastUpdated?: string; // Added as optional
   facebookUrl?: string;
   facebookData?: FacebookPageMeta;
+  notes?: string;
   requests?: PageActionRequest[];
 }
 
@@ -155,6 +156,8 @@ export interface FBAccount {
   email2?: string;
   profileUrl?: string;
   cookie?: string;
+  rawText?: string;
+  notes?: string;
   createdAt?: string;
   isDeleted?: boolean;
   deletedAt?: string;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Save, FilePlus, Search, X, Check, Eye, Users } from 'lucide-react';
 import { Page, DailyLog, User } from '@/types';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,10 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const [importSummary, setImportSummary] = useState({ days: 0, hasViews: false, hasFollowers: false });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTargetPageId, setSelectedTargetPageId] = useState<string | null>(null);
+
+  // Portal mount state
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Filter and sort pages to match SetupView order
   const sortedPages = useMemo(() => {
@@ -429,8 +434,8 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
       </form>
 
       {/* Import Modal */}
-      {isImportModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      {mounted && isImportModalOpen && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
             {importStep === 'select' ? (
               <>
@@ -540,7 +545,8 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

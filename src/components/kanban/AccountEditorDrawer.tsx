@@ -32,6 +32,7 @@ interface AccountEditorDrawerProps {
     email2?: string;
     profileUrl?: string;
     cookie?: string;
+    rawText?: string;
     boxId: number;
   };
   setFormData: (data: any) => void;
@@ -50,6 +51,26 @@ export const AccountEditorDrawer = ({
 }: AccountEditorDrawerProps) => {
   const [importText, setImportText] = React.useState('');
 
+  React.useEffect(() => {
+    if (isOpen) {
+      if (editingAccount) {
+        try {
+          const dict = JSON.parse(localStorage.getItem('cs_raw_texts') || '{}');
+          setImportText(dict[editingAccount.uid] || editingAccount.rawText || formData.rawText || '');
+        } catch {
+          setImportText(editingAccount.rawText || formData.rawText || '');
+        }
+      } else {
+        // For new accounts, initialize with whatever formData has (SetupView resets it to '') 
+        // Do not force it to '' blindly if the user is typing!
+        setImportText(formData.rawText || '');
+      }
+    } else {
+      setImportText('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editingAccount]);
+
   if (!isOpen) return null;
 
   const parseAccountString = (input: string) => {
@@ -65,83 +86,155 @@ export const AccountEditorDrawer = ({
     let cookie = '';
     let name = formData.name;
 
-    // 1. Extract Cookie first
-    const cookieMatch = input.match(/(c_user=\d+;.*?xs=[^;|\s]+)/i);
-    if (cookieMatch) {
-      cookie = cookieMatch[1];
-      const uidMatch = cookie.match(/c_user=(\d+)/);
-      if (uidMatch) uid = uidMatch[1];
+    let text = input.trim();
+
+    // 1. Extract Profile URL first to avoid messing up delimiters
+    const urlRegex = /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)?(?:facebook\.com|fb\.com)\/profile\.php\?id=(\d+)/i;
+    const urlMatch = text.match(urlRegex);
+    if (urlMatch) {
+      profileUrl = `https://www.facebook.com/profile.php?id=${urlMatch[1]}`;
+      uid = urlMatch[1];
+      text = text.replace(urlMatch[0], ''); 
     }
 
-    // 2. Extract Profile URL
-    const urlMatches = input.match(/(?:https?:\/\/)?(?:www\.)?(?:facebook\.com|fb\.com)\/[^\s|:|;]+/gi);
-    if (urlMatches && urlMatches.length > 0) {
-      profileUrl = urlMatches[0];
-      const idMatch = profileUrl.match(/(\d+)/);
-      if (idMatch && !uid) uid = idMatch[1];
+    // Check generic FB urls (e.g. username links)
+    const altUrlRegex = /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)?(?:facebook\.com|fb\.com)\/[a-zA-Z0-9.-]+/i;
+    const altUrlMatch = text.match(altUrlRegex);
+    if (!profileUrl && altUrlMatch) {
+      profileUrl = altUrlMatch[0];
+      text = text.replace(altUrlMatch[0], '');
     }
 
-    // 3. Split by common separators
-    const separators = ['|', ':', ' '];
-    let parts: string[] = [];
-    
-    for (const sep of separators) {
-      const testParts = input.split(sep).map(p => p.trim()).filter(p => p.length > 0);
-      if (testParts.length >= 3) {
-        parts = testParts;
-        break;
+    // 2. Identify delimiter. | is standard market format. If not, fallback to :
+    let delimiter = '|';
+    if (!text.includes('|') && text.includes(':')) {
+      delimiter = ':';
+    }
+
+    // Preserve the index structure
+    let parts = text.split(delimiter).map(p => p.trim());
+
+    // 3. Extract Cookie securely (Long segment with indicators)
+    const cookieIndex = parts.findIndex(p => p.includes('c_user=') || p.includes('datr=') || p.includes('sb=') || p.includes('vpd='));
+    if (cookieIndex !== -1) {
+      cookie = parts[cookieIndex];
+      parts[cookieIndex] = ''; // blank it to preserve index alignment!
+      
+      const cUserMatch = cookie.match(/c_user=(\d+)/);
+      if (cUserMatch && !uid) {
+        uid = cUserMatch[1];
       }
     }
 
-    if (parts.length > 0) {
-      const detectedEmails: string[] = [];
+    // 4. Trace mappings through remaining parts
+    let uidIndex = -1;
+    let emailIndex = -1;
+    let unknownParts: {value: string, index: number}[] = [];
 
-      parts.forEach((part, index) => {
-        // Detect UID
-        if (!uid && /^\d{10,16}$/.test(part)) {
-          uid = part;
-        }
-        // Detect 2FA
-        else if (!twoFactor && (
-          /^[A-Z0-9\s]{16,64}$/.test(part) || 
-          (/^[a-z0-9]{16,64}$/i.test(part) && part.length >= 15 && !part.includes('@') && !part.includes('.'))
-        )) {
-          twoFactor = part;
-        }
-        // Detect Emails
-        else if (part.includes('@')) {
-          detectedEmails.push(part);
-          if (detectedEmails.length === 1) {
-            email = part;
-            if (!name) name = part.split('@')[0];
-            
-            // Heuristic for Passmail
-            if (index + 1 < parts.length) {
-              const nextPart = parts[index + 1];
-              if (nextPart.length > 4 && nextPart !== twoFactor && !nextPart.includes('@') && !nextPart.includes('facebook.com')) {
-                emailPassword = nextPart;
-              }
-            }
-          } else if (detectedEmails.length === 2) {
-            email2 = part;
-          }
-        }
-      });
+    parts.forEach((part, index) => {
+      if (!part) return; // Skip blanks
 
-      // Password Heuristic
-      if (parts.length >= 2) {
-        const p0 = parts[0];
-        const p1 = parts[1];
+      // Detect UID
+      if (!uid && /^\d{10,20}$/.test(part)) {
+        uid = part;
+        uidIndex = index;
+        return;
+      }
+      
+      if (/^\d{10,20}$/.test(part) && uid === part) {
+         uidIndex = index; 
+         return;
+      }
+      
+      // Detect 2FA (Handles 32-char solid or 8 groups of 4)
+      const is2FA = /^[A-Z2-7]{32}$/i.test(part.replace(/\s+/g, '')) || /^[A-Z2-7]{4}(?:\s[A-Z2-7]{4}){7}$/i.test(part);
+      if (!twoFactor && is2FA) {
+        twoFactor = part;
+        return;
+      }
+      
+      // Detect Email
+      const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/i;
+      // Strip typical file labels (Email0: ...)
+      let cleanPart = part.replace(/^(Email|Email0|MailRcv):\s*/i, '');
+      if (emailRegex.test(cleanPart)) {
+        if (!email) {
+          email = cleanPart;
+          emailIndex = index;
+        } else if (!email2 && cleanPart !== email) {
+          email2 = cleanPart;
+        }
+        return;
+      }
+      
+      // Detect Dates (usually account birthdate)
+      if (/^\d{1,2}-[A-Za-z]{3}-\d{2,4}$/.test(part) || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(part)) {
+        return;
+      }
+      
+      // Ignore Meta Labels
+      if (/^(Name|Friend|DOB|Gender|CreatedTime|Meta|2FA):\s*/i.test(part)) {
+         return;
+      }
+
+      // Remaining clean elements are likely passwords
+      cleanPart = part.replace(/^(PassEmail0):\s*/i, '');
+      if (cleanPart && cleanPart.length > 3) {
+         unknownParts.push({ value: cleanPart, index });
+      }
+    });
+
+    // 5. Intelligent Password Assignment
+    unknownParts.forEach(up => {
+      // If it immediately follows the UID, it's almost certainly the FB Password
+      if (up.index === uidIndex + 1 && !password) {
+        password = up.value;
+      } 
+      // If it intimately follows the Email
+      else if (up.index === emailIndex + 1) {
+        // If there was no UID at the start of the string (e.g. UID extracted from trailing URL), 
+        // the Email acts as the primary ID, so the next item is usually the FB password.
+        if (uidIndex === -1 && !password) {
+          password = up.value;
+        } else if (!emailPassword) {
+          emailPassword = up.value;
+        }
+      }
+    });
+
+    // Fallback assignment if positional heuristic fails
+    unknownParts.forEach(up => {
+      if (up.value !== password && up.value !== emailPassword) {
+        // Exclude Base64 giant blobs
+        if (up.value.length > 50 && up.value.endsWith('=')) return; 
         
-        if ((p0 === uid || p0.includes('@')) && p1 !== twoFactor && !detectedEmails.includes(p1) && p1 !== emailPassword && !p1.includes('facebook.com')) {
-          password = p1;
-        } else if (parts.length >= 3 && !password) {
-           const p2 = parts[2];
-           if (p2 !== twoFactor && !detectedEmails.includes(p2) && p2 !== emailPassword && !p2.includes('@') && !p2.includes('facebook.com') && p2.length > 4) {
-             password = p2;
-           }
+        if (!password) {
+           password = up.value;
+        } else if (!emailPassword) {
+           emailPassword = up.value;
         }
       }
+    });
+
+    // If we only found ONE password, assume it is used for both FB and Email (common in farm setups)
+    if (password && !emailPassword) {
+      emailPassword = password;
+    } else if (!password && emailPassword) {
+      password = emailPassword;
+    }
+
+    // Auto-name
+    if (!name && email) {
+      name = email.split('@')[0];
+    } else if (!name && uid) {
+      name = `Acc ${uid.slice(-4)}`;
+    }
+
+    // URL Normalization & Auto-Generation
+    if (!profileUrl && uid) {
+      profileUrl = `https://www.facebook.com/profile.php?id=${uid}`;
+    } else if (profileUrl && !profileUrl.startsWith('http')) {
+      profileUrl = `https://${profileUrl}`;
     }
 
     setFormData({
@@ -154,23 +247,23 @@ export const AccountEditorDrawer = ({
       email2: email2 || formData.email2,
       profileUrl: profileUrl || formData.profileUrl,
       cookie: cookie || formData.cookie,
+      rawText: input, // Save the actual raw string from textarea to persist!
       name: name || formData.name
     });
-    
   };
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-hidden font-prompt font-noto">
+    <div className="fixed inset-0 z-[150] overflow-hidden font-prompt font-noto">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right h-screen">
           <form onSubmit={onSubmit} className="h-full flex flex-col">
-            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+            <div className="px-8 pt-12 pb-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
               <div>
                 <h3 className="text-xl font-bold text-slate-800 uppercase tracking-tight leading-none">
                   {editingAccount ? 'แก้ไขข้อมูลบัญชี' : 'เพิ่มบัญชีใหม่'}
                 </h3>
-                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold opacity-60">Account Hierarchy & Controls</p>
+                <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-wider font-bold opacity-60">Account Hierarchy & Controls</p>
               </div>
               <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
                 <Plus size={24} className="rotate-45" />

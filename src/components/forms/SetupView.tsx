@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { 
-  Trash2, Plus, ExternalLink, MoreVertical, 
-  LayoutGrid, List, Settings, Shield, 
-  Key, Database, ChevronRight, Copy, 
-  CheckCircle2, AlertCircle 
+import {
+  Trash2, Plus, ExternalLink, MoreVertical,
+  LayoutGrid, List, Settings, Shield,
+  Key, Database, ChevronRight, Copy,
+  CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { FBAccount, Page, User } from '@/types';
 
@@ -79,7 +79,7 @@ export const SetupView = ({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => { }
   });
 
   const activePages = useMemo(() => pages.filter(p => !p.isDeleted), [pages]);
@@ -122,7 +122,8 @@ export const SetupView = ({
     category: 'รายการ',
     status: 'Active' as Page['status'],
     boxId: 1,
-    adminIds: [] as string[]
+    adminIds: [] as string[],
+    notes: ''
   });
 
   const [accFormData, setAccFormData] = useState<Omit<FBAccount, 'id' | 'createdAt'>>({
@@ -136,7 +137,9 @@ export const SetupView = ({
     emailPassword: '',
     email2: '',
     profileUrl: '',
-    cookie: ''
+    cookie: '',
+    rawText: '',
+    notes: ''
   });
 
   const pagesByBox = useMemo(() => {
@@ -207,6 +210,17 @@ export const SetupView = ({
       enforceSingleLiveAccount(accFormData.boxId, editingAccount?.id);
     }
 
+    // Capture rawText in LocalStorage using Facebook UID to bypass DB schema limits
+    if (accFormData.rawText && accFormData.uid) {
+      try {
+        const dict = JSON.parse(localStorage.getItem('cs_raw_texts') || '{}');
+        dict[accFormData.uid] = accFormData.rawText;
+        localStorage.setItem('cs_raw_texts', JSON.stringify(dict));
+      } catch (err) {
+        console.error('Failed to save raw text cache', err);
+      }
+    }
+
     if (editingAccount) {
       onUpdateAccount({ ...editingAccount, ...accFormData });
     } else {
@@ -228,7 +242,9 @@ export const SetupView = ({
       email2: '',
       profileUrl: '',
       cookie: '',
-      boxId: boxId || (activeBoxes[0] || 1)
+      rawText: '',
+      notes: '',
+      boxId: boxId ?? (activeBoxes[0] || 1)
     });
     setIsAccountEditorOpen(true);
   };
@@ -246,6 +262,8 @@ export const SetupView = ({
       email2: acc.email2 || '',
       profileUrl: acc.profileUrl || '',
       cookie: acc.cookie || '',
+      rawText: acc.rawText || '',
+      notes: acc.notes || '',
       boxId: acc.boxId
     });
     setIsAccountEditorOpen(true);
@@ -258,8 +276,9 @@ export const SetupView = ({
       url: '',
       category: 'รายการ',
       status: 'Active',
-      boxId: boxId || (activeBoxes[0] || 1),
-      adminIds: []
+      boxId: boxId ?? (activeBoxes[0] || 1),
+      adminIds: [],
+      notes: ''
     });
     setIsEditorOpen(true);
   };
@@ -272,7 +291,8 @@ export const SetupView = ({
       category: page.category,
       status: page.status,
       boxId: page.boxId,
-      adminIds: page.adminIds || []
+      adminIds: page.adminIds || [],
+      notes: page.notes || ''
     });
     setIsEditorOpen(true);
   };
@@ -413,7 +433,7 @@ export const SetupView = ({
         </div>
       </div>
 
-      <PageEditorDrawer 
+      <PageEditorDrawer
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
         editingPage={editingPage}
@@ -421,10 +441,10 @@ export const SetupView = ({
         setFormData={setPageFormData}
         onSubmit={handleSubmit}
         boxes={boxes}
-        adminAccounts={accounts.filter(acc => acc.status === 'Admin')}
+        adminAccounts={accounts.filter(acc => acc.boxId === 0 || acc.status === 'Admin')}
       />
 
-      <AccountEditorDrawer 
+      <AccountEditorDrawer
         isOpen={isAccountEditorOpen}
         onClose={() => setIsAccountEditorOpen(false)}
         editingAccount={editingAccount}
@@ -434,7 +454,7 @@ export const SetupView = ({
         boxes={boxes}
       />
 
-      <BoxConfigModal 
+      <BoxConfigModal
         isOpen={isConfigOpen}
         onClose={() => setIsConfigOpen(false)}
         boxes={boxes}
@@ -443,7 +463,7 @@ export const SetupView = ({
         onShowAll={() => setActiveBoxes(boxes)}
       />
 
-      <TrashDrawer 
+      <TrashDrawer
         isOpen={isTrashOpen}
         onClose={() => setIsTrashOpen(false)}
         deletedPages={deletedPages}
@@ -479,7 +499,7 @@ export const SetupView = ({
         }}
       />
 
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={confirmConfig.isOpen}
         onClose={() => setConfirmConfig({ ...confirmConfig, isOpen: false })}
         onConfirm={confirmConfig.onConfirm}

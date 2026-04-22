@@ -328,6 +328,7 @@ export default function CreatorApp() {
               selectedYear={selectedYear}
               setSelectedYear={setSelectedYear}
               onNavigateToTask={() => setCurrentTab('daily-task')}
+              onNavigateToSetup={() => setCurrentTab('setup')}
               currentUser={currentUser}
               onSyncPage={handleSyncPage}
               policy={policyConfig}

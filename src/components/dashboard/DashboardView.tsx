@@ -35,6 +35,7 @@ interface Props {
   users?: User[];
   viewAsUserId?: string | null;
   setViewAsUserId?: (id: string | null) => void;
+  onNavigateToSetup?: () => void;
 }
 
 
@@ -45,7 +46,8 @@ export const DashboardView = ({
   selectedMonth, setSelectedMonth, selectedYear, setSelectedYear,
   onNavigateToTask, currentUser, onSyncPage,
   allPages, allLogs, policy,
-  isSuperViewer, users, viewAsUserId, setViewAsUserId
+  isSuperViewer, users, viewAsUserId, setViewAsUserId,
+  onNavigateToSetup
 }: Props) => {
   const payload = useMemo(() => {
     return aggregateDashboardMetrics(allPages, allLogs, selectedYear, selectedMonth, selectedPage, policy);
@@ -183,7 +185,7 @@ export const DashboardView = ({
             }}
           />
 
-          <ActivePagesSection pages={pages} selectedPage={selectedPage} />
+          <ActivePagesSection pages={pages} selectedPage={selectedPage} onNavigateToSetup={onNavigateToSetup} />
         </>
       )}
     </div>

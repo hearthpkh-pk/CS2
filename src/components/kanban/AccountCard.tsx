@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Trash2, Shield, Key, Database, Copy, Mail, Lock, Link as LinkIcon } from 'lucide-react';
+import { Trash2, Shield, Key, Database, Copy, Mail, Lock, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { FBAccount, User } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -92,16 +92,28 @@ export const AccountCard = ({
           return (
             <>
               {account.profileUrl && (
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    navigator.clipboard.writeText(account.profileUrl!);
-                  }}
-                  className={btnClass("bg-blue-50 text-blue-400 border-blue-100", "hover:text-blue-600 hover:bg-white")}
-                  title="Copy Profile Link"
-                >
-                  <LinkIcon size={12} />
-                </button>
+                <>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      window.open(account.profileUrl!, '_blank', 'noopener,noreferrer');
+                    }}
+                    className={btnClass("bg-indigo-50 text-indigo-500 border-indigo-100", "hover:text-white hover:bg-indigo-500")}
+                    title="Open Profile Link"
+                  >
+                    <ExternalLink size={12} strokeWidth={2.5} />
+                  </button>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      navigator.clipboard.writeText(account.profileUrl!);
+                    }}
+                    className={btnClass("bg-blue-50 text-blue-400 border-blue-100", "hover:text-blue-600 hover:bg-white")}
+                    title="Copy Profile Link"
+                  >
+                    <LinkIcon size={12} />
+                  </button>
+                </>
               )}
               {isAllowed && account.password && (
                 <button 

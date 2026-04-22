@@ -48,13 +48,13 @@ export const PageEditorDrawer = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-hidden font-prompt text-slate-700">
+    <div className="fixed inset-0 z-[150] overflow-hidden font-prompt text-slate-700">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right h-screen">
           <div className="h-full flex flex-col">
             <form onSubmit={onSubmit} className="h-full flex flex-col">
-              <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className="px-8 pt-12 pb-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
                 <div>
                   <h3 className="text-xl font-bold text-primary-navy font-noto uppercase tracking-tight leading-none">
                     {editingPage ? 'แก้ไขข้อมูลเพจ' : 'เพิ่มเพจใหม่'}
@@ -201,9 +201,25 @@ export const PageEditorDrawer = ({
                   ))}
                 </div>
               </div>
-              </div>
 
-              <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">
+              {/* Group 4: Notes / Comments */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Notes / Comments</label>
+                </div>
+                <div className="relative pt-2">
+                  <textarea 
+                    value={formData.notes || ''}
+                    onChange={e => setFormData({...formData, notes: e.target.value})}
+                    placeholder="บันทึกย่อ หรือ หมายเหตุสำหรับเพจนี้..."
+                    rows={3}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/5 focus:border-[var(--primary-theme)] transition-all text-sm font-noto resize-none h-24"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 border-t border-slate-100 bg-white sticky bottom-0 z-10">
                 <button
                   type="submit"
                   className="w-full bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-slate-200/50 transition-all active:scale-[0.98] font-noto"

@@ -52,6 +52,7 @@ export const dataService = {
       teamId: p.team_id,
       facebookUrl: p.facebook_url,
       facebookData: p.facebook_data,
+      notes: p.notes,
       isDeleted: p.is_deleted,
       createdAt: p.created_at,
     }));
@@ -70,6 +71,7 @@ export const dataService = {
       owner_id: page.ownerId || user.id,
       facebook_url: page.facebookUrl,
       facebook_data: page.facebookData,
+      notes: page.notes,
       is_deleted: page.isDeleted || false,
     };
 
@@ -202,7 +204,7 @@ export const dataService = {
   // --- Accounts (Supabase Migration Phase 2) ---
   getAccounts: async (user?: User): Promise<FBAccount[]> => {
     let query = supabase.from('facebook_accounts').select('*');
-    
+
     // หากมีการส่ง user เข้ามาให้กรองข้อมูล (Role Filtering)
     if (user) {
       if (user.role === Role.Manager) {
@@ -236,6 +238,8 @@ export const dataService = {
       email2: a.email2,
       profileUrl: a.profile_url,
       cookie: a.cookie,
+      rawText: a.raw_text,
+      notes: a.notes,
       isDeleted: a.is_deleted,
       createdAt: a.created_at,
       deletedAt: a.deleted_at
@@ -261,6 +265,8 @@ export const dataService = {
       email2: account.email2,
       profile_url: account.profileUrl,
       cookie: account.cookie,
+      raw_text: account.rawText,
+      notes: account.notes,
       is_deleted: account.isDeleted || false,
     };
 

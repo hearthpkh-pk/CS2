@@ -37,6 +37,12 @@ export const SmartImportSection = ({
           setImportText(e.target.value);
           onParse(e.target.value);
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+          }
+        }}
         placeholder="วางข้อมูลทั้งชุดที่นี่ (รองรับ UID|Pass|2FA|Mail1|Pass1|Mail2...)"
         className="w-full bg-white border border-[var(--primary-theme-border)] rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/10 focus:border-[var(--primary-theme)]/50 transition-all text-xs font-inter resize-none h-20 placeholder:text-slate-300"
       />

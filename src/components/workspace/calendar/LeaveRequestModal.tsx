@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { MoreHorizontal } from 'lucide-react';
 
@@ -21,9 +22,12 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
   setLeaveReason,
   onConfirm,
 }) => {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  return (
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div 
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
@@ -70,6 +74,7 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
