@@ -10,9 +10,10 @@ import { TaskEditorDrawer } from './calendar/TaskEditorDrawer';
 
 interface CalendarViewProps {
   currentUser: User;
+  policy?: any;
 }
 
-export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser }) => {
+export const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, policy }) => {
   const {
     // Calendar navigation
     viewDate,

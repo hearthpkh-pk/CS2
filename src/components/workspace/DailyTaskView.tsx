@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Send,
   CheckCircle2,
@@ -10,20 +11,24 @@ import {
   Info,
   ShieldCheck,
   Plus,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { DailyLog, Page, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
 import { dataService } from '@/services/dataService';
+import { useTodayLogs } from './DailyTaskView/hooks/useTodayLogs';
+import { VirtualTable } from './DailyTaskView/VirtualTable';
 import { format } from 'date-fns';
 
 interface DailyTaskViewProps {
   currentUser: User;
   pages: Page[];
+  policy?: any;
 }
 
-export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages }) => {
+export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages, policy: propPolicy }) => {
   const { getPolicyForUser, isLoading: isConfigLoading } = useCompanyConfig();
 
   // 🎯 Resolve dynamic policy for this user
@@ -38,59 +43,65 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   const [currentInputs, setCurrentInputs] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [duplicateAlert, setDuplicateAlert] = useState(false);
+
+  // Refs for synchronous checks without triggering re-renders
+  const submissionDataRef = useRef(submissionData);
+  const currentInputsRef = useRef(currentInputs);
 
   useEffect(() => {
-    if (isConfigLoading) return;
+    submissionDataRef.current = submissionData;
+  }, [submissionData]);
 
-    const loadTodayData = async () => {
-      try {
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-        const myTodayLogs = await dataService.getTodayLogsForUser(currentUser.id, todayStr);
+  useEffect(() => {
+    currentInputsRef.current = currentInputs;
+  }, [currentInputs]);
 
-        const initial: Record<string, string[]> = {};
-        displayPages.forEach(p => {
-          const existingLog = myTodayLogs.find(l => l.pageId === p.id);
-          initial[p.id] = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
-        });
-        
-        setSubmissionData(initial);
-      } catch (error) {
-        console.error("Failed to fetch today's logs:", error);
-        const initial: Record<string, string[]> = {};
-        displayPages.forEach(p => initial[p.id] = []);
-        setSubmissionData(initial);
-      }
-    };
+  const { logs: myTodayLogs, isLoading: isLogsLoading, submitLogsMutation } = useTodayLogs(currentUser.id);
 
-    loadTodayData();
-  }, [displayPages, isConfigLoading, currentUser.id]);
+  // Sync logs to submissionData when logs load
+  useEffect(() => {
+    if (isConfigLoading || isLogsLoading) return;
 
-  const handleAddLink = (pageId: string) => {
-    const val = (currentInputs[pageId] || '').trim();
+    const initial: Record<string, string[]> = {};
+    displayPages.forEach(p => {
+      const existingLog = myTodayLogs.find(l => l.pageId === p.id);
+      initial[p.id] = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
+    });
+    setSubmissionData(initial);
+  }, [displayPages, isConfigLoading, isLogsLoading, myTodayLogs]);
+
+  const handleAddLink = useCallback((pageId: string) => {
+    const val = (currentInputsRef.current[pageId] || '').trim();
     if (!val) return;
 
-    const isDuplicate = Object.values(submissionData).some(pageLinks => 
+    const isDuplicate = Object.values(submissionDataRef.current).some(pageLinks => 
       pageLinks.some(link => link.trim().toLowerCase() === val.toLowerCase())
     );
 
     if (isDuplicate) {
-      alert("⚠️ ข้อผิดพลาด: ลิงก์นี้ถูกกรอกไปแล้วในตารางของคุณ โปรดใช้ลิงก์อื่น");
+      setDuplicateAlert(true);
       return;
     }
 
-    setSubmissionData(prev => {
-      const existing = (prev[pageId] || []).filter(l => l.trim() !== '');
-      return { ...prev, [pageId]: [...existing, val] };
+    setSubmissionData(prevData => {
+      const existing = (prevData[pageId] || []).filter(l => l.trim() !== '');
+      return { ...prevData, [pageId]: [...existing, val] };
     });
-    setCurrentInputs(prev => ({ ...prev, [pageId]: '' }));
-  };
 
-  const handleRemoveLink = (pageId: string, index: number) => {
+    setCurrentInputs(prevInputs => ({ ...prevInputs, [pageId]: '' }));
+  }, []);
+
+  const handleInputChange = useCallback((pageId: string, value: string) => {
+    setCurrentInputs(prev => ({ ...prev, [pageId]: value }));
+  }, []);
+
+  const handleRemoveLink = useCallback((pageId: string, index: number) => {
     setSubmissionData(prev => {
       const existing = (prev[pageId] || []).filter(l => l.trim() !== '');
       return { ...prev, [pageId]: existing.filter((_, i) => i !== index) };
     });
-  };
+  }, []);
 
   const totalLinksFilled = Object.values(submissionData).flat().filter(l => l.trim() !== '').length;
   const totalRequired = displayPages.length * policy.clipsPerPageInLog;
@@ -116,6 +127,8 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
       });
 
       await dataService.saveLogs(logs);
+      await submitLogsMutation.mutateAsync({ userId: currentUser.id, date: format(new Date(), 'yyyy-MM-dd'), logs });
+      
       setIsSuccess(true);
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
@@ -126,11 +139,11 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
     }
   };
 
-  if (isConfigLoading) {
+  if (isConfigLoading || isLogsLoading) {
     return (
       <div className="py-20 text-center opacity-50">
         <div className="w-8 h-8 border-2 border-[var(--primary-theme)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-[10px] font-bold uppercase tracking-widest">Loading Policy Matrix...</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest">Loading Data...</p>
       </div>
     );
   }
@@ -192,18 +205,18 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
           <table className="w-full text-left border-collapse min-w-[700px] relative">
             <thead>
               <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50/80">
-                <th className="p-4 pl-6 font-noto whitespace-nowrap sticky left-0 z-20 bg-slate-50/95 backdrop-blur-md shadow-[2px_0_10px_rgba(0,0,0,0.03)] border-r border-slate-100/50 w-[200px]">Page Name</th>
-                <th className="p-4 font-noto whitespace-nowrap text-center">Box ID</th>
-                <th className="p-4 font-noto whitespace-nowrap text-center">Status</th>
+                <th className="p-4 pl-6 font-noto whitespace-nowrap sticky left-0 z-20 bg-slate-50/95 backdrop-blur-md shadow-[2px_0_10px_rgba(0,0,0,0.03)] border-r border-slate-100/50 w-[100px] text-center">Box ID</th>
+                <th className="p-4 font-noto whitespace-nowrap w-[200px]">Page Name</th>
+                <th className="p-4 font-noto whitespace-nowrap text-center w-[120px]">Status</th>
                 <th className="p-0 font-noto whitespace-nowrap align-middle">
                   <div className="flex items-center justify-between pl-6 pr-4 py-2 w-full h-full">
                     <span>Clips Submission (Target: {policy.clipsPerPageInLog})</span>
                     <button
                       onClick={handleSubmit}
-                      disabled={isSubmitting || totalLinksFilled < totalRequired}
+                      disabled={isSubmitting}
                       className={cn(
                         "h-7 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm shrink-0 border group",
-                        totalLinksFilled < totalRequired
+                        isSubmitting
                           ? "bg-slate-200/50 border-slate-200 text-slate-400 cursor-not-allowed"
                           : "bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white border-transparent shadow-md shadow-[var(--primary-theme)]/30"
                       )}
@@ -229,84 +242,18 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {displayPages.map((page, idx) => (
-                <tr key={page.id} className="group hover:bg-blue-50/30 transition-colors">
-                  <td className="p-4 pl-6 sticky left-0 z-10 bg-white group-hover:bg-blue-50/50 transition-colors shadow-[2px_0_10px_rgba(0,0,0,0.02)] border-r border-slate-50">
-                    <div className="flex items-center gap-4">
-                      <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-500 shadow-sm shrink-0">
-                        <Layout size={14} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 font-noto truncate max-w-[150px] xl:max-w-[180px]" title={page.name}>{page.name}</p>
-                        <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">Asset #{idx + 1}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 text-center align-middle whitespace-nowrap">
-                    <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase tracking-widest shadow-sm inline-block whitespace-nowrap min-w-[74px]">
-                      Box {page.boxId || '-'}
-                    </span>
-                  </td>
-                  <td className="p-4 align-middle whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      {(submissionData[page.id] || []).filter(l => l.trim() !== '').length >= policy.clipsPerPageInLog ? (
-                        <CheckCircle2 className="text-emerald-500" size={16} strokeWidth={2.5} />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-slate-200" />
-                      )}
-                      <p className="text-[10px] font-bold text-slate-400 whitespace-nowrap tabular-nums">
-                        {(submissionData[page.id] || []).filter(l => l.trim() !== '').length} / {policy.clipsPerPageInLog}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="p-4 pl-6 w-full max-w-[200px] md:max-w-[300px] xl:max-w-none">
-                    <div className="flex flex-nowrap gap-3 items-center w-full overflow-x-auto custom-scrollbar pb-3 pt-1">
-                      <div className="flex bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-4 ring-blue-50 focus-within:border-blue-300 transition-all shadow-sm w-[260px] xl:w-[320px] shrink-0">
-                        <div className="pl-3.5 flex items-center text-slate-400 border-r border-slate-200/60 pr-2.5 mr-1 bg-white">
-                          <LinkIcon size={14} strokeWidth={2.5} />
-                        </div>
-                        <input
-                          type="url"
-                          placeholder="Paste Clip URL & Tap Add ➔"
-                          value={currentInputs[page.id] || ''}
-                          onChange={(e) => setCurrentInputs(prev => ({ ...prev, [page.id]: e.target.value }))}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddLink(page.id);
-                            }
-                          }}
-                          className="flex-1 bg-transparent px-3 py-2.5 text-[11px] outline-none placeholder:text-slate-400 font-medium text-slate-800 min-w-0"
-                        />
-                        <button
-                          onClick={() => handleAddLink(page.id)}
-                          className="px-4 xl:px-5 text-[10px] font-bold text-white bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] transition-colors uppercase tracking-widest shrink-0"
-                        >
-                          Add
-                        </button>
-                      </div>
-
-                      {(submissionData[page.id] || []).filter(l => l.trim() !== '').map((link, i) => (
-                        <div key={i} className="flex items-center gap-1.5 bg-blue-50/50 border border-blue-100 rounded-lg pl-2.5 pr-1 py-1.5 shrink-0 group/pill shadow-sm hover:shadow-md transition-all" title={link}>
-                          <LinkIcon size={10} strokeWidth={3} className="text-blue-500 shrink-0" />
-                          <span className="text-[10px] text-blue-700 font-black tracking-wider uppercase">
-                            Clip {i + 1}
-                          </span>
-                          <button
-                            onClick={() => handleRemoveLink(page.id, i)}
-                            className="p-1 px-1.5 text-blue-400 hover:text-white hover:bg-rose-500 rounded-md transition-colors shrink-0 ml-0.5"
-                          >
-                            <Trash2 size={12} strokeWidth={2.5} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
           </table>
+        </div>
+        <div className="w-full relative min-w-[700px] overflow-x-auto custom-scrollbar">
+          <VirtualTable
+            pages={displayPages}
+            policy={policy}
+            submissionData={submissionData}
+            currentInputs={currentInputs}
+            onAddLink={handleAddLink}
+            onRemoveLink={handleRemoveLink}
+            onInputChange={handleInputChange}
+          />
         </div>
       </div>
 
@@ -319,6 +266,33 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
           <strong className="text-slate-700">Audit Condition:</strong> การส่งงานต้องครบเป้าหมายของกลุ่ม ({policy.requiredPagesPerDay} เพจ) ระบบจะบันทึกประวัติเพื่อประมวลผลการทำงานอัตโนมัติ
         </p>
       </div>
+
+      {/* Duplicate Link Alert Modal */}
+      {duplicateAlert && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center relative overflow-hidden">
+              <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <AlertTriangle size={40} strokeWidth={2.5} />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 font-noto mb-3 uppercase tracking-wider">พบลิงก์ซ้ำ!</h3>
+              <p className="text-sm text-slate-600 font-noto leading-relaxed">
+                การส่งลิงก์ซ้ำถือเป็นการ <strong className="text-red-500">ผิดกฎระเบียบบริษัท</strong><br/>
+                หากพบพฤติกรรมผิดปกติหรือจงใจฝ่าฝืน จะถูกตรวจสอบและลงโทษตามขั้นตอน
+              </p>
+            </div>
+            <div className="p-5 bg-slate-50 border-t border-slate-100 flex justify-center">
+              <button
+                onClick={() => setDuplicateAlert(false)}
+                className="w-full py-3 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-red-500/20 font-noto uppercase tracking-widest active:scale-[0.98]"
+              >
+                รับทราบ และจะไม่ทำซ้ำ
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

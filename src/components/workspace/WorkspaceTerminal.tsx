@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { User, Page, Role } from '@/types';
-import { CalendarIcon, LayoutDashboard, VideoIcon, BookOpen } from 'lucide-react';
+import { CalendarIcon, LayoutDashboard, VideoIcon, BookOpen, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { th } from 'date-fns/locale';
-
-import { DailyTaskView } from './DailyTaskView';
-import { CalendarView } from './CalendarView';
+import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
+import LoadingSpinner from './common/LoadingSpinner';
+// Lazy‑load child views
+const DailyTaskView = lazy(() => import('./DailyTaskView').then(m => ({ default: m.DailyTaskView })));
+const CalendarView = lazy(() => import('./CalendarView').then(m => ({ default: m.CalendarView })));
 import { LeaveRequestModal } from './calendar/LeaveRequestModal';
 import { useCalendarLogic } from '@/hooks/useCalendarLogic';
-import { Plus } from 'lucide-react';
 
 interface WorkspaceTerminalProps {
   currentUser: User;
@@ -27,6 +26,10 @@ export const WorkspaceTerminal: React.FC<WorkspaceTerminalProps> = ({ currentUse
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [leaveReason, setLeaveReason] = useState('');
   
+  // Load company config once
+  const { config, isLoading: configLoading } = useCompanyConfig();
+  const policy = config?.performancePolicy;
+
   // Use logic just for quick record
   const { recordLeave } = useCalendarLogic(currentUser);
 
@@ -35,7 +38,7 @@ export const WorkspaceTerminal: React.FC<WorkspaceTerminalProps> = ({ currentUse
     setShowLeaveModal(false);
     setLeaveReason('');
   };
-
+  if (configLoading) return <LoadingSpinner />;
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 flex flex-col gap-6 animate-in fade-in duration-700">
 
@@ -98,16 +101,18 @@ export const WorkspaceTerminal: React.FC<WorkspaceTerminalProps> = ({ currentUse
 
       {/* 🔄 TAB CONTENT AREA */}
       <div className="relative w-full h-full">
-        {activeTab === 'daily' ? (
-          <div className="animate-in slide-in-from-bottom-4 fade-in duration-500">
-            {/* 🛡️ Inject specific prop subset if needed, else pass through */}
-            <DailyTaskView currentUser={currentUser} pages={pages} />
-          </div>
-        ) : (
-          <div className="animate-in slide-in-from-bottom-4 fade-in duration-500">
-            <CalendarView currentUser={currentUser} />
-          </div>
-        )}
+        <Suspense fallback={<LoadingSpinner />}>
+          {activeTab === 'daily' ? (
+            <div className="animate-in slide-in-from-bottom-4 fade-in duration-500">
+              {/* 🛡️ Inject specific prop subset if needed, else pass through */}
+              <DailyTaskView currentUser={currentUser} pages={pages} policy={policy} />
+            </div>
+          ) : (
+            <div className="animate-in slide-in-from-bottom-4 fade-in duration-500">
+              <CalendarView currentUser={currentUser} policy={policy} />
+            </div>
+          )}
+        </Suspense>
       </div>
       
       {/* QUICK LEAVE MODAL */}

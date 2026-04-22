@@ -189,11 +189,11 @@ export const dataService = {
     // ใช้ Upsert: ถ้ารหัสคู่ page_id + date ซ้ำกัน จะทำการดึงข้อมูลใหม่ไปเขียนทับ 
     const { error } = await supabase
       .from('daily_logs')
-      .upsert(upsertPayload, { onConflict: 'page_id, date' });
+      .upsert(upsertPayload, { onConflict: 'page_id,date' });
 
     if (error) {
-      console.error('Error upserting logs:', error);
-      return;
+      console.error('Error upserting logs:', error.message, error.details, error.hint);
+      throw error; // Throw the error so the UI knows it failed!
     }
 
     // 🏗️ อัปเดต Cache ทันทีหลัง upsert สำเร็จ — ไม่ต้อง re-fetch จาก Supabase

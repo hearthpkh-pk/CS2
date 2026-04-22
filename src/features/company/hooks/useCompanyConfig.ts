@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { configService } from '@/services/configService';
 import { Announcement, CompanyConfig, GroupDefinition, Role, User, PolicyConfiguration, Brand, CompanyRule } from '@/types';
 
@@ -26,27 +27,20 @@ const FALLBACK_CONFIG: CompanyConfig = {
 };
 
 export const useCompanyConfig = () => {
-  const [config, setConfig] = useState<CompanyConfig>(FALLBACK_CONFIG);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const refreshConfig = useCallback(async () => {
-    setIsLoading(true);
-    try {
+  const { data: config = FALLBACK_CONFIG, isLoading, refetch: refreshConfig } = useQuery({
+    queryKey: ['companyConfig'],
+    queryFn: async () => {
       const data = await configService.getConfig();
-      if (data) {
-        setConfig(data);
-      }
-    } catch (e) {
-      console.error('Failed to load config', e);
-      // FALLBACK_CONFIG ถูก set ไว้ใน useState แล้ว ไม่ต้องทำอะไรเพิ่ม
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      return data || FALLBACK_CONFIG;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
-  useEffect(() => {
-    refreshConfig();
-  }, [refreshConfig]);
+  const setConfig = useCallback((newData: CompanyConfig) => {
+    queryClient.setQueryData(['companyConfig'], newData);
+  }, [queryClient]);
 
   // --- Group Management ---
   const saveGroup = useCallback(async (group: GroupDefinition) => {

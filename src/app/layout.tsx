@@ -3,6 +3,7 @@ import { Outfit, Noto_Sans_Thai, Kanit, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { GlobalAnnouncement } from "@/features/company/components/GlobalAnnouncement";
+import { Providers } from "./Providers";
 
 const outfit = Outfit({ 
   subsets: ["latin"], 
@@ -38,10 +39,12 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${outfit.variable} ${notoThai.variable} ${kanit.variable} ${inter.variable}`}>
       <body className="font-noto antialiased bg-[#fefefe] text-[#1e293b]">
-        <AuthProvider>
-          <GlobalAnnouncement />
-          {children}
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <GlobalAnnouncement />
+            {children}
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );
