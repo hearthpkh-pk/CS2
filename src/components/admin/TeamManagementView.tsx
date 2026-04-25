@@ -154,10 +154,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
             <PersonnelTable 
               users={filteredUsers} 
               onEdit={setEditingUser}
-              onSalaryAdjust={(user) => {
-                setEditingUser(user);
-                // logic to open salary adjustment if needed
-              }}
+              teams={teams}
             />
           </div>
         )}
