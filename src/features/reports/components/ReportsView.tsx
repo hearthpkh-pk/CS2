@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { BarChart2 } from 'lucide-react';
 import { DailyReport } from '@/types';
 import { reportService } from '../services/reportService';
+import { personnelService } from '@/services/personnelService';
 import { ExecutiveStats } from './PerformanceAudit/ExecutiveStats';
 import { LeaveAuditReport } from './LeaveAuditReport';
 import { ReportsHeader } from './Common/ReportsHeader';
@@ -17,7 +18,7 @@ interface ReportsViewProps {
 
 export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
   // --- 1. Global State Management ---
-  const [reports] = useState<DailyReport[]>(reportService.getDailyStatus(currentUser));
+  const [reports, setReports] = useState<DailyReport[]>(reportService.getDailyStatus(currentUser));
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [viewMode, setViewMode] = useState<'report' | 'stats' | 'leaves'>('report');
   
@@ -28,6 +29,10 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(
     new Set(reports.filter(r => r.isPinned).map(r => r.id))
   );
+
+  // Reorder Mode
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   // --- 2. Derived Data & Logic ---
   const uniqueDepartments = Array.from(new Set(reports.map(r => r.department)));
@@ -52,8 +57,11 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
     }
   };
 
-  // Sorting Logic (Pinned first)
+  // Sorting Logic: sortOrder first (manual), then pinned, then alphabetical
   const sortedReports = [...reports].sort((a, b) => {
+    const aOrder = a.sortOrder ?? 999;
+    const bOrder = b.sortOrder ?? 999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
     const aPinned = pinnedIds.has(a.id);
     const bPinned = pinnedIds.has(b.id);
     if (aPinned && !bPinned) return -1;
@@ -71,6 +79,35 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
     return true;
   });
 
+  // --- 3. Reorder Handlers ---
+  const handleReorder = useCallback((reorderedReports: DailyReport[]) => {
+    // อัปเดต sortOrder ในแต่ละรายการ
+    const updated = reports.map(report => {
+      const newIndex = reorderedReports.findIndex(r => r.id === report.id);
+      if (newIndex !== -1) {
+        return { ...report, sortOrder: newIndex + 1 };
+      }
+      return report;
+    });
+    setReports(updated);
+  }, [reports]);
+
+  const handleSaveOrder = useCallback(async () => {
+    setIsSavingOrder(true);
+    try {
+      const orderedItems = reports
+        .filter(r => r.sortOrder !== undefined)
+        .map(r => ({ id: r.userId, sortOrder: r.sortOrder! }));
+
+      await personnelService.updateSortOrder(orderedItems);
+      setIsReorderMode(false);
+    } catch (error) {
+      console.error('Error saving sort order:', error);
+    } finally {
+      setIsSavingOrder(false);
+    }
+  }, [reports]);
+
   return (
     <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10 overflow-x-hidden text-slate-900 font-prompt">
       
@@ -80,6 +117,10 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
         onSearchChange={setSearchTerm}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
+        isReorderMode={isReorderMode}
+        onToggleReorder={(filterMode === 'all' && !searchTerm) ? () => setIsReorderMode(!isReorderMode) : undefined}
+        onSaveOrder={handleSaveOrder}
+        isSavingOrder={isSavingOrder}
       />
 
       {/* 🚀 COMPONENT 2: MAIN VIEW ORCHESTRATION */}
@@ -117,6 +158,8 @@ export const ReportsView = ({ currentUser, policy }: ReportsViewProps) => {
           onSelectReport={setSelectedReport}
           pinnedIds={pinnedIds}
           onTogglePin={togglePin}
+          isReorderMode={isReorderMode}
+          onReorder={handleReorder}
         />
       ) : viewMode === 'stats' ? (
         <ExecutiveStats reports={reports} />

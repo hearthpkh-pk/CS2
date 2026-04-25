@@ -70,6 +70,7 @@ export interface User {
   permissions?: string[]; // Array of module keys e.g. ['dashboard', 'setup', 'hq-dashboard']
   isActive?: boolean;
   avatarUrl?: string;
+  sortOrder?: number; // ลำดับการแสดงผลแบบ Manual (ยิ่งน้อยยิ่งอยู่บน)
 }
 
 export interface FacebookPageMeta {
@@ -244,6 +245,7 @@ export interface DailyReport {
   yearlyActivePages: number[];
   yearlyPosts: number[];
   avatarUrl?: string;
+  sortOrder?: number; // ลำดับการแสดงผลแบบ Manual
 }
 
 export interface FinancialMetric {

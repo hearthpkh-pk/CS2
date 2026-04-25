@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 export const personnelService = {
   getAvailableUsers: async (viewerRole?: Role): Promise<User[]> => {
-    const { data: profiles, error } = await supabase.from('profiles').select('*');
+    const { data: profiles, error } = await supabase.from('profiles').select('*').order('sort_order', { ascending: true, nullsFirst: false });
     if (error) {
       console.error('Error fetching users:', error);
       return [];
@@ -29,7 +29,11 @@ export const personnelService = {
       probationDate: p.clearance_date,
       isActive: p.is_active,
       avatarUrl: p.avatar_url,
+      sortOrder: p.sort_order ?? 999,
     }));
+
+    // 🛡️ เรียงตาม sortOrder เสมอ (ยิ่งน้อยยิ่งอยู่บน)
+    users.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
 
     if (!viewerRole || viewerRole === Role.SuperAdmin) return users;
     
@@ -91,6 +95,7 @@ export const personnelService = {
     if (user.bankAccount !== undefined) extendedFields.bank_account = user.bankAccount;
     if (user.startDate !== undefined) extendedFields.enlistment_date = user.startDate;
     if (user.probationDate !== undefined) extendedFields.clearance_date = user.probationDate;
+    if (user.sortOrder   !== undefined) extendedFields.sort_order    = user.sortOrder;
 
     const payload = { ...basePayload, ...extendedFields };
 
@@ -178,5 +183,32 @@ export const personnelService = {
        console.error('Error recording salary adjustment:', error);
        throw error;
     }
+  },
+
+  /**
+   * 🔢 อัปเดตลำดับการแสดงผลแบบ Batch
+   * รับ Array ของ { id, sortOrder } แล้วอัปเดตทีละรายการ
+   * ใช้สำหรับ Drag & Drop reorder ในหน้า Reports/Dashboard
+   */
+  updateSortOrder: async (orderedItems: { id: string; sortOrder: number }[]): Promise<void> => {
+    // ใช้ Promise.all เพื่อส่งคำสั่งอัปเดตพร้อมกัน (Parallel)
+    const updates = orderedItems.map(item =>
+      supabase.from('profiles').update({ sort_order: item.sortOrder }).eq('id', item.id)
+    );
+
+    const results = await Promise.all(updates);
+    const failed = results.filter(r => r.error);
+    
+    if (failed.length > 0) {
+      console.error(`❌ Failed to update sort order for ${failed.length} items:`, failed.map(f => f.error));
+      // Retry with session refresh
+      await supabase.auth.refreshSession();
+      const retries = orderedItems.map(item =>
+        supabase.from('profiles').update({ sort_order: item.sortOrder }).eq('id', item.id)
+      );
+      await Promise.all(retries);
+    }
+
+    console.log(`✅ Sort order updated for ${orderedItems.length} staff members`);
   }
 };

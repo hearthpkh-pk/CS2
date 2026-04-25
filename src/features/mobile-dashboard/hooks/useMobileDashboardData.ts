@@ -43,7 +43,9 @@ export const useMobileDashboardData = (
 
   // Hybrid Data (Merged Shared Metrics + Daily Local State)
   const staffData = useMemo(() => {
-    const activeStaff = allUsers.filter(u => u.role !== Role.SuperAdmin && u.isActive !== false);
+    const activeStaff = [...allUsers]
+      .filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin && u.isActive !== false)
+      .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
 
     return activeStaff.map(user => {
       // Get shared data representation

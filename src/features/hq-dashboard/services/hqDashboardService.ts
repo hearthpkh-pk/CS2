@@ -10,6 +10,7 @@ export interface LeaderboardEntry {
   projectedBonus?: number;
   penaltyRisk?: number;
   avatarUrl?: string;
+  sortOrder?: number;
 }
 
 export interface RiskRadarEntry {
@@ -86,7 +87,7 @@ export const hqDashboardService = {
       scopedAccounts = allAccounts.filter(a => a.ownerId === currentUser.id);
     }
 
-    const staffInScope = scopedUsers.filter(u => u.role !== Role.SuperAdmin);
+    const staffInScope = scopedUsers.filter(u => u.role !== Role.SuperAdmin && u.role !== Role.Admin);
     const monthPrefix = `${targetYear}-${targetMonth}`;
     const currentMonthLogs = allLogs.filter(log => log.date.startsWith(monthPrefix));
 
@@ -103,6 +104,7 @@ export const hqDashboardService = {
         viewsGrowth: 0,
         pagesCount: myPages.length,
         avatarUrl: staff.avatarUrl,
+        sortOrder: staff.sortOrder,
       };
     });
 

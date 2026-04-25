@@ -4,7 +4,10 @@ import {
   Plus, 
   Map, 
   ShieldCheck, 
-  Database
+  Database,
+  Settings,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Role, User } from '@/types';
@@ -18,6 +21,7 @@ import PersonnelDrawer from './team/PersonnelDrawer';
 
 // Logic & Data
 import { useTeamManagement } from './team/useTeamManagement';
+import { personnelService } from '@/services/personnelService';
 
 interface TeamManagementProps {
   users?: User[];
@@ -31,6 +35,10 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
   currentUser
 }) => {
   const [activeTab, setActiveTab] = useState<'directory' | 'teams' | 'access'>('directory');
+  
+  // Reorder State
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   
   const {
     users,
@@ -60,6 +68,39 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
     { id: 'teams', label: 'Unit Topology', icon: Map },
     { id: 'access', label: 'Access Control', icon: ShieldCheck },
   ] as const;
+
+  // Manual Reorder Logic
+  const handleReorder = (reorderedUsers: User[]) => {
+    // อัปเดต sortOrder ในแต่ละรายการแล้วบันทึกลง state (ผ่าน setExternalUsers หรืออัปเดตเองถ้าจัดการ local state)
+    // สำหรับ useTeamManagement hook ถ้าเราให้ setExternalUsers ไป มันจะจัดการ external state ให้ด้วยถ้ามี
+    const updated = users.map(u => {
+      const newIndex = reorderedUsers.findIndex(r => r.id === u.id);
+      if (newIndex !== -1) {
+        return { ...u, sortOrder: newIndex + 1 };
+      }
+      return u;
+    });
+    if (setExternalUsers) {
+      setExternalUsers(updated);
+    }
+    // Note: To see changes immediately, the PersonnelTable already updates based on sortedUsers.
+  };
+
+  const handleSaveOrder = async () => {
+    setIsSavingOrder(true);
+    try {
+      const orderedItems = filteredUsers
+        .filter(u => u.sortOrder !== undefined)
+        .map(u => ({ id: u.id, sortOrder: u.sortOrder! }));
+
+      await personnelService.updateSortOrder(orderedItems);
+      setIsReorderMode(false);
+    } catch (error) {
+      console.error('Error saving sort order:', error);
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 px-4 md:px-8 pb-10">
@@ -138,6 +179,32 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
                 />
               </div>
               <div className="flex items-center gap-3">
+                {isReorderMode && (
+                  <button
+                    onClick={handleSaveOrder}
+                    disabled={isSavingOrder}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm transition-all"
+                  >
+                    {isSavingOrder ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                    Save Order
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setIsReorderMode(!isReorderMode)}
+                  disabled={searchQuery !== '' || roleFilter !== 'All'}
+                  className={cn(
+                    "p-2.5 rounded-2xl border transition-all shadow-sm",
+                    isReorderMode 
+                      ? "bg-slate-100 border-slate-200 text-slate-600" 
+                      : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50",
+                    (searchQuery !== '' || roleFilter !== 'All') && "opacity-50 cursor-not-allowed"
+                  )}
+                  title={searchQuery !== '' || roleFilter !== 'All' ? "กรุณาเคลียร์การค้นหาและการกรองก่อนจัดลำดับ" : "Manual Staff Sorting"}
+                >
+                  <Settings size={18} />
+                </button>
+
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value as any)}
@@ -155,6 +222,8 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
               users={filteredUsers} 
               onEdit={setEditingUser}
               teams={teams}
+              isReorderMode={isReorderMode}
+              onReorder={handleReorder}
             />
           </div>
         )}

@@ -53,8 +53,7 @@ export const PerformanceMatrix: React.FC<PerformanceMatrixProps> = ({
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-700 font-prompt leading-none mb-1">{staff.name}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{staff.teamId}</p>
+                          <p className="text-sm font-medium text-slate-700 font-prompt leading-none">{staff.name}</p>
                         </div>
                       </div>
                     </td>

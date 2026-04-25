@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Users, Activity, Share2, Target, Clock, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Activity, Share2, Target, Clock, ChevronRight, GripVertical } from 'lucide-react';
 import { DailyReport } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,8 @@ interface OperationalMatrixProps {
   onSelectReport: (report: DailyReport) => void;
   pinnedIds: Set<string>;
   onTogglePin: (e: React.MouseEvent, id: string) => void;
+  isReorderMode?: boolean;
+  onReorder?: (reorderedReports: DailyReport[]) => void;
 }
 
 export const OperationalMatrix: React.FC<OperationalMatrixProps> = ({
@@ -32,8 +34,50 @@ export const OperationalMatrix: React.FC<OperationalMatrixProps> = ({
   uniqueTags,
   onSelectReport,
   pinnedIds,
-  onTogglePin
+  onTogglePin,
+  isReorderMode = false,
+  onReorder
 }) => {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  // --- Drag & Drop Handlers ---
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (!isReorderMode) return;
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Firefox requires some data to be set
+    e.dataTransfer.setData('text/plain', index.toString());
+    
+    // Create a ghost image or just let browser handle it
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = '0.4';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedIndex(null);
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = '1';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (!isReorderMode || draggedIndex === null || draggedIndex === index) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    if (!isReorderMode || draggedIndex === null || draggedIndex === targetIndex || !onReorder) return;
+    e.preventDefault();
+
+    const newReports = [...filteredReports];
+    const draggedItem = newReports[draggedIndex];
+    newReports.splice(draggedIndex, 1);
+    newReports.splice(targetIndex, 0, draggedItem);
+
+    onReorder(newReports);
+    setDraggedIndex(null);
+  };
+
   return (
     <div className="animate-in fade-in duration-700">
       {/* Precision KPI Summary Grid - HQ Control Center Style */}
@@ -102,12 +146,20 @@ export const OperationalMatrix: React.FC<OperationalMatrixProps> = ({
       )}
 
       {/* Main List */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
+      <div className={cn(
+        "bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden transition-all",
+        isReorderMode ? "ring-4 ring-blue-50 border-blue-200" : ""
+      )}>
         <div className="overflow-x-auto relative custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-[#f8fafc]">
               <tr className="border-b border-slate-100">
-                <th className="pl-4 md:pl-8 pr-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Operational Staff</th>
+                <th className="pl-4 md:pl-8 pr-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                  <div className="flex items-center gap-3">
+                    {isReorderMode && <div className="w-5" />}
+                    Operational Staff
+                  </div>
+                </th>
                 <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Running Campaigns</th>
                 <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Output Volume</th>
                 <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Sync Time</th>
@@ -115,26 +167,39 @@ export const OperationalMatrix: React.FC<OperationalMatrixProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredReports.map((report) => (
+              {filteredReports.map((report, index) => (
                 <tr 
                   key={report.id} 
+                  draggable={isReorderMode}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
                   className={cn(
                     "hover:bg-[#f1f5f9]/50 transition-all duration-300 group cursor-pointer",
-                    pinnedIds.has(report.id) ? 'bg-blue-50/10' : ''
+                    pinnedIds.has(report.id) ? 'bg-blue-50/10' : '',
+                    isReorderMode ? "cursor-move active:scale-[0.98]" : "",
+                    draggedIndex === index ? "opacity-40 bg-slate-100" : ""
                   )}
-                  onClick={() => onSelectReport(report)}
+                  onClick={() => !isReorderMode && onSelectReport(report)}
                 >
                   <td className="pl-4 md:pl-8 pr-6 py-5">
                     <div className="flex items-center gap-4">
-                      <button 
-                        onClick={(e) => onTogglePin(e, report.id)}
-                        className={cn(
-                          "p-1.5 rounded-lg transition-all",
-                          pinnedIds.has(report.id) ? 'text-[var(--primary-theme)]' : 'text-slate-200 hover:text-slate-400'
-                        )}
-                      >
-                        <Target size={13} className={pinnedIds.has(report.id) ? 'fill-[var(--primary-theme)]' : ''} />
-                      </button>
+                      {isReorderMode ? (
+                        <div className="text-slate-300 group-hover:text-blue-400 transition-colors">
+                          <GripVertical size={16} />
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={(e) => onTogglePin(e, report.id)}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-all",
+                            pinnedIds.has(report.id) ? 'text-[var(--primary-theme)]' : 'text-slate-200 hover:text-slate-400'
+                          )}
+                        >
+                          <Target size={13} className={pinnedIds.has(report.id) ? 'fill-[var(--primary-theme)]' : ''} />
+                        </button>
+                      )}
 
                       <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-900 flex items-center justify-center text-white group-hover:bg-blue-600 group-hover:border-blue-600 transition-all shadow-sm shrink-0 overflow-hidden">
                         {report.avatarUrl ? (
