@@ -31,7 +31,7 @@ export const personnelService = {
       avatarUrl: p.avatar_url,
     }));
 
-    if (!viewerRole || viewerRole === Role.SuperAdmin || viewerRole === Role.Developer) return users;
+    if (!viewerRole || viewerRole === Role.SuperAdmin) return users;
     
     if (viewerRole === Role.Admin) {
       return users.filter(u => u.role !== Role.SuperAdmin);
@@ -64,7 +64,7 @@ export const personnelService = {
     return { total, managers, active, activeTeams: teams.length };
   },
 
-  saveUser: async (user: User): Promise<void> => {
+  saveUser: async (user: User, skipQueue = false): Promise<void> => {
     // Base payload — columns ที่มีอยู่ตั้งแต่ต้นและปลอดภัย 100%
     const basePayload: Record<string, unknown> = {
       name: user.name,
@@ -98,27 +98,71 @@ export const personnelService = {
     const isNewUser = !user.id || user.id.startsWith('user-');
 
     if (isNewUser) {
-      const { error } = await supabase.from('profiles').insert(payload);
+      let { error } = await supabase.from('profiles').insert(payload);
+      // 🛡️ Retry on auth failure
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('profiles').insert(payload);
+        error = retry.error;
+      }
       if (error) {
         console.error('Error inserting new user:', error);
+        if (!skipQueue) {
+          console.warn('📡 Adding user save to sync queue...');
+          await logCacheService.addToSyncQueue('SAVE_USER', user);
+          return;
+        }
         throw error;
       }
     } else {
-      const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
+      let { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
+      // 🛡️ Retry on auth failure
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('profiles').update(payload).eq('id', user.id);
+        error = retry.error;
+      }
       if (error) {
         console.error('Error updating existing user:', error);
+        if (!skipQueue) {
+          console.warn('📡 Adding user update to sync queue...');
+          await logCacheService.addToSyncQueue('SAVE_USER', user);
+          return;
+        }
         throw error;
       }
     }
   },
 
-  saveTeam: async (team: Team): Promise<void> => {
+  saveTeam: async (team: Team, skipQueue = false): Promise<void> => {
     if (team.id && (!team.id.startsWith('team-') && team.id.trim() !== '')) {
-      const { error } = await supabase.from('teams').update({ name: team.name }).eq('id', team.id);
-      if (error) console.error('Error updating team:', error);
+      let { error } = await supabase.from('teams').update({ name: team.name }).eq('id', team.id);
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('teams').update({ name: team.name }).eq('id', team.id);
+        error = retry.error;
+      }
+      if (error) {
+        console.error('Error updating team:', error);
+        if (!skipQueue) {
+           await logCacheService.addToSyncQueue('SAVE_TEAM', team);
+           return;
+        }
+      }
     } else {
-      const { error } = await supabase.from('teams').insert({ name: team.name });
-      if (error) console.error('Error adding team:', error);
+      let { error } = await supabase.from('teams').insert({ name: team.name });
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('teams').insert({ name: team.name });
+        error = retry.error;
+      }
+      if (error) {
+        console.error('Error adding team:', error);
+        if (!skipQueue) {
+           await logCacheService.addToSyncQueue('SAVE_TEAM', team);
+           return;
+        }
+      }
     }
   },
 
@@ -133,12 +177,20 @@ export const personnelService = {
   },
 
   recordSalaryAdjustment: async (staffId: string, amount: number, reason: string, effectiveDate: string): Promise<void> => {
-    const { error } = await supabase.from('salary_adjustments').insert({
+    const payload = {
       staff_id: staffId,
       new_salary: amount,
       reason: reason,
       effective_date: effectiveDate
-    });
+    };
+    let { error } = await supabase.from('salary_adjustments').insert(payload);
+    
+    if (error && error.message?.includes('auth')) {
+      await supabase.auth.refreshSession();
+      const retry = await supabase.from('salary_adjustments').insert(payload);
+      error = retry.error;
+    }
+
     if (error) {
        console.error('Error recording salary adjustment:', error);
        throw error;

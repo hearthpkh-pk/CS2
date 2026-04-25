@@ -178,7 +178,6 @@ const PersonnelDrawer: React.FC<PersonnelDrawerProps> = ({
                 className={inputCls}
               >
                 {Object.entries(ROLE_LABELS).filter(([role]) => {
-                  if (role === Role.Developer) return false;
                   if (viewerRole === Role.SuperAdmin) return true;
                   if (viewerRole === Role.Admin) return role !== Role.SuperAdmin;
                   if (viewerRole === Role.Manager) return role === Role.Manager || role === Role.Staff;

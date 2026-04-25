@@ -35,7 +35,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   if (!currentUser) return null;
 
   // 🔔 ดึงจำนวน user ที่รอ approve (เฉพาะ SuperAdmin/Admin/Developer)
-  const isSuperViewer = currentUser.role === Role.SuperAdmin || currentUser.role === Role.Admin || currentUser.role === Role.Developer;
+  const isSuperViewer = currentUser.role === Role.SuperAdmin || currentUser.role === Role.Admin;
 
   useEffect(() => {
     if (!isSuperViewer) return;
@@ -69,35 +69,35 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
     {
       title: 'Workspace',
       items: [
-        { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'workspace', icon: CalendarIcon, label: 'ตารางงาน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'setup', icon: SettingsIcon, label: 'จัดการเพจและบัญชี', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ดสรุปผล', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+        { id: 'workspace', icon: CalendarIcon, label: 'ตารางงาน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+        { id: 'setup', icon: SettingsIcon, label: 'จัดการเพจและบัญชี', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+        { id: 'transactions', icon: FilePlus, label: 'ลงบันทึกประจำวัน', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
       ]
     },
     {
       title: 'Organization',
       items: [
-        { id: 'hq-dashboard', icon: PieChart, label: 'แดชบอร์ดรายงานรวม', roles: [Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: [Role.SuperAdmin, Role.Developer] },
-        { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'hq-dashboard', icon: PieChart, label: 'แดชบอร์ดรายงานรวม', roles: [Role.Manager, Role.Admin, Role.SuperAdmin] },
+        { id: 'analytics', icon: BarChart3, label: 'รายงานและสถิติ', roles: [Role.SuperAdmin] },
+        { id: 'team', icon: Users, label: 'จัดการทีมงาน', roles: [Role.Admin, Role.SuperAdmin] },
       ]
     },
     {
       title: 'Enterprise',
       items: [
-        { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: [Role.SuperAdmin, Role.Developer] },
-        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: [Role.SuperAdmin, Role.Developer] },
-        { id: 'rules', icon: Scale, label: 'กฎระเบียบบริษัท', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'payroll', icon: CreditCard, label: 'ระบบเงินเดือน', roles: [Role.SuperAdmin] },
+        { id: 'settings', icon: Building2, label: 'ตั้งค่าบริษัท', roles: [Role.SuperAdmin] },
+        { id: 'rules', icon: Scale, label: 'กฎระเบียบบริษัท', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
       ]
     },
     {
       title: 'System',
       items: [
-        { id: 'profile', icon: UserIcon, label: 'ข้อมูลส่วนตัว', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'learning', icon: BookOpen, label: 'ศูนย์การเรียนรู้', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
-        { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
+        { id: 'profile', icon: UserIcon, label: 'ข้อมูลส่วนตัว', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+        { id: 'learning', icon: BookOpen, label: 'ศูนย์การเรียนรู้', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+        { id: 'audit', icon: HistoryIcon, label: 'ประวัติความเคลื่อนไหว', roles: [Role.Admin, Role.SuperAdmin] },
+        { id: 'help', icon: HelpCircle, label: 'ศูนย์ช่วยเหลือ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
       ]
     }
   ];
@@ -169,14 +169,22 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       {/* 🛡️ REVERTED: Profile fixed at bottom with discrete styling */}
       <div className="mt-auto border-t border-white/5 p-4">
         <div className="group/profile flex items-center gap-3 px-2 py-4 transition-all duration-300">
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 shadow-inner overflow-hidden">
+          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5 shadow-inner overflow-hidden relative">
             {currentUser.avatarUrl ? (
               <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-sm font-bold text-white/50 uppercase">
-                {currentUser.name.trim().slice(-1)}
-              </span>
-            )}
+            ) : currentUser.email ? (
+              <img 
+                src={`https://www.gravatar.com/avatar/${btoa(currentUser.email).substring(0, 32)}?d=404`} 
+                alt={currentUser.name} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : null}
+            <span className="text-sm font-bold text-white/50 uppercase absolute">
+              {currentUser.name.trim().slice(-1)}
+            </span>
           </div>
           <div className="flex-1 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden whitespace-nowrap">
             <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
@@ -222,10 +230,10 @@ export const MobileBottomNav = ({ currentTab, setCurrentTab }: Omit<SidebarProps
   if (!currentUser) return null;
 
   const menuItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ด', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-    { id: 'transactions', icon: FilePlus, label: 'บันทึก', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-    { id: 'setup', icon: SettingsIcon, label: 'จัดการ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin, Role.Developer] },
-    { id: 'team', icon: Users, label: 'ทีม', roles: [Role.Admin, Role.SuperAdmin, Role.Developer] },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'แดชบอร์ด', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+    { id: 'transactions', icon: FilePlus, label: 'บันทึก', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+    { id: 'setup', icon: SettingsIcon, label: 'จัดการ', roles: [Role.Staff, Role.Manager, Role.Admin, Role.SuperAdmin] },
+    { id: 'team', icon: Users, label: 'ทีม', roles: [Role.Admin, Role.SuperAdmin] },
   ];
 
   const visibleItems = menuItems.filter(item => item.roles.includes(currentUser.role));

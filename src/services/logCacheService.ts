@@ -17,9 +17,10 @@
 import { DailyLog } from '@/types';
 
 const DB_NAME = 'cs2_log_cache';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // อัปเกรดเวอร์ชันเพื่อเพิ่ม Store ใหม่
 const STORE_LOGS = 'daily_logs';
 const STORE_META = 'meta';
+const STORE_SYNC_QUEUE = 'sync_queue'; // ตารางสำหรับเก็บรายการรอซิงค์
 
 // Meta keys
 const META_LAST_SYNC = 'lastSyncAt';
@@ -72,6 +73,12 @@ const openDB = (): Promise<IDBDatabase | null> => {
         // Store สำหรับเก็บ metadata (lastSyncAt, userId)
         if (!db.objectStoreNames.contains(STORE_META)) {
           db.createObjectStore(STORE_META, { keyPath: 'key' });
+        }
+
+        // Store สำหรับเก็บรายการรอซิงค์ (Sync Queue)
+        if (!db.objectStoreNames.contains(STORE_SYNC_QUEUE)) {
+          const syncStore = db.createObjectStore(STORE_SYNC_QUEUE, { keyPath: 'id', autoIncrement: true });
+          syncStore.createIndex('by_status', 'status', { unique: false });
         }
       };
 
@@ -287,5 +294,83 @@ export const logCacheService = {
     }
 
     return true;
+  },
+
+  // ===========================
+  //  SYNC QUEUE API (Offline-First)
+  // ===========================
+
+  /**
+   * เพิ่มรายการลงในคิวซิงค์
+   */
+  addToSyncQueue: async (type: string, payload: any): Promise<number> => {
+    const db = await openDB();
+    if (!db) return Date.now(); // Fallback id
+
+    return new Promise((resolve) => {
+      const transaction = db.transaction([STORE_SYNC_QUEUE], 'readwrite');
+      const store = transaction.objectStore(STORE_SYNC_QUEUE);
+      const request = store.add({
+        type,
+        payload,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        retryCount: 0
+      });
+      request.onsuccess = () => resolve(request.result as number);
+    });
+  },
+
+  /**
+   * ดึงรายการที่รอซิงค์ทั้งหมด
+   */
+  getPendingSyncItems: async (): Promise<any[]> => {
+    const db = await openDB();
+    if (!db) return [];
+
+    return new Promise((resolve) => {
+      const transaction = db.transaction([STORE_SYNC_QUEUE], 'readonly');
+      const store = transaction.objectStore(STORE_SYNC_QUEUE);
+      const index = store.index('by_status');
+      const request = index.getAll('pending');
+      request.onsuccess = () => resolve(request.result || []);
+    });
+  },
+
+  /**
+   * ลบรายการออกจากคิวเมื่อซิงค์สำเร็จ
+   */
+  removeFromSyncQueue: async (id: number): Promise<void> => {
+    const db = await openDB();
+    if (!db) return;
+
+    return new Promise((resolve) => {
+      const transaction = db.transaction([STORE_SYNC_QUEUE], 'readwrite');
+      const store = transaction.objectStore(STORE_SYNC_QUEUE);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+    });
+  },
+
+  /**
+   * อัปเดตสถานะรายการในคิว
+   */
+  updateSyncItem: async (id: number, updates: any): Promise<void> => {
+    const db = await openDB();
+    if (!db) return;
+
+    return new Promise((resolve) => {
+      const transaction = db.transaction([STORE_SYNC_QUEUE], 'readwrite');
+      const store = transaction.objectStore(STORE_SYNC_QUEUE);
+      const getRequest = store.get(id);
+      
+      getRequest.onsuccess = () => {
+        const data = getRequest.result;
+        if (data) {
+          store.put({ ...data, ...updates });
+        }
+        resolve();
+      };
+    });
   }
 };

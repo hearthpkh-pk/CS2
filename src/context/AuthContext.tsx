@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Role } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
 import { logCacheService } from '@/services/logCacheService';
+import { syncService } from '@/services/syncService'; // เพิ่มการนำเข้าคิวซิงค์
 
 interface AuthContextType {
   user: User | null;
@@ -52,9 +53,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // 🚀 เริ่มทำงาน Background Sync Engine
+    const stopSync = syncService.init();
+
     return () => {
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (stopSync) stopSync(); // หยุดการซิงค์เมื่อปิดแอป
     };
   }, []);
 

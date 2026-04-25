@@ -16,7 +16,6 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
   teams
 }) => {
   const roleWeights: Record<string, number> = {
-    [Role.Developer]: 5,
     [Role.SuperAdmin]: 4,
     [Role.Admin]: 3,
     [Role.Manager]: 2,
@@ -33,7 +32,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
         <thead>
           <tr className="border-b border-slate-50">
             <th className="px-8 py-5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Personnel Identity</th>
-            <th className="px-8 py-5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status & Assignment</th>
+            <th className="px-8 py-5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
             <th className="px-8 py-5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Workload Group</th>
             <th className="px-8 py-5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Brand Assignment</th>
             <th className="px-8 py-5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action</th>
@@ -53,10 +52,22 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shadow-sm transition-transform group-hover:scale-105",
+                      "w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shadow-sm transition-transform group-hover:scale-105 overflow-hidden",
                       theme.bg, theme.color
                     )}>
-                      {user.name.charAt(0)}
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                      ) : user.email ? (
+                        <img 
+                          src={`https://www.gravatar.com/avatar/${btoa(user.email).substring(0, 32)}?d=404`} 
+                          alt={user.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : null}
+                      <span className="absolute">{user.name.trim().slice(-1)}</span>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800 tracking-tight">{user.name}</p>
@@ -73,8 +84,6 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                       )}>
                         {ROLE_LABELS[user.role]}
                       </span>
-                      <span className="text-[10px] text-slate-300">•</span>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{teamName}</span>
                     </div>
                     {user.status && (
                       <p className="text-[9px] font-semibold text-blue-500 uppercase tracking-widest">

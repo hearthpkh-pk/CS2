@@ -109,7 +109,7 @@ export default function CreatorApp() {
     setUsers(freshUsers);
   };
 
-  const isSuperViewer = currentUser?.role === Role.SuperAdmin || currentUser?.role === Role.Developer;
+  const isSuperViewer = currentUser?.role === Role.SuperAdmin;
   const effectiveUserId = (isSuperViewer && viewAsUserId) ? viewAsUserId : currentUser?.id;
 
   const myPages = React.useMemo(() => {

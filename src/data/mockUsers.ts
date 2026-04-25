@@ -13,7 +13,7 @@ export const MOCK_USERS: User[] = [
     email: 'dev@editor.com',
     username: 'sys_dev',
     name: 'System Developer',
-    role: Role.Developer,
+    role: Role.SuperAdmin,
     isActive: true,
     permissions: ['all'],
     startDate: '2026-01-01',

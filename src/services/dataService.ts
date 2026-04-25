@@ -58,12 +58,12 @@ export const dataService = {
     }));
   },
 
-  savePage: async (page: Page): Promise<void> => {
+  savePage: async (page: Page, skipQueue = false): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const payload = {
-      id: (!page.id || page.id === '' || page.id.startsWith('p')) ? undefined : page.id, // ให้ Postgres gen_random_uuid() อัตโนมัติถ้าไม่มี ID
+      id: (!page.id || page.id === '' || page.id.startsWith('p')) ? undefined : page.id, 
       name: page.name,
       category: page.category,
       status: page.status || 'Active',
@@ -75,19 +75,45 @@ export const dataService = {
       is_deleted: page.isDeleted || false,
     };
 
+    let error;
     if (page.id && !page.id.startsWith('p')) {
       // Update
-      const { error } = await supabase.from('facebook_pages').update(payload).eq('id', page.id);
-      if (error) console.error('Error updating page:', error);
+      const res = await supabase.from('facebook_pages').update(payload).eq('id', page.id);
+      error = res.error;
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('facebook_pages').update(payload).eq('id', page.id);
+        error = retry.error;
+      }
     } else {
       // Insert
-      const { error } = await supabase.from('facebook_pages').insert(payload);
-      if (error) console.error('Error inserting page:', error);
+      const res = await supabase.from('facebook_pages').insert(payload);
+      error = res.error;
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('facebook_pages').insert(payload);
+        error = retry.error;
+      }
+    }
+
+    if (error) {
+      console.error('Error saving page:', error);
+      if (!skipQueue) {
+        console.warn('📡 Adding page save to sync queue...');
+        await logCacheService.addToSyncQueue('SAVE_PAGE', page);
+        return;
+      }
+      throw error;
     }
   },
 
   deletePage: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('facebook_pages').delete().eq('id', id);
+    let { error } = await supabase.from('facebook_pages').delete().eq('id', id);
+    if (error && error.message?.includes('auth')) {
+      await supabase.auth.refreshSession();
+      const retry = await supabase.from('facebook_pages').delete().eq('id', id);
+      error = retry.error;
+    }
     if (error) console.error('Error deleting page:', error);
   },
 
@@ -203,7 +229,7 @@ export const dataService = {
     return mapDbLogsToFrontend(logs || []);
   },
 
-  saveLogs: async (newLogs: DailyLog[]): Promise<void> => {
+  saveLogs: async (newLogs: DailyLog[], skipQueue = false): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -221,13 +247,32 @@ export const dataService = {
     }));
 
     // ใช้ Upsert: ถ้ารหัสคู่ page_id + date ซ้ำกัน จะทำการดึงข้อมูลใหม่ไปเขียนทับ 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('daily_logs')
       .upsert(upsertPayload, { onConflict: 'page_id,date' });
 
+    // 🛡️ Bullet-proof: ถ้าบันทึกไม่ผ่านเพราะ auth หมดอายุ ให้ลอง refresh แล้วบันทึกใหม่
+    if (error && error.message?.includes('auth')) {
+      console.warn('⚠️ Logs save failed (auth), retrying...');
+      await supabase.auth.refreshSession();
+      const retry = await supabase
+        .from('daily_logs')
+        .upsert(upsertPayload, { onConflict: 'page_id,date' });
+      error = retry.error;
+    }
+
     if (error) {
-      console.error('Error upserting logs:', error.message, error.details, error.hint);
-      throw error; // Throw the error so the UI knows it failed!
+      console.error('Error upserting logs:', error.message);
+      
+      // 🚀 Offline-First: ถ้าไม่ใช่การเรียกจาก sync engine และบันทึกไม่สำเร็จ ให้ลงคิวไว้
+      if (!skipQueue) {
+        console.warn('📡 Network/Auth issue, adding logs to sync queue...');
+        await logCacheService.addToSyncQueue('SAVE_LOGS', newLogs);
+        // อัปเดต Cache ในเครื่องเพื่อให้ UI แสดงผลเสมือนว่าบันทึกสำเร็จ
+        await logCacheService.upsertMany(newLogs);
+        return;
+      }
+      throw error;
     }
 
     // 🏗️ อัปเดต Cache ทันทีหลัง upsert สำเร็จ — ไม่ต้อง re-fetch จาก Supabase
@@ -244,7 +289,7 @@ export const dataService = {
       if (user.role === Role.Manager) {
         // Manager เห็นบัญชีในทีมตัวเอง (+ของตัวเอง)
         query = query.or(`team_id.eq.${user.teamId},owner_id.eq.${user.id}`);
-      } else if (user.role !== Role.Developer && user.role !== Role.SuperAdmin && user.role !== Role.Admin) {
+      } else if (user.role !== Role.SuperAdmin && user.role !== Role.Admin) {
         // Staff เห็นแค่ของตัวเอง
         query = query.eq('owner_id', user.id);
       }
@@ -280,12 +325,12 @@ export const dataService = {
     }));
   },
 
-  saveAccount: async (account: FBAccount): Promise<void> => {
+  saveAccount: async (account: FBAccount, skipQueue = false): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const payload = {
-      id: (!account.id || account.id === '' || account.id.startsWith('acc-')) ? undefined : account.id, // ให้ Postgres gen_random_uuid() อัตโนมัติถ้าไม่มี ID หรือเป็น ID เก่าที่จำลองมา
+      id: (!account.id || account.id === '' || account.id.startsWith('acc-')) ? undefined : account.id, 
       box_id: account.boxId,
       name: account.name,
       uid: account.uid,
@@ -304,20 +349,43 @@ export const dataService = {
       is_deleted: account.isDeleted || false,
     };
 
+    let error;
     if (account.id && !account.id.startsWith('acc-')) {
-      // Update
-      const { error } = await supabase.from('facebook_accounts').update(payload).eq('id', account.id);
-      if (error) console.error('Error updating account:', error);
+      const res = await supabase.from('facebook_accounts').update(payload).eq('id', account.id);
+      error = res.error;
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('facebook_accounts').update(payload).eq('id', account.id);
+        error = retry.error;
+      }
     } else {
-      // Insert
-      const { error } = await supabase.from('facebook_accounts').insert(payload);
-      if (error) console.error('Error inserting account:', error);
+      const res = await supabase.from('facebook_accounts').insert(payload);
+      error = res.error;
+      if (error && error.message?.includes('auth')) {
+        await supabase.auth.refreshSession();
+        const retry = await supabase.from('facebook_accounts').insert(payload);
+        error = retry.error;
+      }
+    }
+
+    if (error) {
+      console.error('Error saving account:', error);
+      if (!skipQueue) {
+        console.warn('📡 Adding account save to sync queue...');
+        await logCacheService.addToSyncQueue('SAVE_ACCOUNT', account);
+        return;
+      }
+      throw error;
     }
   },
 
   deleteAccount: async (id: string): Promise<void> => {
-    // ใช้ Soft Delete เพื่อเก็บบันทึกประวัติ หรือ Hard Delete ถ้าต้องการ
-    const { error } = await supabase.from('facebook_accounts').delete().eq('id', id);
+    let { error } = await supabase.from('facebook_accounts').delete().eq('id', id);
+    if (error && error.message?.includes('auth')) {
+      await supabase.auth.refreshSession();
+      const retry = await supabase.from('facebook_accounts').delete().eq('id', id);
+      error = retry.error;
+    }
     if (error) console.error('Error deleting account:', error);
   }
 };
