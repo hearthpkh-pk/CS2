@@ -97,11 +97,31 @@ export const dataService = {
   // - ครั้งถัดไป: ดึงเฉพาะ rows ที่ใหม่กว่า lastSyncAt
   // - เปิดซ้ำวันเดียวกัน: ใช้ Cache 100%
   getLogs: async (forceRefresh = false): Promise<DailyLog[]> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    let { data: { user } } = await supabase.auth.getUser();
+    // หากไม่มี user (session หมด) ให้ลอง refresh session ก่อน
+    if (!user) {
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.warn('⚠️ Session refresh failed, user not authenticated');
+        return [];
+      }
+      // รีลองดึง user หลัง refresh
+      const refreshed = await supabase.auth.getUser();
+      user = refreshed.data?.user;
+      if (!user) {
+        console.warn('⚠️ No user after session refresh');
+        return [];
+      }
+    }
     if (!user) return [];
 
     // 🛡️ ตรวจสอบว่า cache เป็นของ user คนปัจจุบันหรือไม่
     const cacheValid = await logCacheService.validateForUser(user.id);
+
+    // ถ้า cache ไม่ถูกต้องหรือหมดอายุ ให้บังคับทำ full fetch
+    if (!cacheValid) {
+      forceRefresh = true;
+    }
 
     if (cacheValid && !forceRefresh) {
       // --- Delta Sync: ดึงเฉพาะข้อมูลใหม่ ---
@@ -109,10 +129,22 @@ export const dataService = {
       const cachedLogs = await logCacheService.getAll();
 
       if (lastSync && cachedLogs.length > 0) {
-        const { data: newRows, error } = await supabase
+        let { data: newRows, error } = await supabase
           .from('daily_logs')
           .select('*')
           .gt('created_at', lastSync);
+
+        // Retry delta sync if auth error
+        if (error && error.message?.includes('auth')) {
+          console.warn('⚠️ Delta Sync auth error, refreshing session...');
+          await supabase.auth.refreshSession();
+          const retry = await supabase
+            .from('daily_logs')
+            .select('*')
+            .gt('created_at', lastSync);
+          newRows = retry.data;
+          error = retry.error;
+        }
 
         if (!error && newRows && newRows.length > 0) {
           const mapped = mapDbLogsToFrontend(newRows);
@@ -120,6 +152,8 @@ export const dataService = {
           console.log(`🔄 Delta Sync: +${mapped.length} new rows`);
         } else if (!error) {
           console.log('✅ Cache up-to-date, 0 new rows');
+        } else {
+          console.error('Delta Sync failed:', error);
         }
 
         await logCacheService.setLastSyncAt(new Date().toISOString());

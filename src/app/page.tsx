@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar, MobileHeader, MobileBottomNav } from '@/components/layout/Navigation';
-import { 
+import {
   Users, Building2, History as HistoryIcon, HelpCircle
 } from 'lucide-react';
 import { DashboardView } from '@/components/dashboard/DashboardView';
@@ -69,18 +69,20 @@ export default function CreatorApp() {
         setUsers(await personnelService.getAvailableUsers(currentUser.role));
       }
     };
-    
+
     fetchInitialData();
 
     // 🚀 Auto-Hydration: Background sync when returning to active tab or coming back online
     const handleReactivation = () => {
-      if (document.visibilityState === 'visible' && navigator.onLine) {
+      if (currentUser && document.visibilityState === 'visible' && navigator.onLine) {
         fetchInitialData();
       }
     };
 
     const handleOnline = () => {
-      fetchInitialData();
+      if (currentUser) {
+        fetchInitialData();
+      }
     };
 
     document.addEventListener('visibilitychange', handleReactivation);
@@ -143,11 +145,11 @@ export default function CreatorApp() {
   if (isMobile) {
     if (currentUser.role === Role.SuperAdmin) {
       return (
-        <MobileHQDashboard 
-          currentUser={currentUser} 
-          pages={pages} 
-          users={users} 
-          logs={logs} 
+        <MobileHQDashboard
+          currentUser={currentUser}
+          pages={pages}
+          users={users}
+          logs={logs}
           policy={policyConfig}
         />
       );
@@ -157,18 +159,18 @@ export default function CreatorApp() {
           {/* Decorative blur */}
           <div className="absolute top-[-10%] right-[-10%] w-60 h-60 bg-[var(--primary-blue)]/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl"></div>
-          
+
           <div className="bg-white p-8 rounded-[2rem] shadow-2xl max-w-sm w-full relative z-10 animate-in zoom-in-95 duration-500">
             <div className="w-16 h-16 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm transform -rotate-3">
               <span className="text-2xl">🚧</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2 leading-tight">ขออภัย!<br/>ไม่อนุญาตให้ใช้งานผ่านมือถือ</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2 leading-tight">ขออภัย!<br />ไม่อนุญาตให้ใช้งานผ่านมือถือ</h2>
             <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
               เพื่อให้การประมวลผลข้อมูลและตารางงานมีความแม่นยำสูงสุด รบกวนพนักงานเข้าสู่ระบบผ่านคอมพิวเตอร์เท่านั้น
             </p>
-            <button 
-               onClick={() => window.location.reload()}
-               className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-[13px] rounded-xl transition-colors border border-slate-200"
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-[13px] rounded-xl transition-colors border border-slate-200"
             >
               ลองใหม่อีกครั้ง
             </button>
@@ -269,7 +271,7 @@ export default function CreatorApp() {
   const handleClearTrash = async () => {
     const deletedPages = pages.filter(p => p.isDeleted);
     const deletedAccounts = accounts.filter(a => a.isDeleted);
-    
+
     // Process async deletions
     await Promise.all([
       ...deletedPages.map(p => dataService.deletePage(p.id)),
@@ -348,8 +350,8 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'rules' && (
-            <PolicyCenterView 
-              currentUser={currentUser} 
+            <PolicyCenterView
+              currentUser={currentUser}
               onNavigate={(tab, subTab) => {
                 setSettingsInitialTab(subTab);
                 setCurrentTab(tab);
@@ -359,7 +361,7 @@ export default function CreatorApp() {
 
           {currentTab === 'payroll' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Developer) && (
             <div className="space-y-10 animate-fade-in">
-              <PayrollView 
+              <PayrollView
                 currentUser={currentUser}
                 policy={policyConfig}
               />
@@ -376,7 +378,7 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'hq-dashboard' && (
-            <HQDashboardView 
+            <HQDashboardView
               currentUser={currentUser}
               policy={policyConfig}
             />
@@ -411,15 +413,15 @@ export default function CreatorApp() {
               currentUser={currentUser}
             />
           ) : currentTab === 'team' ? (
-            <PlaceholderView 
-              title="Access Denied" 
-              icon={Users} 
-              description="You do not have permission to view Team Management." 
+            <PlaceholderView
+              title="Access Denied"
+              icon={Users}
+              description="You do not have permission to view Team Management."
             />
           ) : null}
 
           {currentTab === 'analytics' && (currentUser.role === Role.SuperAdmin || currentUser.role === Role.Developer) && (
-            <ReportsView 
+            <ReportsView
               currentUser={currentUser}
               policy={policyConfig}
             />
@@ -430,32 +432,32 @@ export default function CreatorApp() {
           )}
 
           {currentTab === 'settings' && (
-            <CompanySettingsView 
-              currentUser={currentUser} 
+            <CompanySettingsView
+              currentUser={currentUser}
               initialTab={settingsInitialTab as any}
             />
           )}
 
           {currentTab === 'audit' && (
-            <PlaceholderView 
-              title="Activity Audit" 
-              icon={HistoryIcon} 
-              description="Security logs and activity tracking coming soon..." 
+            <PlaceholderView
+              title="Activity Audit"
+              icon={HistoryIcon}
+              description="Security logs and activity tracking coming soon..."
             />
           )}
 
           {currentTab === 'help' && (
-            <PlaceholderView 
-              title="Help Center" 
-              icon={HelpCircle} 
-              description="Documentation and tutorials coming soon..." 
+            <PlaceholderView
+              title="Help Center"
+              icon={HelpCircle}
+              description="Documentation and tutorials coming soon..."
             />
           )}
         </main>
 
-        <MobileBottomNav 
-          currentTab={currentTab} 
-          setCurrentTab={setCurrentTab} 
+        <MobileBottomNav
+          currentTab={currentTab}
+          setCurrentTab={setCurrentTab}
         />
 
         {/* 🛡️ SuperAdmin/Dev: FAB Workspace Switcher (Root Level Rendering) */}
@@ -463,7 +465,7 @@ export default function CreatorApp() {
           <WorkspaceFAB
             users={users}
             viewAsUserId={viewAsUserId ?? null}
-            setViewAsUserId={setViewAsUserId ?? (() => {})}
+            setViewAsUserId={setViewAsUserId ?? (() => { })}
           />
         )}
       </div>
