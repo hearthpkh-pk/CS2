@@ -17,6 +17,7 @@ import { twMerge } from 'tailwind-merge';
 import { POCLogo } from '@/components/brand/POCLogo';
 import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
 import { supabase } from '@/lib/supabaseClient';
+import { SyncStatus } from '@/components/shared/SyncStatus'; // เพิ่มตัวแสดงสถานะซิงค์
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -120,6 +121,11 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             <h1 className="text-xl font-semibold tracking-tight font-outfit uppercase text-white">Editor</h1>
             <p className="text-[9px] text-blue-100/60 font-medium tracking-[0.25em] font-noto -mt-0.5 uppercase">Command Center</p>
           </div>
+        </div>
+        
+        {/* 🛰️ Sync Status Indicator (แสดงเฉพาะตอนขยาย Sidebar เพื่อความคลีน) */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-2 mt-2">
+          <SyncStatus />
         </div>
       </div>
 

@@ -30,7 +30,7 @@ const mapDbLogsToFrontend = (rows: any[]): DailyLog[] => {
 
 export const dataService = {
   // --- Pages (Supabase) ---
-  getPages: async (): Promise<Page[]> => {
+  getPages: async (forceRefresh = false): Promise<Page[]> => {
     const { data: pages, error } = await supabase
       .from('facebook_pages')
       .select('*')
@@ -60,7 +60,7 @@ export const dataService = {
 
   savePage: async (page: Page, skipQueue = false): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) throw new Error('Session expired. Please refresh the page.');
 
     const payload = {
       id: (!page.id || page.id === '' || page.id.startsWith('p')) ? undefined : page.id, 
@@ -206,11 +206,22 @@ export const dataService = {
     // บันทึกลง IndexedDB
     await logCacheService.clearCache();
     await logCacheService.upsertMany(mapped);
+    
+    // 🛡️ สำคัญมาก (Bulletproof Optimistic UI): 
+    // ถ้าเราเพิ่งดึงข้อมูลจาก DB มาทับ เราต้องเอา "ข้อมูลที่ติดคิวซิงค์รอส่ง" กลับมาทับซ้ำอีกที
+    // ไม่งั้นข้อมูลบน UI จะหายวั๊บทันทีที่ผู้ใช้สลับแท็บ (เพราะ DB ยังไม่มีข้อมูลใหม่)
+    const pendingItems = await logCacheService.getPendingSyncItems();
+    const pendingLogs = pendingItems.filter(i => i.userId === user.id && i.type === 'SAVE_LOGS');
+    for (const item of pendingLogs) {
+      await logCacheService.upsertMany(item.payload);
+    }
+
     await logCacheService.setCachedUserId(user.id);
     await logCacheService.setLastSyncAt(new Date().toISOString());
 
-    console.log(`💾 Full Fetch complete: ${mapped.length} rows cached`);
-    return mapped;
+    const finalLogs = await logCacheService.getAll();
+    console.log(`💾 Full Fetch complete: ${finalLogs.length} rows cached (including pending syncs)`);
+    return finalLogs;
   },
 
   // Targeted Query: ดึงเฉพาะของพนักงานคนเดียว ในวันที่ระบุ (รวดเร็วและ Scalable กว่า)
@@ -231,7 +242,7 @@ export const dataService = {
 
   saveLogs: async (newLogs: DailyLog[], skipQueue = false): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) throw new Error('Session expired. Please refresh the page.');
 
     const upsertPayload = newLogs.map(log => ({
       page_id: log.pageId,
@@ -251,9 +262,9 @@ export const dataService = {
       .from('daily_logs')
       .upsert(upsertPayload, { onConflict: 'page_id,date' });
 
-    // 🛡️ Bullet-proof: ถ้าบันทึกไม่ผ่านเพราะ auth หมดอายุ ให้ลอง refresh แล้วบันทึกใหม่
-    if (error && error.message?.includes('auth')) {
-      console.warn('⚠️ Logs save failed (auth), retrying...');
+    // 🛡️ Bullet-proof: ถ้าบันทึกไม่ผ่าน ให้ลอง refresh session 1 ครั้ง (เผื่อ token หมดอายุหรือ RLS ขัดข้อง)
+    if (error) {
+      console.warn('⚠️ Logs save failed, attempting session refresh and retry...');
       await supabase.auth.refreshSession();
       const retry = await supabase
         .from('daily_logs')
@@ -327,7 +338,7 @@ export const dataService = {
 
   saveAccount: async (account: FBAccount, skipQueue = false): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) throw new Error('Session expired. Please refresh the page.');
 
     const payload = {
       id: (!account.id || account.id === '' || account.id.startsWith('acc-')) ? undefined : account.id, 

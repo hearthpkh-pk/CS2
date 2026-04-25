@@ -307,12 +307,17 @@ export const logCacheService = {
     const db = await openDB();
     if (!db) return Date.now(); // Fallback id
 
+    // 🛡️ ดึง userId ปัจจุบันมาผูกกับคิว เพื่อป้องกันการซิงค์ข้ามบัญชี
+    const metaStore = await logCacheService.getMeta(META_USER_ID);
+    const userId = metaStore || 'anonymous';
+
     return new Promise((resolve) => {
       const transaction = db.transaction([STORE_SYNC_QUEUE], 'readwrite');
       const store = transaction.objectStore(STORE_SYNC_QUEUE);
       const request = store.add({
         type,
         payload,
+        userId, // ผูก ID ผู้ใช้ไว้กับรายการนี้
         status: 'pending',
         createdAt: new Date().toISOString(),
         retryCount: 0

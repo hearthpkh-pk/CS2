@@ -94,75 +94,58 @@ export const personnelService = {
 
     const payload = { ...basePayload, ...extendedFields };
 
-    // ตรวจสอบว่าเป็นพนักงานใหม่ (ID จะขึ้นต้นด้วย user-xxxx จากฝั่ง Client) หรือพนักงานเดิม
-    const isNewUser = !user.id || user.id.startsWith('user-');
+    // 🛡️ Bullet-proof: ใช้ UPSERT แทนการแยก Insert/Update
+    // ถ้า ID เป็น Mock ID (เช่น user-xxxx หรือ u-xxxx) ให้ลบ ID ออกเพื่อให้ DB สร้าง UUID ให้ใหม่
+    if (user.id && (user.id.startsWith('user-') || user.id.startsWith('u-'))) {
+      delete (payload as any).id;
+    } else if (user.id) {
+      (payload as any).id = user.id;
+    }
 
-    if (isNewUser) {
-      let { error } = await supabase.from('profiles').insert(payload);
-      // 🛡️ Retry on auth failure
-      if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
-        const retry = await supabase.from('profiles').insert(payload);
-        error = retry.error;
+    let { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+
+    // 🛡️ Retry logic
+    if (error) {
+      await supabase.auth.refreshSession();
+      const retry = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+      error = retry.error;
+    }
+
+    if (error) {
+      console.error('Error saving user (upsert):', error.message);
+      if (!skipQueue) {
+        console.warn('📡 Network issue, adding user save to sync queue...');
+        await logCacheService.addToSyncQueue('SAVE_USER', user);
+        return;
       }
-      if (error) {
-        console.error('Error inserting new user:', error);
-        if (!skipQueue) {
-          console.warn('📡 Adding user save to sync queue...');
-          await logCacheService.addToSyncQueue('SAVE_USER', user);
-          return;
-        }
-        throw error;
-      }
-    } else {
-      let { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
-      // 🛡️ Retry on auth failure
-      if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
-        const retry = await supabase.from('profiles').update(payload).eq('id', user.id);
-        error = retry.error;
-      }
-      if (error) {
-        console.error('Error updating existing user:', error);
-        if (!skipQueue) {
-          console.warn('📡 Adding user update to sync queue...');
-          await logCacheService.addToSyncQueue('SAVE_USER', user);
-          return;
-        }
-        throw error;
-      }
+      throw error;
     }
   },
 
   saveTeam: async (team: Team, skipQueue = false): Promise<void> => {
-    if (team.id && (!team.id.startsWith('team-') && team.id.trim() !== '')) {
-      let { error } = await supabase.from('teams').update({ name: team.name }).eq('id', team.id);
-      if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
-        const retry = await supabase.from('teams').update({ name: team.name }).eq('id', team.id);
-        error = retry.error;
+    const payload: any = { name: team.name };
+    
+    // 🛡️ บันทึก ID เฉพาะถ้าไม่ใช่ Mock ID
+    if (team.id && !team.id.startsWith('team-') && team.id.trim() !== '') {
+      payload.id = team.id;
+    }
+
+    let { error } = await supabase.from('teams').upsert(payload, { onConflict: 'id' });
+
+    // 🛡️ Retry logic
+    if (error) {
+      await supabase.auth.refreshSession();
+      const retry = await supabase.from('teams').upsert(payload, { onConflict: 'id' });
+      error = retry.error;
+    }
+
+    if (error) {
+      console.error('Error saving team (upsert):', error.message);
+      if (!skipQueue) {
+        await logCacheService.addToSyncQueue('SAVE_TEAM', team);
+        return;
       }
-      if (error) {
-        console.error('Error updating team:', error);
-        if (!skipQueue) {
-           await logCacheService.addToSyncQueue('SAVE_TEAM', team);
-           return;
-        }
-      }
-    } else {
-      let { error } = await supabase.from('teams').insert({ name: team.name });
-      if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
-        const retry = await supabase.from('teams').insert({ name: team.name });
-        error = retry.error;
-      }
-      if (error) {
-        console.error('Error adding team:', error);
-        if (!skipQueue) {
-           await logCacheService.addToSyncQueue('SAVE_TEAM', team);
-           return;
-        }
-      }
+      throw error;
     }
   },
 

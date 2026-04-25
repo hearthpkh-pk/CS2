@@ -8,10 +8,16 @@ export const syncService = {
    * 🔄 ประมวลผลคิวที่ค้างอยู่ทั้งหมด
    */
   processQueue: async (): Promise<void> => {
-    // 🛡️ ตรวจสอบเน็ตก่อนเริ่ม
+    // 🛡️ ตรวจสอบเน็ตและ User ก่อนเริ่ม
     if (typeof window !== 'undefined' && !navigator.onLine) return;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    const pendingItems = await logCacheService.getPendingSyncItems();
+    const allPending = await logCacheService.getPendingSyncItems();
+    // 🛡️ กรองเฉพาะรายการที่เป็นของ User ปัจจุบันเท่านั้น
+    const pendingItems = allPending.filter(item => item.userId === user.id);
+    
     if (pendingItems.length === 0) return;
 
     console.log(`📡 Sync Engine: Processing ${pendingItems.length} pending items...`);
@@ -20,11 +26,18 @@ export const syncService = {
       try {
         await logCacheService.updateSyncItem(item.id, { status: 'syncing' });
 
+        // 🛡️ ก่อนส่งของ ให้เช็คและ refresh session อีกรอบเพื่อความชัวร์
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+           const { error: refreshError } = await supabase.auth.refreshSession();
+           if (refreshError) throw new Error('Session expired and cannot be refreshed');
+        }
+
         let success = false;
         
         switch (item.type) {
           case 'SAVE_LOGS':
-            await dataService.saveLogs(item.payload, true); // true = skip queue (direct write)
+            await dataService.saveLogs(item.payload, true); // true = called from sync engine
             success = true;
             break;
           case 'SAVE_PAGE':
@@ -57,6 +70,13 @@ export const syncService = {
           lastError: (error as Error).message
         });
       }
+    }
+    // End of for-loop
+    // After processing all items, notify app to refresh UI if needed
+    try {
+      window.dispatchEvent(new Event('syncComplete'));
+    } catch (e) {
+      console.warn('⚠️ Unable to dispatch syncComplete event:', e);
     }
   },
 

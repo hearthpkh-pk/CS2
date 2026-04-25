@@ -61,11 +61,12 @@ export default function CreatorApp() {
 
   // Load Initial Data - Reactive to currentUser
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchInitialData = async (force = false) => {
       if (currentUser) {
-        setPages(await dataService.getPages()); // ไม่ต้องส่ง currentUser แล้ว RLS จัดการให้
+        // 🔄 Force refresh will ignore local cache and fetch directly from Supabase
+        setPages(await dataService.getPages(force));
         setAccounts(await dataService.getAccounts(currentUser));
-        setLogs(await dataService.getLogs());
+        setLogs(await dataService.getLogs(force));
         setUsers(await personnelService.getAvailableUsers(currentUser.role));
       }
     };
@@ -75,13 +76,13 @@ export default function CreatorApp() {
     // 🚀 Auto-Hydration: Background sync when returning to active tab or coming back online
     const handleReactivation = () => {
       if (currentUser && document.visibilityState === 'visible' && navigator.onLine) {
-        fetchInitialData();
+        fetchInitialData(true); // บังคับดึงข้อมูลใหม่จาก Cloud
       }
     };
 
     const handleOnline = () => {
       if (currentUser) {
-        fetchInitialData();
+        fetchInitialData(true); // บังคับดึงข้อมูลใหม่จาก Cloud ทันทีที่เน็ตกลับมา
       }
     };
 
@@ -187,10 +188,15 @@ export default function CreatorApp() {
 
   // --- Handlers ---
   const handleSaveLogs = async (newLogs: DailyLog[]) => {
-    await dataService.saveLogs(newLogs);
-    // 🏗️ saveLogs() อัปเดต Cache ภายในแล้ว → getLogs() จะอ่านจาก Cache (ไม่ re-fetch)
-    setLogs(await dataService.getLogs());
-    showToast('บันทึกข้อมูลเรียบร้อย');
+    try {
+      await dataService.saveLogs(newLogs);
+      // 🏗️ saveLogs() อัปเดต Cache ภายในแล้ว → getLogs() จะอ่านจาก Cache (ไม่ re-fetch)
+      setLogs(await dataService.getLogs());
+      showToast('บันทึกข้อมูลเรียบร้อย');
+    } catch (error) {
+      console.error('Error in handleSaveLogs:', error);
+      showToast('เกิดข้อผิดพลาด: เซสชันอาจหมดอายุ กรุณารีเฟรชหน้าเว็บ');
+    }
   };
 
   const handleAddPage = async (pageData: Omit<Page, 'id'>) => {

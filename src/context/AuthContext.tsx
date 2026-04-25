@@ -46,9 +46,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // เมื่อ user เปิดแท็บค้างนานแล้วกลับมา → force check session validity
     // ถ้า token หมดอายุ Supabase จะ auto-refresh ให้ → ยิง TOKEN_REFRESHED event
     // ถ้า refresh ไม่ได้ (เช่น refresh_token หมดอายุ) → ยิง SIGNED_OUT event
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
-        supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+           console.warn('⚠️ No active session found on focus, reloading...');
+           window.location.reload();
+           return;
+        }
+        if (data.session && data.session.expires_at) {
+          // ถ้า session จะหมดอายุในอีก 5 นาที (หรือหมดไปแล้ว) ให้บังคับ refresh ทันที
+          const timeToExpiry = (data.session.expires_at * 1000) - Date.now();
+          if (timeToExpiry < 5 * 60 * 1000) {
+            console.log('🔄 Session expiring soon or expired, proactive refresh...');
+            const { error } = await supabase.auth.refreshSession();
+            if (error) {
+              console.error('❌ Failed to refresh session, forcing reload to trigger middleware...', error);
+              window.location.reload();
+            }
+          }
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
