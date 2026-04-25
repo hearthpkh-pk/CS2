@@ -308,8 +308,8 @@ export const logCacheService = {
     if (!db) return Date.now(); // Fallback id
 
     // 🛡️ ดึง userId ปัจจุบันมาผูกกับคิว เพื่อป้องกันการซิงค์ข้ามบัญชี
-    const metaStore = await logCacheService.getMeta(META_USER_ID);
-    const userId = metaStore || 'anonymous';
+    const cachedUserId = await logCacheService.getCachedUserId();
+    const userId = cachedUserId || 'anonymous';
 
     return new Promise((resolve) => {
       const transaction = db.transaction([STORE_SYNC_QUEUE], 'readwrite');

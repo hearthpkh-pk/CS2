@@ -1,5 +1,6 @@
 import { User, Team, Role } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
+import { logCacheService } from './logCacheService';
 
 export const personnelService = {
   getAvailableUsers: async (viewerRole?: Role): Promise<User[]> => {

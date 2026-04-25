@@ -10,7 +10,8 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.Staff]: 'Staff',
   [Role.Manager]: 'Manager',
   [Role.Admin]: 'Admin',
-  [Role.SuperAdmin]: 'Super Admin'
+  [Role.SuperAdmin]: 'Super Admin',
+  [Role.Developer]: 'Developer'
 };
 
 /**
@@ -21,7 +22,8 @@ export const ROLE_THEME: Record<Role, { color: string; bg: string; border: strin
   [Role.Staff]: { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
   [Role.Manager]: { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
   [Role.Admin]: { color: 'text-slate-900', bg: 'bg-slate-100', border: 'border-slate-200' },
-  [Role.SuperAdmin]: { color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' }
+  [Role.SuperAdmin]: { color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+  [Role.Developer]: { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' }
 };
 
 /**
