@@ -22,6 +22,7 @@ export const personnelService = {
       salary: Number(p.salary) || 0,
       department: p.department,
       group: p.group,
+      brand: p.brand,
       bankName: p.bank_name,
       bankAccount: p.bank_account,
       startDate: p.enlistment_date,
@@ -67,7 +68,9 @@ export const personnelService = {
     // Base payload — columns ที่มีอยู่ตั้งแต่ต้นและปลอดภัย 100%
     const basePayload: Record<string, unknown> = {
       name: user.name,
-      username: user.username,
+      username: user.username && user.username.trim() !== "" 
+        ? user.username 
+        : (user.email ? user.email.split('@')[0] : `staff_${Math.random().toString(36).substring(7)}`),
       role: user.role,
       team_id: (user.teamId && !user.teamId.startsWith('team-')) ? user.teamId : null,
       salary: user.salary ?? 12000,
@@ -83,6 +86,7 @@ export const personnelService = {
     if (user.phone     !== undefined) extendedFields.phone         = user.phone;
     if (user.lineId    !== undefined) extendedFields.line_id       = user.lineId;
     if (user.status    !== undefined) extendedFields.status        = user.status;
+    if (user.brand     !== undefined) extendedFields.brand         = user.brand;
     if (user.bankName  !== undefined) extendedFields.bank_name     = user.bankName;
     if (user.bankAccount !== undefined) extendedFields.bank_account = user.bankAccount;
     if (user.startDate !== undefined) extendedFields.enlistment_date = user.startDate;

@@ -47,6 +47,7 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
     setIsAdjustingSalary,
     salaryForm,
     setSalaryForm,
+    isSaving,
     handleSaveUser,
     handleCreateTeam,
     handleUpdateTeam,
@@ -98,40 +99,67 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
               </button>
             ))}
           </div>
-          
-          <button 
-            onClick={() => setEditingUser({ 
-              id: `user-${Date.now()}`, 
-              name: '', 
-              role: Role.Staff, 
-              username: '', 
-              isActive: true,
-              status: 'Pending',
-              salary: 12000  // เงินเดือนพื้นฐานตามนโยบาย
-            })}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--primary-theme)] text-white text-sm font-bold font-noto rounded-2xl hover:bg-[var(--primary-theme-hover)] transition-all shadow-lg shadow-blue-100/50 active:scale-95"
-          >
-            <Plus size={18} />
-            เพิ่มพนักงาน
-          </button>
+
+          {activeTab === 'directory' && (
+            <button 
+              onClick={() => setEditingUser({
+                id: `user-${Date.now()}`,
+                name: '',
+                username: '',
+                role: Role.Staff,
+                isActive: false,
+                salary: 12000
+              })}
+              className="flex items-center gap-2 bg-[var(--primary-theme)] text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-blue-200 active:scale-95"
+            >
+              <Plus size={14} />
+              Add Personnel
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Conditionally Render Stat Cards (only for directory/teams) */}
-      {activeTab !== 'access' && <StatCards stats={stats} />}
+      {/* Stats Section */}
+      <StatCards stats={stats} />
 
-      {/* Main Content Areas */}
-      <div className="min-h-[600px]">
+      {/* Main Content Area */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[600px]">
         {activeTab === 'directory' && (
-          <PersonnelTable 
-            users={filteredUsers}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            roleFilter={roleFilter}
-            onRoleFilterChange={setRoleFilter}
-            onEdit={setEditingUser}
-            teams={teams}
-          />
+          <div className="flex flex-col h-full">
+            {/* Table Search Header */}
+            <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/30">
+              <div className="relative w-full md:w-96">
+                <input
+                  type="text"
+                  placeholder="Search by name or identity..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-xs font-medium outline-none focus:border-[var(--primary-theme)] transition-all shadow-sm"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value as any)}
+                  className="bg-white border border-slate-200 rounded-2xl px-4 py-3 text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer hover:border-slate-300 transition-all shadow-sm"
+                >
+                  <option value="All">All Roles</option>
+                  {Object.values(Role).map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <PersonnelTable 
+              users={filteredUsers} 
+              onEdit={setEditingUser}
+              onSalaryAdjust={(user) => {
+                setEditingUser(user);
+                // logic to open salary adjustment if needed
+              }}
+            />
+          </div>
         )}
 
         {activeTab === 'teams' && (
@@ -148,19 +176,20 @@ export const TeamManagementView: React.FC<TeamManagementProps> = ({
       </div>
 
       {/* Profile Editor Drawer */}
-      <PersonnelDrawer 
+      <PersonnelDrawer
         editingUser={editingUser}
-        users={users}
-        teams={teams}
         onClose={() => setEditingUser(null)}
         onSave={handleSaveUser}
         onChange={setEditingUser}
+        teams={teams}
         isAdjustingSalary={isAdjustingSalary}
         onToggleAdjustSalary={setIsAdjustingSalary}
         salaryForm={salaryForm}
         onSalaryFormChange={setSalaryForm}
         onConfirmSalary={handleConfirmSalary}
+        users={users}
         viewerRole={currentUser?.role}
+        isSaving={isSaving}
       />
 
     </div>

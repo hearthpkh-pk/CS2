@@ -23,6 +23,17 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
   onEdit,
   teams
 }) => {
+  const roleWeights: Record<string, number> = {
+    [Role.Developer]: 5,
+    [Role.SuperAdmin]: 4,
+    [Role.Admin]: 3,
+    [Role.Manager]: 2,
+    [Role.Staff]: 1
+  };
+
+  const sortedUsers = [...users].sort((a, b) => {
+    return (roleWeights[b.role] || 0) - (roleWeights[a.role] || 0);
+  });
   return (
     <div className="space-y-6">
       {/* Search & Filter Bar */}
@@ -60,7 +71,8 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
             <thead>
               <tr className="border-b border-slate-50">
                 <th className="px-8 pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit">Personnel Record</th>
-                <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-center">System Identity</th>
+                <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-center">Workload Group</th>
+                <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-center">Brand</th>
                 <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit">{PERSONNEL_LABELS.GROUP_HEADER}</th>
                 <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-right">Placement Date</th>
                 <th className="pb-6 pt-8 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.2em] font-outfit text-center">Status</th>
@@ -68,7 +80,7 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50/50">
-              {users.map((user) => (
+              {sortedUsers.map((user) => (
                 <tr 
                   key={user.id} 
                   onClick={() => onEdit(user)}
@@ -94,8 +106,13 @@ const PersonnelTable: React.FC<PersonnelTableProps> = ({
                     </div>
                   </td>
                   <td className="py-5 text-center">
-                    <div className="text-[10px] font-bold text-slate-800 bg-slate-100/50 px-3 py-1.5 rounded-lg inline-block font-inter">
-                      {user.username}
+                    <div className="text-[10px] font-bold text-slate-600 bg-slate-100/50 px-3 py-1.5 rounded-lg inline-block font-inter uppercase tracking-widest">
+                      {user.department || user.group || '—'}
+                    </div>
+                  </td>
+                  <td className="py-5 text-center">
+                    <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg inline-block font-inter uppercase tracking-widest">
+                      {user.brand || '—'}
                     </div>
                   </td>
                   <td className="py-5">

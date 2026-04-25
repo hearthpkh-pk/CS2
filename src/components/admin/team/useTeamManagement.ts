@@ -15,6 +15,7 @@ export const useTeamManagement = (
 
   // ล้างการใช้ useMemo แล้วเปลี่ยนเป็น useEffect เพื่อโหลดข้อมูล Async จาก Service
   const [personnelVersion, setPersonnelVersion] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   const sync = () => setPersonnelVersion(v => v + 1);
 
   useEffect(() => {
@@ -56,23 +57,34 @@ export const useTeamManagement = (
 
   // --- Handlers ---
   const handleSaveUser = async (userData: User) => {
-    // 🛡️ เสมอ: บันทึกลง DB ก่อน แล้วค่อย sync state
-    await personnelService.saveUser(userData);
+    if (isSaving) return;
+    setIsSaving(true);
+    
+    try {
+      // 🛡️ เสมอ: บันทึกลง DB ก่อน แล้วค่อย sync state
+      await personnelService.saveUser(userData);
 
-    // Re-fetch ข้อมูลจาก DB เพื่อให้ตรงกับ Source of Truth
-    const freshUsers = await personnelService.getAvailableUsers(viewerRole);
-    setUsers(freshUsers);
+      // Re-fetch ข้อมูลจาก DB เพื่อให้ตรงกับ Source of Truth
+      const freshUsers = await personnelService.getAvailableUsers(viewerRole);
+      setUsers(freshUsers);
 
-    // ถ้ามี external state (page.tsx) → propagate ไปด้วย
-    if (setExternalUsers) {
-      setExternalUsers(freshUsers);
+      // ถ้ามี external state (page.tsx) → propagate ไปด้วย
+      if (setExternalUsers) {
+        setExternalUsers(freshUsers);
+      }
+
+      // Re-sync stats (Total Personnel, Active Personnel, etc.)
+      setStats(await personnelService.getPersonnelStats());
+      setTeams(await personnelService.getTeams());
+
+      setEditingUser(null);
+    } catch (err) {
+      console.error('Failed to save user:', err);
+      // Re-throw so UI can handle if needed
+      throw err;
+    } finally {
+      setIsSaving(false);
     }
-
-    // Re-sync stats (Total Personnel, Active Personnel, etc.)
-    setStats(await personnelService.getPersonnelStats());
-    setTeams(await personnelService.getTeams());
-
-    setEditingUser(null);
   };
 
   const handleCreateTeam = async (name: string) => {
@@ -131,6 +143,7 @@ export const useTeamManagement = (
     setIsAdjustingSalary,
     salaryForm,
     setSalaryForm,
+    isSaving,
     handleSaveUser,
     handleCreateTeam,
     handleUpdateTeam,

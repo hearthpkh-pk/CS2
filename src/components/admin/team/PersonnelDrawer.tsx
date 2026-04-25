@@ -18,6 +18,7 @@ interface PersonnelDrawerProps {
   onConfirmSalary: () => void;
   users: User[];
   viewerRole?: Role;
+  isSaving?: boolean;
 }
 
 // Shared input class — single consistent style throughout
@@ -36,7 +37,8 @@ const PersonnelDrawer: React.FC<PersonnelDrawerProps> = ({
   onSalaryFormChange,
   onConfirmSalary,
   users,
-  viewerRole
+  viewerRole,
+  isSaving = false
 }) => {
   const { config } = useCompanyConfig();
   if (!editingUser) return null;
@@ -373,9 +375,20 @@ const PersonnelDrawer: React.FC<PersonnelDrawerProps> = ({
           </button>
           <button
             onClick={() => onSave(editingUser)}
-            className="px-8 py-2.5 bg-blue-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-colors active:scale-95 shadow-sm"
+            disabled={isSaving}
+            className={cn(
+              "px-8 py-2.5 bg-blue-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-2",
+              isSaving ? "opacity-70 cursor-not-allowed scale-100" : "hover:bg-blue-700 active:scale-95"
+            )}
           >
-            Commit Changes
+            {isSaving ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Commit Changes"
+            )}
           </button>
         </div>
 
