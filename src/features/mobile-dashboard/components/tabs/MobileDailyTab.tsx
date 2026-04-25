@@ -20,49 +20,48 @@ export const MobileDailyTab = ({
   const progressPercent = totalAssigned > 0 ? Math.round((totalUpdated / totalAssigned) * 100) : 0;
 
   return (
-    <div className="animate-in fade-in duration-300 pb-8 bg-white min-h-full">
+    <div className="animate-in fade-in duration-300 pb-8 bg-slate-50 min-h-full">
       {/* KPI Minimalist */}
-      <div className="border-b border-slate-100 px-6 py-8 bg-slate-50 relative overflow-hidden">
-        {/* Subtle grid pattern for professional tech feel */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wICA0MEgwVjBIMzkuOTg5VjQwSDBaIiBmaWxsPSJub25lIi8+CjxwYXRoIGQ9Ik0zOS45ODkgNEgwdjFIMzkuOTg5em0wIDhIMHYxSDM5Ljk4OXptMCA4SDB2MUgzOS45ODl6bTAgOEgwdjFIMzkuOTg5em0wIDhIMHYxSDM5Ljk4OXoiIGZpbGw9IiNFMkU4RjAiIGZpbGwtb3BhY2l0eT0iLjMiLz4KPHBhdGggZD0iTTQgMHY0MGgxVjB6bTggMHY0MGgxVjB6bTggMHY0MGgxVjB6bTggMHY0MGgxVjB6bTggMHY0MGgxVjB6IiBmaWxsPSIjRTJFOEYwIiBmaWxsLW9wYWNpdHk9Ii4zIi8+Cjwvc3ZnPg==')] opacity-40 z-0"></div>
-        
+      <div className="bg-white mx-4 mt-6 rounded-[1.5rem] p-6 shadow-sm relative overflow-hidden border border-slate-100">
         <div className="relative z-10">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.25em] font-noto mb-3">Today's Operations</p>
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] font-outfit">Today's Operations</h3>
+          </div>
           <div className="flex items-end justify-between">
-            <div className="flex gap-4 items-baseline">
-               <span className="text-6xl font-light font-outfit tracking-tighter text-[#054ab3] leading-none">{progressPercent}<span className="text-3xl text-[#054ab3]/40 font-normal ml-0.5">%</span></span>
+            <div className="flex gap-2 items-baseline">
+               <span className="text-5xl font-extrabold font-outfit tracking-tighter text-slate-800 leading-none">{progressPercent}<span className="text-2xl text-slate-400 font-bold ml-1">%</span></span>
             </div>
-            <div className="pb-1.5 text-right">
-               <p className="text-sm font-semibold text-slate-700 font-outfit">{totalUpdated} <span className="text-slate-400 font-normal">/ {totalAssigned}</span></p>
-               <p className="text-[9px] text-[#054ab3] font-noto uppercase tracking-widest mt-0.5">Processed</p>
+            <div className="pb-1 text-right">
+               <p className="text-sm font-bold text-slate-700 font-outfit">{totalUpdated} <span className="text-slate-400 font-medium">/ {totalAssigned}</span></p>
+               <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest mt-1">Processed</p>
             </div>
           </div>
-          <div className="w-full h-[3px] bg-slate-200 mt-6 rounded-full relative overflow-hidden">
-             <div className="absolute top-0 left-0 h-full bg-[#054ab3] transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }}></div>
+          <div className="w-full h-2 bg-slate-100 mt-5 rounded-full relative overflow-hidden">
+             <div className="absolute top-0 left-0 h-full bg-[#054ab3] transition-all duration-1000 ease-out rounded-full" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
       </div>
 
-      <div className="px-0 py-2">
+      <div className="px-4 py-4 space-y-4">
         {/* Search */}
-        <div className="relative mb-2 mt-4 px-6">
-          <Search size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="relative">
+          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input 
             type="text" 
             placeholder="Search operator..."
-            className="w-full bg-transparent border-b border-slate-200 py-2.5 pl-7 pr-4 text-xs font-noto text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-800 transition-all rounded-none"
+            className="w-full bg-white border border-slate-200 py-3 pl-10 pr-4 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all rounded-xl shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="mt-4 flex px-6 justify-between items-center mb-1">
-           <h3 className="text-[10px] font-bold text-slate-500 font-outfit tracking-[0.2em] uppercase">Operator Status</h3>
-           <span className="text-[10px] font-bold text-slate-400 font-noto uppercase">History (3D)</span>
+        <div className="flex justify-between items-center px-1">
+           <h3 className="text-[10px] font-bold text-slate-500 font-outfit tracking-widest uppercase">Operator Status</h3>
+           <span className="text-[9px] font-bold text-slate-400 font-outfit uppercase tracking-widest">History (3D)</span>
         </div>
 
         {/* List */}
-        <div className="text-slate-800">
+        <div className="flex flex-col gap-3">
            {filteredStaff.map((staff) => {
               const hasNoPages = staff.totalPages === 0;
 
@@ -70,20 +69,20 @@ export const MobileDailyTab = ({
                  <button 
                   key={staff.id}
                   onClick={() => onStaffClick(staff)}
-                  className="w-full flex items-center justify-between py-4 px-6 border-b border-slate-100/80 hover:bg-slate-50 transition-colors text-left group stroke-white"
+                  className="w-full flex items-center justify-between p-4 bg-white rounded-[1rem] border border-slate-100 shadow-sm hover:shadow-md transition-all text-left group"
                  >
-                    <div className="flex items-center gap-4">
-                       <span className="w-8 text-center text-[10px] font-black font-outfit text-slate-400 group-hover:text-[#054ab3] transition-colors bg-slate-50 py-1.5 rounded">{staff.avatar}</span>
+                    <div className="flex items-center gap-3">
+                       <span className="w-10 h-10 flex items-center justify-center text-sm font-black font-outfit text-slate-500 bg-slate-50 border border-slate-100 rounded-full group-hover:bg-[#054ab3] group-hover:text-white transition-colors">{staff.avatar}</span>
                        <div>
-                         <h4 className="font-semibold text-[13px] text-slate-900 font-noto tracking-tight leading-tight">{staff.name}</h4>
-                         <p className="text-[10px] text-slate-400 font-outfit mt-0.5 tracking-wide">
-                            {hasNoPages ? 'NO ASSIGNED PAGES' : <span className="text-[#054ab3] font-bold">{staff.totalPages} ACTIVE PAGES</span>}
+                         <h4 className="font-bold text-[13px] text-slate-800 font-prompt leading-tight">{staff.name}</h4>
+                         <p className="text-[10px] text-slate-400 font-outfit mt-1 tracking-wide">
+                            {hasNoPages ? 'NO ASSIGNED PAGES' : <span className="text-emerald-500 font-bold">{staff.totalPages} ACTIVE PAGES</span>}
                          </p>
                        </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         {staff.history.map((h: any, idx: number) => (
                            <MobileHistoryBlock key={idx} day={h.dayNameShort[0]} status={h.status} isToday={idx === 2} />
                         ))}
@@ -92,6 +91,9 @@ export const MobileDailyTab = ({
                  </button>
               )
            })}
+           {filteredStaff.length === 0 && (
+              <div className="text-center py-8 text-sm text-slate-400 italic">No operators found</div>
+           )}
         </div>
       </div>
     </div>

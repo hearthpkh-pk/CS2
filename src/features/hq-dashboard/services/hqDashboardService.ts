@@ -22,6 +22,25 @@ export interface RiskRadarEntry {
   message?: string;
 }
 
+export interface CategoryPerformance {
+  category: string;
+  totalViews: number;
+  pageCount: number;
+  avgViewsPerPage: number;
+}
+
+export interface BrandPerformance {
+  brand: string;
+  totalViews: number;
+  staffCount: number;
+  avgViewsPerStaff: number;
+}
+
+export interface AssetHealthSummary {
+  pages: { status: string; count: number }[];
+  accounts: { status: string; count: number }[];
+}
+
 export interface HQDashboardMetrics {
   scope: 'Company' | 'Team' | 'Personal';
   totalUsersInScope: number;
@@ -31,6 +50,9 @@ export interface HQDashboardMetrics {
   leaderboard: LeaderboardEntry[];
   riskRadar: RiskRadarEntry[];
   assets: Page[];
+  categoryPerformance: CategoryPerformance[];
+  brandPerformance: BrandPerformance[];
+  assetHealth: AssetHealthSummary;
 }
 
 export const hqDashboardService = {
@@ -106,6 +128,82 @@ export const hqDashboardService = {
       }
     });
 
+    const categoryMap: Record<string, { views: number, pages: Set<string> }> = {};
+    
+    // First, count pages per category
+    scopedPages.forEach(p => {
+      const cat = p.category || 'Other';
+      if (!categoryMap[cat]) categoryMap[cat] = { views: 0, pages: new Set() };
+      categoryMap[cat].pages.add(p.id);
+    });
+
+    currentMonthLogs.forEach(log => {
+      const page = scopedPages.find(p => p.id === log.pageId);
+      if (page) {
+        const cat = page.category || 'Other';
+        if (!categoryMap[cat]) categoryMap[cat] = { views: 0, pages: new Set() };
+        categoryMap[cat].views += log.views;
+      }
+    });
+
+    const categoryPerformance: CategoryPerformance[] = Object.keys(categoryMap).map(cat => {
+      const data = categoryMap[cat];
+      return {
+        category: cat,
+        totalViews: data.views,
+        pageCount: data.pages.size,
+        avgViewsPerPage: data.pages.size > 0 ? data.views / data.pages.size : 0
+      };
+    }).sort((a, b) => b.totalViews - a.totalViews);
+
+    // Brand Performance logic
+    const brandMap: Record<string, { views: number, staff: Set<string> }> = {};
+    staffInScope.forEach(u => {
+      const b = u.brand || 'Unassigned';
+      if (!brandMap[b]) brandMap[b] = { views: 0, staff: new Set() };
+      brandMap[b].staff.add(u.id);
+    });
+
+    currentMonthLogs.forEach(log => {
+      const u = staffInScope.find(s => s.id === log.staffId);
+      if (u) {
+        const b = u.brand || 'Unassigned';
+        if (!brandMap[b]) brandMap[b] = { views: 0, staff: new Set() };
+        brandMap[b].views += log.views;
+      }
+    });
+
+    const brandPerformance: BrandPerformance[] = Object.keys(brandMap).map(b => {
+      const data = brandMap[b];
+      return {
+        brand: b,
+        totalViews: data.views,
+        staffCount: data.staff.size,
+        avgViewsPerStaff: data.staff.size > 0 ? data.views / data.staff.size : 0
+      };
+    }).sort((a, b) => b.totalViews - a.totalViews);
+
+    const assetHealth: AssetHealthSummary = {
+      pages: [],
+      accounts: []
+    };
+    
+    const pageStatusMap: Record<string, number> = {};
+    scopedPages.forEach(p => {
+      if (!p.isDeleted) {
+        pageStatusMap[p.status] = (pageStatusMap[p.status] || 0) + 1;
+      }
+    });
+    assetHealth.pages = Object.keys(pageStatusMap).map(s => ({ status: s, count: pageStatusMap[s] }));
+
+    const accStatusMap: Record<string, number> = {};
+    scopedAccounts.forEach(a => {
+      if (!a.isDeleted) {
+        accStatusMap[a.status] = (accStatusMap[a.status] || 0) + 1;
+      }
+    });
+    assetHealth.accounts = Object.keys(accStatusMap).map(s => ({ status: s, count: accStatusMap[s] }));
+
     return {
       scope,
       totalUsersInScope: staffInScope.length,
@@ -114,7 +212,10 @@ export const hqDashboardService = {
       attainmentPercentage,
       leaderboard,
       riskRadar,
-      assets: scopedPages
+      assets: scopedPages,
+      categoryPerformance,
+      brandPerformance,
+      assetHealth
     };
   }
 };

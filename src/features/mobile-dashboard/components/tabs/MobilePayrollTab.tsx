@@ -3,16 +3,16 @@ import { Building2 } from 'lucide-react';
 
 export const MobilePayrollTab = ({ staffData }: { staffData: any[] }) => {
   return (
-    <div className="animate-in fade-in duration-300 pb-8 bg-white min-h-full">
-      <div className="border-b border-slate-100 px-6 py-8 bg-slate-50 relative overflow-hidden">
-        <h3 className="text-[9px] font-bold text-[#054ab3] uppercase tracking-[0.25em] font-noto mb-3">Payroll Validation</h3>
-        <p className="text-4xl font-light font-outfit tracking-tighter text-slate-900 leading-none">Security Mode</p>
-        <p className="text-[10px] font-medium text-slate-500 font-noto mt-2 leading-relaxed">
+    <div className="animate-in fade-in duration-300 pb-8 bg-slate-50 min-h-full">
+      <div className="bg-white mx-4 mt-6 rounded-[1.5rem] p-6 shadow-sm border border-slate-100">
+        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] font-outfit mb-3">Payroll Validation</h3>
+        <p className="text-4xl font-extrabold font-outfit tracking-tighter text-slate-800 leading-none">Security Mode</p>
+        <p className="text-[10px] font-medium text-slate-500 font-noto mt-3 leading-relaxed">
           โหมดตรวจสอบความถูกต้องบัญชี สำหรับ Super Admin เพื่อป้องกันความผิดพลาด
         </p>
       </div>
 
-      <div className="px-6 py-6 border-b border-slate-100/80">
+      <div className="bg-white mx-4 mt-4 rounded-[1.5rem] p-6 shadow-sm border border-slate-100">
         <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-[11px] font-bold text-slate-600 font-noto">บัญชีพนักงาน (ตรวจสอบ)</p>
@@ -34,7 +34,7 @@ export const MobilePayrollTab = ({ staffData }: { staffData: any[] }) => {
         </div>
       </div>
       
-      <div className="px-6 py-6 opacity-60">
+      <div className="mx-4 mt-4 px-6 py-6 opacity-60">
         <div className="flex items-start gap-4">
           <Building2 size={16} className="text-[#054ab3] mt-0.5" />
           <div>

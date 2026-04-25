@@ -18,6 +18,12 @@ export const MobileStaffDetail = ({
   const isClickScrolling = useRef(false);
   const selectedPageIdRef = useRef(selectedPageId);
 
+  // Mouse Drag State
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftPos = useRef(0);
+  const dragDistance = useRef(0);
+
   // Alert/Tag form state
   const [tagModalOpen, setTagModalOpen] = useState(false);
   const [tagType, setTagType] = useState<'Flag' | 'Note' | 'Warning'>('Warning');
@@ -109,22 +115,22 @@ export const MobileStaffDetail = ({
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-[#054ab3] transition-colors py-1.5 px-2 bg-slate-50 rounded-lg border border-slate-200 shadow-sm"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors py-1.5 px-2 bg-white rounded-lg border border-slate-200 shadow-sm"
           >
             <ChevronLeft size={16} />
             <span className="text-[10px] font-bold uppercase tracking-wider font-outfit">Overview</span>
           </button>
           <div className={cn(
-            "px-2.5 py-1 rounded-md text-[10px] font-bold font-outfit border uppercase",
-            isComplete ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-              progressPercent > 0 ? 'bg-blue-50 text-[#054ab3] border-blue-200' : 'bg-slate-50 text-slate-500 border-slate-200'
+            "px-2.5 py-1 rounded-md text-[10px] font-bold font-outfit border uppercase bg-white shadow-sm",
+            isComplete ? 'text-emerald-500 border-slate-200' :
+              progressPercent > 0 ? 'text-[#054ab3] border-slate-200' : 'text-slate-500 border-slate-200'
           )}>
             {isComplete ? 'All Tasks Done' : `${progressPercent}% Progress`}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center font-black text-xl text-[#054ab3] font-outfit border border-slate-200 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center font-black text-xl text-slate-700 font-outfit border border-slate-200 shadow-sm">
             {selectedStaff.avatar}
           </div>
           <div>
@@ -144,9 +150,34 @@ export const MobileStaffDetail = ({
           ) : (
             <div
               ref={scrollContainerRef}
-              className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-0 pb-4 pt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+              className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-0 pb-4 pt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth cursor-grab active:cursor-grabbing"
+              onMouseDown={(e) => {
+                isDragging.current = true;
+                dragDistance.current = 0;
+                startX.current = e.pageX - scrollContainerRef.current!.offsetLeft;
+                scrollLeftPos.current = scrollContainerRef.current!.scrollLeft;
+              }}
+              onMouseLeave={() => {
+                isDragging.current = false;
+              }}
+              onMouseUp={() => {
+                isDragging.current = false;
+              }}
+              onMouseMove={(e) => {
+                if (!isDragging.current) return;
+                e.preventDefault();
+                const x = e.pageX - scrollContainerRef.current!.offsetLeft;
+                const walk = (x - startX.current) * 1.5;
+                dragDistance.current = Math.abs(walk);
+                if (scrollContainerRef.current) {
+                  // Disable smooth scroll temporarily for immediate drag tracking
+                  scrollContainerRef.current.style.scrollBehavior = 'auto';
+                  scrollContainerRef.current.scrollLeft = scrollLeftPos.current - walk;
+                  scrollContainerRef.current.style.scrollBehavior = 'smooth';
+                }
+              }}
             >
-              {/* Start Spacer (Blue Box) - Used to push the first item to exactly center of the screen */}
+              {/* Start Spacer (Slate Box) - Used to push the first item to exactly center of the screen */}
               <div className="shrink-0 w-[calc(50vw-80px-0.75rem)] min-h-full bg-gradient-to-l from-[#054ab3] to-[#054ab3]/80 rounded-r-2xl flex items-center justify-end pr-3 snap-align-none shadow-[inset_0px_0px_10px_rgba(0,0,0,0.1)]">
                 <div className="w-1.5 h-6 rounded-full bg-white/20" />
               </div>
@@ -155,7 +186,12 @@ export const MobileStaffDetail = ({
                 <button
                   key={page.id}
                   data-page-id={page.id}
-                  onClick={() => {
+                  onClick={(e) => {
+                    // Prevent click if we dragged
+                    if (dragDistance.current > 5) {
+                      e.preventDefault();
+                      return;
+                    }
                     isClickScrolling.current = true;
                     setSelectedPageId(page.id);
                     const container = scrollContainerRef.current;
@@ -174,7 +210,7 @@ export const MobileStaffDetail = ({
                   <div className="flex justify-between items-start mb-3">
                     <div className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center border font-black font-outfit text-[10px] transition-colors",
-                      selectedPageId === page.id ? "bg-[#054ab3] text-white border-[#054ab3]" : "bg-slate-50 text-[#054ab3] border-slate-200"
+                      selectedPageId === page.id ? "bg-[#054ab3] text-white border-[#054ab3]" : "bg-white text-slate-400 border-slate-200"
                     )}>
                       {page.boxId.toString().padStart(2, '0')}
                     </div>
@@ -202,7 +238,7 @@ export const MobileStaffDetail = ({
                 <div className="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                   <div>
                     <h2 className="text-sm font-bold font-noto text-slate-900 leading-tight mb-1">{activePage.name}</h2>
-                    <span className="text-[9px] text-[#054ab3] font-outfit tracking-widest font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">BOX {activePage.boxId.toString().padStart(2, '0')}</span>
+                    <span className="text-[9px] text-slate-500 font-outfit tracking-widest font-bold border border-slate-200 px-2 py-0.5 rounded-full">BOX {activePage.boxId.toString().padStart(2, '0')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button

@@ -8,7 +8,7 @@ import { hqDashboardService } from '../services/hqDashboardService';
 import { KPIStrip } from './KPIStrip';
 import { PerformanceMatrix } from './PerformanceMatrix';
 import { RiskCenter } from './RiskCenter';
-import { ShieldAlert, ArrowRight } from 'lucide-react';
+import { ShieldAlert, ArrowRight, PieChart, BarChart, Server, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { dataService } from '@/services/dataService';
 import { personnelService } from '@/services/personnelService';
@@ -30,11 +30,16 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
   const [allAccounts, setAllAccounts] = useState<FBAccount[]>([]);
   const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch real data on component mount
+  // Fetch real data on component mount and auto-refresh
   useEffect(() => {
-    const fetchRealData = async () => {
-      setIsLoading(true);
+    let intervalId: NodeJS.Timeout;
+    
+    const fetchRealData = async (isBackground = false) => {
+      if (!isBackground) setIsLoading(true);
+      else setIsRefreshing(true);
+      
       try {
         const [fetchedUsers, fetchedPages, fetchedAccounts, fetchedLogs] = await Promise.all([
           personnelService.getAvailableUsers(currentUser.role),
@@ -50,11 +55,20 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
-        setIsLoading(false);
+        if (!isBackground) setIsLoading(false);
+        else setIsRefreshing(false);
       }
     };
     
-    fetchRealData();
+    // Initial load
+    fetchRealData(false);
+    
+    // Auto-refresh every 5 minutes (300,000 ms)
+    intervalId = setInterval(() => {
+      fetchRealData(true);
+    }, 300000);
+    
+    return () => clearInterval(intervalId);
   }, [currentUser]);
 
   // Decide source of truth
@@ -95,9 +109,21 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
               HQ CONTROL CENTER
             </h2>
           </div>
-          <p className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
+          <div className="text-slate-400 font-noto text-[11px] mt-1.5 flex items-center gap-2">
             ศูนย์ควบคุมปฏิบัติการและวิเคราะห์ข้อมูลองค์กร • <span className="text-[var(--primary-theme)] font-bold">{dashboardData.scope} Executive Console</span>
-          </p>
+            <span className="mx-1 text-slate-300">•</span>
+            {isRefreshing ? (
+              <span className="flex items-center gap-1.5 text-indigo-500 font-semibold animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>
+                Syncing Live Data...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-emerald-500 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+                Live Auto-Refresh Active
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-xl px-3 py-1.5 shadow-sm hover:border-slate-200 transition-colors">
@@ -132,7 +158,193 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
         riskCount={dashboardData.riskRadar.length}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
+      {/* ANALYTICS ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mt-2">
+        {/* CATEGORY PERFORMANCE */}
+        <div className="bg-white rounded-[1.5rem] p-5 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <PieChart size={14} className="text-slate-400" strokeWidth={1.5} />
+            <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-widest">Category Analytics</h3>
+          </div>
+          
+          <div className="flex flex-col md:flex-row items-center gap-6 lg:px-4">
+            
+            {/* Left: Compact List */}
+            <div className="flex-1 w-full space-y-1">
+              {dashboardData.categoryPerformance.map((cat, idx) => {
+                const totalViewsInScope = dashboardData.actualTotalViews || 1; 
+                const percent = (cat.totalViews / totalViewsInScope) * 100;
+                const colorClass = idx === 0 ? "bg-slate-700" : idx === 1 ? "bg-slate-500" : idx === 2 ? "bg-slate-400" : "bg-slate-300";
+                
+                return (
+                  <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group/cat">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn("w-2 h-2 rounded-full shadow-sm group-hover/cat:scale-125 transition-transform", colorClass)}></div>
+                        <div>
+                          <span className="text-[13px] font-bold text-slate-700 font-prompt leading-none">{cat.category}</span>
+                          <div className="text-[9px] font-medium text-slate-400 mt-0.5">
+                            {cat.pageCount} Pages • {percent.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-base font-outfit font-extrabold text-slate-800 leading-none">{(cat.totalViews / 1000000).toFixed(1)}<span className="text-[10px] text-slate-400 ml-0.5">M</span></span>
+                        <div className="text-[8px] font-medium text-emerald-500 uppercase tracking-widest mt-0.5">
+                          Avg {(cat.avgViewsPerPage / 1000).toFixed(0)}k/page
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {dashboardData.categoryPerformance.length === 0 && (
+                <div className="text-xs text-slate-400 italic py-2">No data available for this period</div>
+              )}
+            </div>
+
+            {/* Right: Donut Chart */}
+            {dashboardData.categoryPerformance.length > 0 && (
+              <div className="w-full md:w-36 h-36 flex items-center justify-center relative shrink-0">
+                <svg width="100%" height="100%" viewBox="0 0 42 42" className="overflow-visible drop-shadow-sm">
+                  {/* Background Ring */}
+                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f8fafc" strokeWidth="4" />
+                  
+                  {/* Data Rings */}
+                  {(() => {
+                    let cumulative = 0;
+                    return dashboardData.categoryPerformance.map((cat, idx) => {
+                      const totalViewsInScope = dashboardData.actualTotalViews || 1;
+                      const percent = (cat.totalViews / totalViewsInScope) * 100;
+                      cumulative += percent;
+                      const offset = 100 - cumulative + percent;
+                      const color = idx === 0 ? '#334155' : idx === 1 ? '#64748b' : idx === 2 ? '#94a3b8' : '#cbd5e1';
+                      
+                      return (
+                        <circle
+                          key={idx}
+                          cx="21"
+                          cy="21"
+                          r="15.91549430918954"
+                          fill="transparent"
+                          stroke={color}
+                          strokeWidth="4"
+                          strokeDasharray={`${percent} ${100 - percent}`}
+                          strokeDashoffset={offset}
+                          transform="rotate(-90 21 21)"
+                          className="transition-all duration-1000 ease-in-out cursor-pointer hover:stroke-[5px] outline-none"
+                        >
+                          <title>{cat.category}&#10;{(cat.totalViews / 1000000).toFixed(1)}M Views ({percent.toFixed(1)}%)&#10;{cat.pageCount} Pages</title>
+                        </circle>
+                      );
+                    });
+                  })()}
+                </svg>
+                
+                {/* Center Text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Views</span>
+                  <span className="text-lg font-outfit font-extrabold text-slate-800 leading-none mt-0.5">{(dashboardData.actualTotalViews / 1000000).toFixed(1)}<span className="text-[10px] text-slate-400 ml-0.5">M</span></span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* BRAND PERFORMANCE */}
+        <div className="bg-white rounded-[1.5rem] p-5 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Briefcase size={14} className="text-slate-400" strokeWidth={1.5} />
+            <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-widest">Brand Analytics</h3>
+          </div>
+          
+          <div className="flex flex-col md:flex-row items-center gap-6 lg:px-4">
+            
+            {/* Left: Compact List */}
+            <div className="flex-1 w-full space-y-1">
+              {dashboardData.brandPerformance.map((brandData, idx) => {
+                const totalViewsInScope = dashboardData.actualTotalViews || 1; 
+                const percent = (brandData.totalViews / totalViewsInScope) * 100;
+                // Use a slightly different color palette for brand to distinguish from category
+                const colorClass = idx === 0 ? "bg-indigo-600" : idx === 1 ? "bg-indigo-400" : idx === 2 ? "bg-indigo-300" : "bg-indigo-200";
+                
+                return (
+                  <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-50 group/brand">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn("w-2 h-2 rounded-full shadow-sm group-hover/brand:scale-125 transition-transform", colorClass)}></div>
+                        <div>
+                          <span className="text-[13px] font-bold text-slate-700 font-prompt leading-none">{brandData.brand}</span>
+                          <div className="text-[9px] font-medium text-slate-400 mt-0.5">
+                            {brandData.staffCount} Staffs • {percent.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-base font-outfit font-extrabold text-slate-800 leading-none">{(brandData.totalViews / 1000000).toFixed(1)}<span className="text-[10px] text-slate-400 ml-0.5">M</span></span>
+                        <div className="text-[8px] font-medium text-emerald-500 uppercase tracking-widest mt-0.5">
+                          Avg {(brandData.avgViewsPerStaff / 1000).toFixed(0)}k/staff
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {dashboardData.brandPerformance.length === 0 && (
+                <div className="text-xs text-slate-400 italic py-2">No brand data available</div>
+              )}
+            </div>
+
+            {/* Right: Donut Chart */}
+            {dashboardData.brandPerformance.length > 0 && (
+              <div className="w-full md:w-36 h-36 flex items-center justify-center relative shrink-0">
+                <svg width="100%" height="100%" viewBox="0 0 42 42" className="overflow-visible drop-shadow-sm">
+                  {/* Background Ring */}
+                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f8fafc" strokeWidth="4" />
+                  
+                  {/* Data Rings */}
+                  {(() => {
+                    let cumulative = 0;
+                    return dashboardData.brandPerformance.map((brandData, idx) => {
+                      const totalViewsInScope = dashboardData.actualTotalViews || 1;
+                      const percent = (brandData.totalViews / totalViewsInScope) * 100;
+                      cumulative += percent;
+                      const offset = 100 - cumulative + percent;
+                      const color = idx === 0 ? '#4f46e5' : idx === 1 ? '#818cf8' : idx === 2 ? '#a5b4fc' : '#c7d2fe';
+                      
+                      return (
+                        <circle
+                          key={idx}
+                          cx="21"
+                          cy="21"
+                          r="15.91549430918954"
+                          fill="transparent"
+                          stroke={color}
+                          strokeWidth="4"
+                          strokeDasharray={`${percent} ${100 - percent}`}
+                          strokeDashoffset={offset}
+                          transform="rotate(-90 21 21)"
+                          className="transition-all duration-1000 ease-in-out cursor-pointer hover:stroke-[5px] outline-none"
+                        >
+                          <title>{brandData.brand}&#10;{(brandData.totalViews / 1000000).toFixed(1)}M Views ({percent.toFixed(1)}%)&#10;{brandData.staffCount} Staffs</title>
+                        </circle>
+                      );
+                    });
+                  })()}
+                </svg>
+                
+                {/* Center Text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[8px] font-bold text-indigo-400 uppercase tracking-widest">Brand Views</span>
+                  <span className="text-lg font-outfit font-extrabold text-slate-800 leading-none mt-0.5">{(dashboardData.actualTotalViews / 1000000).toFixed(1)}<span className="text-[10px] text-slate-400 ml-0.5">M</span></span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 mt-2">
         
         {/* 3. ATTAINMENT & MATRIX (LEFT 8/12) */}
         <div className="lg:col-span-8 flex flex-col gap-4 md:gap-8">
@@ -172,13 +384,37 @@ export const HQDashboardView: React.FC<HQDashboardViewProps> = ({
             leaderboard={dashboardData.leaderboard}
             pages={dashboardData.assets}
           />
+
         </div>
 
-        {/* 4. RISK & ACTIVITY (RIGHT 4/12) */}
+        {/* 4. ASSET HEALTH & ACTIVITY (RIGHT 4/12) */}
         <div className="lg:col-span-4 flex flex-col gap-4 md:gap-8">
-          
-          <RiskCenter risks={dashboardData.riskRadar} />
 
+          {/* ASSET HEALTH OVERVIEW */}
+          <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-6">
+              <Server size={14} className="text-slate-400" strokeWidth={1.5} />
+              <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-widest">Asset Health Overview</h3>
+            </div>
+            
+            <div className="flex flex-col gap-6">
+              <div>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Managed Pages</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {dashboardData.assetHealth.pages.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-1.5">
+                        <div className={cn("w-1.5 h-1.5 rounded-full", p.status === 'Active' ? 'bg-emerald-400' : 'bg-red-400')}></div>
+                        <span className="text-[10px] font-medium text-slate-600">{p.status}</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">{p.count}</span>
+                    </div>
+                  ))}
+                  {dashboardData.assetHealth.pages.length === 0 && <span className="text-[10px] text-slate-400 italic">No pages</span>}
+                </div>
+              </div>
+            </div>
+          </div>
           {/* ACTIVITY RANKING */}
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
             <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.3em] mb-6">Activity Ranking</h3>

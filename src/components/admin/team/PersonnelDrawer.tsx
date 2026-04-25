@@ -106,10 +106,10 @@ const PersonnelDrawer: React.FC<PersonnelDrawerProps> = ({
                                                        "border-blue-200 text-blue-600"
                 )}
               >
-                <option value="Pending">PENDING</option>
-                <option value="Probation">PROBATION</option>
-                <option value="Official">ACTIVE</option>
-                <option value="Resigned">RESIGNED</option>
+                <option value="Pending">รอเริ่มงาน</option>
+                <option value="Probation">ทดลองงาน</option>
+                <option value="Official">พนักงานประจำ</option>
+                <option value="Resigned">ลาออก</option>
               </select>
             </div>
             <div className="space-y-2 relative pt-2">
@@ -205,19 +205,34 @@ const PersonnelDrawer: React.FC<PersonnelDrawerProps> = ({
             </div>
           </div>
 
-          {/* TEAM ASSIGNMENT */}
-          <div className="space-y-2 relative pt-2">
-            <label className={labelCls}>TEAM ASSIGNMENT</label>
-            <select
-              value={editingUser.teamId || ''}
-              onChange={(e) => onChange({ ...editingUser, teamId: e.target.value || undefined })}
-              className={inputCls}
-            >
-              <option value="">{PERSONNEL_LABELS.UNASSIGNED}</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
+          {/* TEAM & BRAND ASSIGNMENT */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 relative pt-2">
+              <label className={labelCls}>TEAM ASSIGNMENT</label>
+              <select
+                value={editingUser.teamId || ''}
+                onChange={(e) => onChange({ ...editingUser, teamId: e.target.value || undefined })}
+                className={inputCls}
+              >
+                <option value="">{PERSONNEL_LABELS.UNASSIGNED}</option>
+                {teams.map(team => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2 relative pt-2">
+              <label className={labelCls}>BRAND</label>
+              <select
+                value={editingUser.brand || ''}
+                onChange={(e) => onChange({ ...editingUser, brand: e.target.value || undefined })}
+                className={inputCls}
+              >
+                <option value="">UNASSIGNED</option>
+                {(config.brands || []).map(b => (
+                  <option key={b.id} value={b.name}>{b.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Divider */}
