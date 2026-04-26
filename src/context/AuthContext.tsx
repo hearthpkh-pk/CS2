@@ -20,9 +20,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isResolved = false; // Flag ป้องกัน double-resolve
+
+    // 🛡️ Safety Net: ถ้ารอ Auth event นานเกิน 8 วินาที → ถือว่าไม่มี session
+    // แก้ปัญหา Token เก่า/เสียค้างใน Cookie ที่ทำให้หน้าเว็บค้างหน้า "AUTHENTICATING" ตลอดไป
+    const authTimeout = setTimeout(async () => {
+      if (!isResolved) {
+        console.warn('⚠️ Auth timeout (8s): No auth event received. Clearing stale session...');
+        isResolved = true;
+        // ล้าง Session เสียๆ ออกจาก Cookie เพื่อป้องกันการค้างซ้ำในครั้งหน้า
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch (e) {
+          // signOut อาจ fail ถ้า token เสียมาก — ไม่เป็นไร Cookie ถูก clear แล้ว
+        }
+        setUser(null);
+        setIsLoading(false);
+      }
+    }, 8000);
+
     // 🛡️ ใช้ onAuthStateChange + INITIAL_SESSION (Supabase Official Pattern)
     // ไม่ต้องเรียก getSession() แยก → ลด Race Condition
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // ยกเลิก timeout ทันทีที่ได้รับ event แรก
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(authTimeout);
+      }
+
       if (event === 'INITIAL_SESSION') {
         if (session?.user) {
           await fetchUserProfile(session.user.id, session.user.email);
@@ -48,23 +73,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // ถ้า refresh ไม่ได้ (เช่น refresh_token หมดอายุ) → ยิง SIGNED_OUT event
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-           console.warn('⚠️ No active session found on focus, reloading...');
-           window.location.reload();
-           return;
-        }
-        if (data.session && data.session.expires_at) {
-          // ถ้า session จะหมดอายุในอีก 5 นาที (หรือหมดไปแล้ว) ให้บังคับ refresh ทันที
-          const timeToExpiry = (data.session.expires_at * 1000) - Date.now();
-          if (timeToExpiry < 5 * 60 * 1000) {
-            console.log('🔄 Session expiring soon or expired, proactive refresh...');
-            const { error } = await supabase.auth.refreshSession();
-            if (error) {
-              console.error('❌ Failed to refresh session, forcing reload to trigger middleware...', error);
-              window.location.reload();
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (!data.session) {
+            console.warn('⚠️ No active session found on focus, reloading...');
+            window.location.reload();
+            return;
+          }
+          if (data.session && data.session.expires_at) {
+            // ถ้า session จะหมดอายุในอีก 5 นาที (หรือหมดไปแล้ว) ให้บังคับ refresh ทันที
+            const timeToExpiry = (data.session.expires_at * 1000) - Date.now();
+            if (timeToExpiry < 5 * 60 * 1000) {
+              console.log('🔄 Session expiring soon or expired, proactive refresh...');
+              const { error } = await supabase.auth.refreshSession();
+              if (error) {
+                console.error('❌ Failed to refresh session, signing out gracefully...');
+                await supabase.auth.signOut({ scope: 'local' });
+                window.location.reload();
+              }
             }
           }
+        } catch (e) {
+          console.error('❌ Visibility check failed:', e);
         }
       }
     };
@@ -74,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const stopSync = syncService.init();
 
     return () => {
+      clearTimeout(authTimeout);
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (stopSync) stopSync(); // หยุดการซิงค์เมื่อปิดแอป
