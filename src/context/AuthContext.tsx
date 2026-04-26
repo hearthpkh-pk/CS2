@@ -236,16 +236,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (uid: string, email?: string) => {
     console.log(`⏳ Starting profile fetch for UID: ${uid}`);
     try {
-      // 🛡️ ป้องกัน Query ค้างตลอดกาล (เช่น โดน Service Worker บล็อค) โดยตั้งเวลา 8 วินาที
+      // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 8 วินาที
+      let timeoutId: NodeJS.Timeout;
+      const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 8000);
+      });
+
       const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', uid)
-        .maybeSingle();
-        
-      const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => {
-        setTimeout(() => reject(new Error('Profile query timeout')), 8000);
-      });
+        .maybeSingle()
+        .then(res => {
+          clearTimeout(timeoutId);
+          return res;
+        });
 
       const { data: profile, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
