@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Editor HQ Terminal',
-    short_name: 'Editor HQ',
+    name: 'C-Report',
+    short_name: 'C-Report',
     description: 'Next-gen Creator Management Platform',
     start_url: '/',
     display: 'standalone', // Makes it look like a native app without browser UI
