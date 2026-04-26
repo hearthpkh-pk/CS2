@@ -13,6 +13,33 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
+const PROFILE_CACHE_KEY = 'auth_profile_cache';
+
+// 🛡️ Profile Cache Helpers: 0ms hydration on page refresh
+const getCachedProfile = (): User | null => {
+  try {
+    const raw = sessionStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    // ถ้า cache เกิน 24 ชม. ถือว่า expired
+    if (Date.now() - cached._cachedAt > 24 * 60 * 60 * 1000) {
+      sessionStorage.removeItem(PROFILE_CACHE_KEY);
+      return null;
+    }
+    return cached.user;
+  } catch { return null; }
+};
+
+const setCachedProfile = (user: User) => {
+  try {
+    sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({ user, _cachedAt: Date.now() }));
+  } catch { /* ignore */ }
+};
+
+const clearCachedProfile = () => {
+  try { sessionStorage.removeItem(PROFILE_CACHE_KEY); } catch { /* ignore */ }
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,6 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Track auth resolved state for visibility handler guard
   const authResolvedRef = React.useRef(false);
+  // 🛡️ Guard: prevent concurrent profile fetches
+  const profileFetchingRef = React.useRef(false);
 
   // 🛡️ Helper: resolve auth ได้ครั้งเดียว ป้องกัน race condition
   const resolveAuth = React.useCallback((userData: User | null) => {
@@ -80,6 +109,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
+        // ⚡ INSTANT HYDRATION: ใช้ cached profile + cookie data แสดง UI ทันที (0ms)
+        const cachedProfile = getCachedProfile();
+        if (cachedProfile) {
+          console.log('⚡ INSTANT: Hydrating from sessionStorage cache');
+          resolveAuth(cachedProfile); // แสดง UI ทันที
+          // 🔄 Background refresh: ดึง profile ใหม่เงียบๆ ไม่ block UI
+          fetchUserProfile(cachedProfile.id, cachedProfile.email, true);
+          if (!stopSync) stopSync = syncService.init();
+          return;
+        }
+
         if (fastPathUser) {
           // ถ้ามี Fast Path เราเอา ID ไปดึง Profile ได้เลย ไม่ต้องรอ getSession
           await fetchUserProfile(fastPathUser.id, fastPathUser.email);
@@ -119,11 +159,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!isMounted) return;
 
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN') {
         if (session?.user) {
+          // 🛡️ Guard: ถ้า profile ตรงกับที่มีอยู่แล้ว ไม่ fetch ซ้ำ
+          if (profileFetchingRef.current) {
+            console.log('🛡️ SIGNED_IN: Profile fetch already in progress, skipping');
+            return;
+          }
           await fetchUserProfile(session.user.id, session.user.email);
           if (!stopSync) stopSync = syncService.init();
           cleanAuthUrl();
+        }
+      } else if (event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          // Token refreshed successfully - just update session, no need to re-fetch profile
+          console.log('✅ Token refreshed successfully');
+          cleanAuthUrl();
+        } else {
+          // Token refresh returned no session - session is dead
+          console.error('❌ TOKEN_REFRESHED fired but no session, signing out...');
+          await supabase.auth.signOut({ scope: 'local' });
+          resolveAuth(null);
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User SIGNED_OUT');
@@ -140,8 +196,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const { data } = await supabase.auth.getSession();
           if (!data.session) {
-            console.warn('⚠️ No active session found on focus, reloading...');
-            window.location.reload();
+            // 🛡️ ลอง refresh ก่อน ไม่ต้อง reload ทันที
+            console.warn('⚠️ No session in storage, attempting refresh...');
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError || !refreshData.session) {
+              console.error('❌ Refresh failed, signing out gracefully...');
+              await supabase.auth.signOut({ scope: 'local' });
+              resolveAuth(null);
+            } else {
+              console.log('✅ Session refreshed on focus');
+            }
             return;
           }
           if (data.session?.expires_at) {
@@ -152,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (error) {
                 console.error('❌ Failed to refresh session, signing out...');
                 await supabase.auth.signOut({ scope: 'local' });
-                window.location.reload();
+                resolveAuth(null);
               }
             }
           }
@@ -163,22 +227,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // 🔄 Periodic Token Refresh: ต่ออายุ token ทุก 10 นาที ป้องกัน session หมดอายุขณะใช้งาน
+    const refreshInterval = setInterval(async () => {
+      if (!authResolvedRef.current) return;
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        if (error || !data.session) {
+          console.error('❌ Periodic refresh failed, signing out...');
+          await supabase.auth.signOut({ scope: 'local' });
+          resolveAuth(null);
+        } else {
+          console.log('✅ Periodic token refresh successful');
+        }
+      } catch (e) {
+        console.error('❌ Periodic refresh error:', e);
+      }
+    }, 10 * 60 * 1000); // ทุก 10 นาที
+
     return () => {
       isMounted = false;
       if (authTimeout) clearTimeout(authTimeout);
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(refreshInterval);
       if (stopSync) stopSync();
     };
   }, [resolveAuth]);
 
-  const fetchUserProfile = async (uid: string, email?: string, retryCount = 0): Promise<void> => {
+  const fetchUserProfile = async (uid: string, email?: string, isBackground = false, retryCount = 0): Promise<void> => {
+    // 🛡️ Guard: skip if another fetch is in progress
+    if (profileFetchingRef.current) {
+      console.log('🛡️ Profile fetch already in progress, skipping duplicate');
+      return;
+    }
+    profileFetchingRef.current = true;
+
     console.log(`⏳ Starting profile fetch for UID: ${uid} (Attempt ${retryCount + 1})`);
     try {
-      // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 8 วินาที
+      // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 4 วินาที
       let timeoutId: NodeJS.Timeout;
       const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 8000);
+        timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 4000);
       });
 
       const fetchPromise = supabase
@@ -214,15 +303,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isActive: profile.is_active,
           avatarUrl: profile.avatar_url,
         };
+        setCachedProfile(appUser); // 💾 cache for instant re-hydration
         setUser(appUser);
       } else {
         // 💡 WORLD-CLASS SOLUTION: Database Trigger Race Condition
         // เวลาสมัครใหม่ด้วย Google บางครั้ง Trigger ฝั่ง Database ที่ใช้สร้าง Profile 
         // ทำงานช้ากว่า Frontend ที่ยิงไปขอข้อมูล ทำให้หา Profile ไม่เจอในรอบแรก
-        if (retryCount < 3) {
-          console.warn(`⚠️ No profile found for UID: ${uid}. Retrying in ${500 * (retryCount + 1)}ms...`);
-          await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
-          return fetchUserProfile(uid, email, retryCount + 1);
+        if (retryCount < 2) {
+          console.warn(`⚠️ No profile found for UID: ${uid}. Retrying in ${400 * (retryCount + 1)}ms...`);
+          await new Promise(resolve => setTimeout(resolve, 400 * (retryCount + 1)));
+          return fetchUserProfile(uid, email, isBackground, retryCount + 1);
         }
         
         console.error(`❌ Exhausted retries. No profile found for UID: ${uid}`);
@@ -232,12 +322,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('❌ Failed to fetch user profile:', e);
       setUser(null);
     } finally {
-      console.log('🏁 Setting isLoading to false');
-      setIsLoading(false);
+      profileFetchingRef.current = false;
+      if (!isBackground) {
+        console.log('🏁 Setting isLoading to false');
+        setIsLoading(false);
+      }
     }
   };
 
   const logout = async () => {
+    clearCachedProfile();
     await logCacheService.clearCache();
     await supabase.auth.signOut();
   };

@@ -40,7 +40,7 @@ export const LoginPage = () => {
     setSuccessMessage('');
 
     setIsExiting(true);
-    await new Promise(resolve => setTimeout(resolve, 600));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -69,7 +69,7 @@ export const LoginPage = () => {
     setErrorMessage('');
     
     setIsExiting(true);
-    await new Promise(resolve => setTimeout(resolve, 600));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
