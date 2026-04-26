@@ -351,3 +351,40 @@ export interface PersonalTask {
   endDate?: string;   // ISO string — optional: task ends on this date
   createdAt: string;  // ISO string — when the task was created (metadata only)
 }
+
+// === Monthly Submission Workflow ===
+// ระบบส่งเช็คยอดประจำเดือน: Staff เลือกเพจที่ต้องการส่ง → Admin Approve/Reject → คำนวณค่าคอม
+
+export type SubmissionStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+
+export interface SubmissionPage {
+  id: string;
+  submissionId: string;
+  pageId: string;
+  pageName: string;        // Snapshot ชื่อเพจ ณ ตอนส่ง (กันเปลี่ยนชื่อภายหลัง)
+  pageStatus?: string;     // Active / Rest ณ ตอนส่ง
+  snapshotViews: number;   // ยอดวิวรวมของเดือนนั้น (Snapshot)
+  snapshotFollowers: number; // ยอดผู้ติดตามรวม (Snapshot)
+  createdAt: string;
+}
+
+export interface MonthlySubmission {
+  id: string;
+  staffId: string;
+  staffName?: string;      // Denormalized สำหรับ Admin Review UI
+  period: string;          // 'YYYY-MM' เช่น '2026-04'
+  status: SubmissionStatus;
+  submittedAt?: string;
+  reviewedBy?: string;     // Admin User ID ที่ Review
+  reviewedAt?: string;
+  reviewNote?: string;     // หมายเหตุจาก Admin (เช่น เหตุผลที่ Reject)
+  totalViews: number;      // รวมยอดวิวทุกเพจที่ส่ง (Snapshot)
+  totalFollowers: number;  // รวมยอดผู้ติดตามทุกเพจที่ส่ง (Snapshot)
+  // ค่าคอม Auto-calculate (Admin แก้ไขได้)
+  calculatedCommission?: number;  // ค่าคอมที่คำนวณจาก policy
+  adjustedCommission?: number;    // ค่าคอมที่ Admin แก้ไข (ถ้ามี)
+  commissionNote?: string;        // หมายเหตุการปรับค่าคอม
+  pages: SubmissionPage[];        // เพจที่เลือกส่งในรอบนี้
+  createdAt: string;
+}
+

@@ -20,6 +20,7 @@ export interface DashboardMetricsPayload {
     id: string; // pageId
     name: string;
     boxId?: string | number;
+    status?: string;
     views: number;
     followers: number;
     viewsGrowth: number;
@@ -239,6 +240,7 @@ export const aggregateDashboardMetrics = (
       id: p.id,
       name: p.name,
       boxId: p.boxId,
+      status: p.status,
       views,
       followers,
       viewsGrowth,

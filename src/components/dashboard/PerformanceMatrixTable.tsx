@@ -119,15 +119,16 @@ export const PerformanceMatrixTable: React.FC<Props> = ({
               <th className="pb-4 w-10"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50 relative">
-            {pageStats.map((page, index) => {
+          <tbody className="relative">
+            {/* ──── ACTIVE PAGES ──── */}
+            {pageStats.filter(p => p.status === 'Active').map((page, index) => {
               const isSelected = selectedPage === page.id;
               const isDimmed = selectedPage !== 'all' && !isSelected;
               
               return (
                 <tr 
                   key={page.id} 
-                  className={`group transition-all duration-300 cursor-pointer ${
+                  className={`group transition-all duration-300 cursor-pointer border-b border-slate-50 ${
                     isDimmed 
                       ? 'opacity-40 hover:opacity-100 hover:bg-slate-50/50' 
                       : isSelected 
@@ -138,7 +139,7 @@ export const PerformanceMatrixTable: React.FC<Props> = ({
                 >
                 <td className="py-4 pr-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 font-outfit group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/80 border border-blue-200/60 flex items-center justify-center text-[11px] font-black text-[var(--primary-blue)] font-outfit group-hover:from-blue-100 group-hover:to-blue-200/80 transition-colors">
                       {page.boxId || index + 1}
                     </div>
                     <div>
@@ -216,6 +217,74 @@ export const PerformanceMatrixTable: React.FC<Props> = ({
                 </td>
                 <td className="py-4 pl-4 text-right">
                   <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors inline-block" />
+                </td>
+              </tr>
+              );
+            })}
+
+            {/* ──── INACTIVE SECTION DIVIDER ──── */}
+            {pageStats.some(p => p.status !== 'Active') && (
+              <tr>
+                <td colSpan={6} className="px-4 py-3 bg-slate-50/80">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-slate-200/60"></div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">ไม่ได้ติดตามยอด</span>
+                    <div className="h-px flex-1 bg-slate-200/60"></div>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {/* ──── INACTIVE PAGES (dimmed) ──── */}
+            {pageStats.filter(p => p.status !== 'Active').map((page, index) => {
+              const isSelected = selectedPage === page.id;
+              
+              return (
+                <tr 
+                  key={page.id} 
+                  className={`group transition-all duration-300 cursor-pointer opacity-40 hover:opacity-70 border-b border-slate-50/50 bg-slate-50/20 ${
+                    isSelected ? 'bg-blue-50/50 !opacity-80 border-y border-blue-100' : ''
+                  }`}
+                  onClick={() => onSelectPage(isSelected ? 'all' : page.id)}
+                >
+                <td className="py-4 pr-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200/60 flex items-center justify-center text-[11px] font-black text-slate-400 font-outfit">
+                      {page.boxId || index + 1}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-500 font-noto line-through decoration-slate-300">
+                        {page.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-outfit tracking-wider mt-0.5">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest border ${
+                          page.status === 'Rest'
+                            ? 'bg-amber-50 text-amber-500 border-amber-100'
+                            : 'bg-red-50 text-red-400 border-red-100'
+                        }`}>
+                          <span className={`w-1 h-1 rounded-full ${page.status === 'Rest' ? 'bg-amber-400' : 'bg-red-400'}`}></span>
+                          {page.status === 'Rest' ? 'Rest' : 'Closed'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-4">
+                  <TierBadge tier={page.tier} />
+                </td>
+                <td className="py-4 pl-4 text-right">
+                  <span className="text-sm font-bold text-slate-400 font-outfit">
+                    {metric === 'views' ? page.views.toLocaleString() : page.followers.toLocaleString()}
+                  </span>
+                </td>
+                <td className="py-4 pl-8 text-right">
+                  <span className="text-[11px] font-bold text-slate-300">–</span>
+                </td>
+                <td className="py-4 pl-4 text-right">
+                  <span className="text-[11px] font-bold text-slate-300">–</span>
+                </td>
+                <td className="py-4 pl-4 text-right">
+                  <ChevronRight size={16} className="text-slate-200 group-hover:text-slate-400 transition-colors inline-block" />
                 </td>
               </tr>
               );
