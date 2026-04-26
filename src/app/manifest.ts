@@ -12,9 +12,10 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait-primary',
     icons: [
       {
-        src: '/icon', // This points to our dynamic icon.tsx we just created!
-        sizes: 'any',
-        type: 'image/png',
+        src: '/icon.svg',
+        sizes: '192x192 512x512',
+        type: 'image/svg+xml',
+        purpose: 'any maskable'
       },
     ],
   }
