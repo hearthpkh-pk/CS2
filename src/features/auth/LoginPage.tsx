@@ -75,7 +75,8 @@ export const LoginPage = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          // ✅ ชี้ไปที่ Server Route เพื่อให้ Server จัดการ Code แทน Browser
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       });
 

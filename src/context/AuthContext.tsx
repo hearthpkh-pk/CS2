@@ -38,9 +38,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isResolved = true;
       authResolvedRef.current = true;
       if (authTimeout) clearTimeout(authTimeout);
+    };
 
-      // 🛡️ ลบ ?code= ออกจาก URL ทันทีหลัง Auth resolve
-      // PKCE code ใช้ได้ครั้งเดียว ถ้าค้างอยู่ใน URL จะทำให้ refresh แล้วค้างซ้ำ!
+    // 🛡️ ลบ ?code= ออกจาก URL (เรียกหลังจาก Auth exchange เสร็จแล้วเท่านั้น!)
+    const cleanAuthUrl = () => {
       try {
         const url = new URL(window.location.href);
         if (url.searchParams.has('code')) {
@@ -53,7 +54,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // ═══════════════════════════════════════════════════════════════
     // 🚀 PRE-FLIGHT CHECK: เช็ค localStorage ก่อนแบบ Synchronous
     // ถ้าไม่มี Token อยู่เลย → ไม่ต้องรอ Auth event → resolve ทันที (0ms)
+    // ⚠️ ยกเว้น: ถ้ามี ?code= ใน URL → กำลังอยู่ระหว่าง OAuth redirect
+    //    ต้องปล่อยให้ Supabase แลก code เป็น session ก่อน!
     // ═══════════════════════════════════════════════════════════════
+    const hasAuthCode = (() => {
+      try {
+        return new URL(window.location.href).searchParams.has('code');
+      } catch { return false; }
+    })();
+
     const hasStoredSession = (() => {
       try {
         return Object.keys(localStorage).some(
@@ -64,15 +73,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     })();
 
-    if (!hasStoredSession) {
-      // ✅ ไม่มี Token → User ยังไม่เคย Login → ข้ามไปเลย
+    if (!hasStoredSession && !hasAuthCode) {
+      // ✅ ไม่มี Token และไม่มี OAuth Code → User ยังไม่เคย Login → ข้ามไปเลย
       console.log('🔓 No stored session found. Skipping auth wait.');
       markResolved();
       resolveAuth(null);
 
       // ยังต้อง subscribe เพื่อรับ SIGNED_IN event ตอน Login
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
           await fetchUserProfile(session.user.id, session.user.email);
           if (!stopSync) stopSync = syncService.init();
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
@@ -93,23 +102,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 🔐 มี Token อยู่ใน Storage → ลองดึง Session ผ่าน onAuthStateChange
     // ═══════════════════════════════════════════════════════════════
 
-    // 🛡️ Safety Net: ถ้ารอนานเกิน 3 วินาที → Token น่าจะเสีย → ลบทิ้งแล้วไปต่อ
-    // ⚠️ ห้ามเรียก supabase.auth.signOut() ตรงนี้ เพราะจะติด Lock เดียวกัน
-    authTimeout = setTimeout(() => {
+    // 🛡️ Safety Net: ถ้า onAuthStateChange ไม่ยิง (Lock ค้าง)
+    // → ใช้ getSession() เพื่ออ่าน Session (รองรับ Cookie จาก @supabase/ssr)
+    // ให้เวลา 8 วิสำหรับ OAuth (เพราะต้องรอมันแลก code ผ่านเน็ต) และ 3 วิสำหรับกรณีทั่วไป
+    const timeoutDuration = hasAuthCode ? 8000 : 3000;
+    authTimeout = setTimeout(async () => {
       if (!isResolved) {
-        console.warn('⚠️ Auth timeout (3s): Force clearing stale session...');
+        console.warn(`⚠️ Auth timeout (${timeoutDuration/1000}s): Bypassing lock, reading session...`);
         markResolved();
+        cleanAuthUrl();
 
-        // 🛡️ ลบ Token ตรงๆ จาก localStorage (ไม่ผ่าน Auth Lock)
+        try {
+          // 🛡️ getSession() จะอ่านจาก Cookie หรือ Storage ที่ถูกต้องเสมอ
+          const { data, error } = await supabase.auth.getSession();
+          if (data.session?.user && !error) {
+            console.log('✅ Found valid session via getSession(), loading profile...');
+            await fetchUserProfile(data.session.user.id, data.session.user.email);
+            if (!stopSync) stopSync = syncService.init();
+            return; // fetchUserProfile จะ setIsLoading(false) ให้
+          }
+        } catch (e) {
+          console.warn('⚠️ Failed to get session from fallback:', e);
+        }
+
+        // ถ้าไม่มี session จริงๆ → ลบ Token เก่า + ไปหน้า Login
         try {
           Object.keys(localStorage)
             .filter(k => k.startsWith('sb-') && (k.endsWith('-auth-token') || k.endsWith('-auth-token-code-verifier')))
             .forEach(k => localStorage.removeItem(k));
-        } catch (e) { /* localStorage อาจไม่เข้าถึงได้ */ }
+        } catch (e) { /* ignore */ }
 
         resolveAuth(null);
       }
-    }, 3000);
+    }, timeoutDuration);
 
     // 🛡️ ใช้ onAuthStateChange + INITIAL_SESSION (Supabase Official Pattern)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -122,10 +147,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           resolveAuth(null);
         }
+        // ✅ ลบ ?code= หลังจาก Supabase แลก code เสร็จแล้ว
+        cleanAuthUrl();
         // 🚀 เริ่ม Sync Engine หลังจาก Auth resolve แล้วเท่านั้น
         if (!stopSync) stopSync = syncService.init();
       } else if (event === 'SIGNED_IN' && session?.user) {
         await fetchUserProfile(session.user.id, session.user.email);
+        cleanAuthUrl();
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
         await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
