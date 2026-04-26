@@ -362,9 +362,11 @@ export interface SubmissionPage {
   submissionId: string;
   pageId: string;
   pageName: string;        // Snapshot ชื่อเพจ ณ ตอนส่ง (กันเปลี่ยนชื่อภายหลัง)
+  pageUrl?: string;        // ลิงก์ไปยังเพจ
   pageStatus?: string;     // Active / Rest ณ ตอนส่ง
+  reviewStatus?: 'Pending' | 'Approved' | 'Rejected'; // ผลตรวจเฉพาะเพจ
+  reviewNote?: string;     // หมายเหตุเฉพาะเพจ
   snapshotViews: number;   // ยอดวิวรวมของเดือนนั้น (Snapshot)
-  snapshotFollowers: number; // ยอดผู้ติดตามรวม (Snapshot)
   createdAt: string;
 }
 
@@ -375,11 +377,11 @@ export interface MonthlySubmission {
   period: string;          // 'YYYY-MM' เช่น '2026-04'
   status: SubmissionStatus;
   submittedAt?: string;
+  submittedByName?: string; // ชื่อคนกดส่ง (กรณี Admin ส่งแทน)
   reviewedBy?: string;     // Admin User ID ที่ Review
   reviewedAt?: string;
   reviewNote?: string;     // หมายเหตุจาก Admin (เช่น เหตุผลที่ Reject)
   totalViews: number;      // รวมยอดวิวทุกเพจที่ส่ง (Snapshot)
-  totalFollowers: number;  // รวมยอดผู้ติดตามทุกเพจที่ส่ง (Snapshot)
   // ค่าคอม Auto-calculate (Admin แก้ไขได้)
   calculatedCommission?: number;  // ค่าคอมที่คำนวณจาก policy
   adjustedCommission?: number;    // ค่าคอมที่ Admin แก้ไข (ถ้ามี)

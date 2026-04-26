@@ -6,9 +6,10 @@ import { reportService } from '@/features/reports/services/reportService';
 import { historicalReportsLogs } from '@/features/reports/mocks/reportMocks';
 import { allMockUsers, mockDashboardPages } from '@/features/hq-dashboard/mocks/dashboardMocks';
 import { 
-  DollarSign, Download, Gem, ArrowUpRight, ArrowDownRight
+  DollarSign, Download, Gem, ArrowUpRight, ArrowDownRight, FileCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SubmissionReviewQueue } from './SubmissionReviewQueue';
 
 interface PayrollViewProps {
   currentUser: User;
@@ -20,6 +21,9 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
 }) => {
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [activeTab, setActiveTab] = useState<'payroll' | 'review'>('payroll');
+  
+  const currentPeriod = `${selectedYear}-${selectedMonth}`;
 
   const payrollData = useMemo(() => {
     // 🛡️ หาก policy ยังไม่มา ให้คืนค่าเป็นชุดข้อมูลว่างก่อนกันแครช
@@ -88,14 +92,41 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
         </div>
       </div>
 
-      {/* FINANCIAL SUMMARY TABLE */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-          <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-            <Gem size={14} className="text-amber-500" strokeWidth={1.5} /> Payroll Matrix (฿)
-          </h3>
-          <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest font-prompt">นโยบาย: {policy.minViewTarget.toLocaleString()} วิว / {policy.requiredPagesPerDay * policy.clipsPerPageInLog} คลิป</p>
-        </div>
+      {/* TABS */}
+      <div className="flex items-center gap-2 mb-2 bg-white p-1 rounded-2xl w-fit shadow-sm border border-slate-100">
+        <button
+          onClick={() => setActiveTab('payroll')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors",
+            activeTab === 'payroll' 
+              ? "bg-[var(--primary-theme)] text-white shadow-md shadow-blue-100/50" 
+              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+          )}
+        >
+          <Gem size={14} /> Payroll Matrix
+        </button>
+        <button
+          onClick={() => setActiveTab('review')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors",
+            activeTab === 'review' 
+              ? "bg-[var(--primary-theme)] text-white shadow-md shadow-blue-100/50" 
+              : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+          )}
+        >
+          <FileCheck size={14} /> Monthly Close Review
+        </button>
+      </div>
+
+      {/* TAB CONTENT */}
+      {activeTab === 'payroll' ? (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+            <h3 className="text-xs font-semibold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+              <Gem size={14} className="text-amber-500" strokeWidth={1.5} /> Payroll Matrix (฿)
+            </h3>
+            <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest font-prompt">นโยบาย: {policy.minViewTarget.toLocaleString()} วิว / {policy.requiredPagesPerDay * policy.clipsPerPageInLog} คลิป</p>
+          </div>
         <div className="overflow-x-auto relative custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
@@ -140,6 +171,13 @@ export const PayrollView: React.FC<PayrollViewProps> = ({
           </table>
         </div>
       </div>
+      ) : (
+        <SubmissionReviewQueue 
+          period={currentPeriod}
+          currentUser={currentUser}
+          onSubmissionsChanged={() => {}}
+        />
+      )}
 
       {/* FOOTER */}
       <div className="flex justify-between items-center text-[10px] font-medium text-slate-300 uppercase tracking-[0.2em] px-4 font-prompt">

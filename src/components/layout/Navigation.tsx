@@ -18,6 +18,7 @@ import { POCLogo } from '@/components/brand/POCLogo';
 import { useCompanyConfig } from '@/features/company/hooks/useCompanyConfig';
 import { supabase } from '@/lib/supabaseClient';
 import { SyncStatus } from '@/components/shared/SyncStatus'; // เพิ่มตัวแสดงสถานะซิงค์
+import { submissionService } from '@/services/submissionService';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,6 +33,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   const { user: currentUser, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0);
 
   if (!currentUser) return null;
 
@@ -50,6 +52,10 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       if (!error && count !== null) {
         setPendingCount(count);
       }
+
+      // ดึงจำนวน submissions ที่รออนุมัติ
+      const submissionCount = await submissionService.getPendingCount();
+      setPendingSubmissionCount(submissionCount);
     };
 
     fetchPendingCount();
@@ -163,6 +169,12 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
                   {item.id === 'team' && pendingCount > 0 && (
                     <span className="absolute top-2 left-8 min-w-[18px] h-[18px] flex items-center justify-center bg-rose-500 text-white text-[9px] font-black rounded-full px-1 shadow-lg shadow-rose-500/30 animate-in fade-in zoom-in-50 duration-300">
                       {pendingCount}
+                    </span>
+                  )}
+                  {/* 🔔 Badge แจ้งเตือนยอดเงินเดือนที่รอตรวจ */}
+                  {item.id === 'payroll' && pendingSubmissionCount > 0 && (
+                    <span className="absolute top-2 left-8 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[9px] font-black rounded-full px-1 shadow-lg shadow-amber-500/30 animate-in fade-in zoom-in-50 duration-300">
+                      {pendingSubmissionCount}
                     </span>
                   )}
                 </button>

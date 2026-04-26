@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Users, Eye, Filter, Calendar, Activity, RefreshCw, UserCog } from 'lucide-react';
+import { Users, Eye, Filter, Calendar, Activity, RefreshCw, UserCog, FileCheck } from 'lucide-react';
 import { Page, DailyLog, User, Role } from '@/types';
 import { PerformanceChart } from './PerformanceChart';
 import { ActivePagesSection } from './ActivePagesSection';
 import { ExecutiveQuotaBrief } from './ExecutiveQuotaBrief';
 import { PerformanceMatrixTable } from './PerformanceMatrixTable';
+import { MonthlyCloseDrawer } from './MonthlyCloseDrawer';
 import { aggregateDashboardMetrics } from '@/services/dashboardMetricsService';
 
 interface Props {
@@ -55,6 +56,8 @@ export const DashboardView = ({
 
   const { chartData, totals, matrixData, quotaData } = payload;
 
+  const [isMonthlyCloseOpen, setIsMonthlyCloseOpen] = useState(false);
+
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-10 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pt-4 pb-6 mb-6 gap-6">
@@ -96,6 +99,17 @@ export const DashboardView = ({
               <option value="2026">2569</option>
             </select>
           </div>
+
+          {/* Monthly Close Button */}
+          {currentUser.role !== 'Developer' && (
+            <button
+              onClick={() => setIsMonthlyCloseOpen(true)}
+              className="flex items-center gap-2 bg-[var(--primary-theme)] hover:bg-[var(--primary-theme-hover)] text-white px-4 py-2.5 rounded-xl font-bold font-noto text-xs shadow-lg shadow-blue-100/50 hover:-translate-y-0.5 transition-all active:scale-95 whitespace-nowrap"
+            >
+              <FileCheck size={14} />
+              ส่งเช็คยอด
+            </button>
+          )}
         </div>
       </div>
 
@@ -188,6 +202,16 @@ export const DashboardView = ({
           <ActivePagesSection pages={pages} selectedPage={selectedPage} onNavigateToSetup={onNavigateToSetup} />
         </>
       )}
+
+      {/* Monthly Close Drawer */}
+      <MonthlyCloseDrawer
+        isOpen={isMonthlyCloseOpen}
+        onClose={() => setIsMonthlyCloseOpen(false)}
+        currentUser={currentUser}
+        targetUser={viewAsUserId && users ? users.find(u => u.id === viewAsUserId) || currentUser : currentUser}
+        pages={allPages}
+        logs={allLogs}
+      />
     </div>
   );
 };
