@@ -115,16 +115,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cleanAuthUrl();
 
         try {
-          // 🛡️ getSession() จะอ่านจาก Cookie หรือ Storage ที่ถูกต้องเสมอ
-          const { data, error } = await supabase.auth.getSession();
-          if (data.session?.user && !error) {
-            console.log('✅ Found valid session via getSession(), loading profile...');
-            await fetchUserProfile(data.session.user.id, data.session.user.email);
+          // 🛡️ อ่าน Session จาก Cookie แบบ Manual (เพื่อหลีกเลี่ยง Web Lock Deadlock ของ getSession)
+          let sessionUser: { id: string, email?: string } | null = null;
+
+          // 1. ลองหาจาก document.cookie ก่อน
+          const cookies = document.cookie.split('; ');
+          const authCookie = cookies.find(c => c.startsWith('sb-') && c.includes('-auth-token'));
+          if (authCookie) {
+            try {
+              const cookieValue = decodeURIComponent(authCookie.split('=')[1]);
+              // Supabase chunked cookies (sb-xxx-auth-token.0, .1) needs careful parsing, 
+              // but normally it's a JSON string.
+              const parsed = JSON.parse(cookieValue);
+              if (parsed?.user?.id) sessionUser = parsed.user;
+            } catch (e) { /* ignore parse error */ }
+          }
+
+          // 2. ถ้าไม่เจอใน Cookie ลองหาใน localStorage
+          if (!sessionUser) {
+            const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+            if (storageKey) {
+              try {
+                const parsed = JSON.parse(localStorage.getItem(storageKey) || '');
+                if (parsed?.user?.id) sessionUser = parsed.user;
+              } catch (e) { /* ignore parse error */ }
+            }
+          }
+
+          if (sessionUser?.id) {
+            console.log('✅ Found valid session via manual parser, bypassing Supabase Lock...');
+            await fetchUserProfile(sessionUser.id, sessionUser.email);
             if (!stopSync) stopSync = syncService.init();
-            return; // fetchUserProfile จะ setIsLoading(false) ให้
+            return;
           }
         } catch (e) {
-          console.warn('⚠️ Failed to get session from fallback:', e);
+          console.warn('⚠️ Failed to parse session manually:', e);
         }
 
         // ถ้าไม่มี session จริงๆ → ลบ Token เก่า + ไปหน้า Login
@@ -140,13 +165,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 🛡️ ใช้ onAuthStateChange + INITIAL_SESSION (Supabase Official Pattern)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`📡 Auth Event Fired: ${event}`, { hasUser: !!session?.user });
+      
       // ยกเลิก timeout ทันทีที่ได้รับ event แรก
       if (!isResolved) markResolved();
 
       if (event === 'INITIAL_SESSION') {
         if (session?.user) {
+          console.log('👤 Fetching user profile for:', session.user.email);
           await fetchUserProfile(session.user.id, session.user.email);
         } else {
+          console.log('👻 No user in INITIAL_SESSION, resolving null');
           resolveAuth(null);
         }
         // ✅ ลบ ?code= หลังจาก Supabase แลก code เสร็จแล้ว
@@ -154,11 +183,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 🚀 เริ่ม Sync Engine หลังจาก Auth resolve แล้วเท่านั้น
         if (!stopSync) stopSync = syncService.init();
       } else if (event === 'SIGNED_IN' && session?.user) {
+        console.log('👤 Fetching user profile for SIGNED_IN:', session.user.email);
         await fetchUserProfile(session.user.id, session.user.email);
         cleanAuthUrl();
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
         await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User SIGNED_OUT');
         await logCacheService.clearCache();
         resolveAuth(null);
       }
@@ -203,6 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [resolveAuth]);
 
   const fetchUserProfile = async (uid: string, email?: string) => {
+    console.log(`⏳ Starting profile fetch for UID: ${uid}`);
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -210,7 +242,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', uid)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase profile query error:', error);
+        throw error;
+      }
+
+      console.log(`✅ Profile fetch complete. Profile found: ${!!profile}`);
 
       if (profile) {
         const appUser: User = {
@@ -227,11 +264,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatarUrl: profile.avatar_url,
         };
         setUser(appUser);
+      } else {
+        console.warn(`⚠️ No profile found for UID: ${uid}`);
+        setUser(null);
       }
     } catch (e: any) {
-      console.error('Failed to fetch user profile:', e);
+      console.error('❌ Failed to fetch user profile:', e);
       setUser(null);
     } finally {
+      console.log('🏁 Setting isLoading to false');
       setIsLoading(false);
     }
   };
