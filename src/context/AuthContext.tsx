@@ -19,60 +19,115 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isResolved = false; // Flag ป้องกัน double-resolve
+  // Track auth resolved state for visibility handler guard
+  const authResolvedRef = React.useRef(false);
 
-    // 🛡️ Safety Net: ถ้ารอ Auth event นานเกิน 8 วินาที → ถือว่าไม่มี session
-    // แก้ปัญหา Token เก่า/เสียค้างใน Cookie ที่ทำให้หน้าเว็บค้างหน้า "AUTHENTICATING" ตลอดไป
-    const authTimeout = setTimeout(async () => {
-      if (!isResolved) {
-        console.warn('⚠️ Auth timeout (8s): No auth event received. Clearing stale session...');
-        isResolved = true;
-        // ล้าง Session เสียๆ ออกจาก Cookie เพื่อป้องกันการค้างซ้ำในครั้งหน้า
-        try {
-          await supabase.auth.signOut({ scope: 'local' });
-        } catch (e) {
-          // signOut อาจ fail ถ้า token เสียมาก — ไม่เป็นไร Cookie ถูก clear แล้ว
-        }
-        setUser(null);
-        setIsLoading(false);
+  // 🛡️ Helper: resolve auth ได้ครั้งเดียว ป้องกัน race condition
+  const resolveAuth = React.useCallback((userData: User | null) => {
+    authResolvedRef.current = true;
+    setUser(userData);
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    let isResolved = false;
+    let stopSync: (() => void) | undefined;
+    let authTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const markResolved = () => {
+      isResolved = true;
+      authResolvedRef.current = true;
+      if (authTimeout) clearTimeout(authTimeout);
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🚀 PRE-FLIGHT CHECK: เช็ค localStorage ก่อนแบบ Synchronous
+    // ถ้าไม่มี Token อยู่เลย → ไม่ต้องรอ Auth event → resolve ทันที (0ms)
+    // ═══════════════════════════════════════════════════════════════
+    const hasStoredSession = (() => {
+      try {
+        return Object.keys(localStorage).some(
+          k => k.startsWith('sb-') && k.endsWith('-auth-token')
+        );
+      } catch {
+        return false;
       }
-    }, 8000);
+    })();
+
+    if (!hasStoredSession) {
+      // ✅ ไม่มี Token → User ยังไม่เคย Login → ข้ามไปเลย
+      console.log('🔓 No stored session found. Skipping auth wait.');
+      markResolved();
+      resolveAuth(null);
+
+      // ยังต้อง subscribe เพื่อรับ SIGNED_IN event ตอน Login
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchUserProfile(session.user.id, session.user.email);
+          if (!stopSync) stopSync = syncService.init();
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          await fetchUserProfile(session.user.id, session.user.email);
+        } else if (event === 'SIGNED_OUT') {
+          await logCacheService.clearCache();
+          resolveAuth(null);
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+        if (stopSync) stopSync();
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔐 มี Token อยู่ใน Storage → ลองดึง Session ผ่าน onAuthStateChange
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🛡️ Safety Net: ถ้ารอนานเกิน 3 วินาที → Token น่าจะเสีย → ลบทิ้งแล้วไปต่อ
+    // ⚠️ ห้ามเรียก supabase.auth.signOut() ตรงนี้ เพราะจะติด Lock เดียวกัน
+    authTimeout = setTimeout(() => {
+      if (!isResolved) {
+        console.warn('⚠️ Auth timeout (3s): Force clearing stale session...');
+        markResolved();
+
+        // 🛡️ ลบ Token ตรงๆ จาก localStorage (ไม่ผ่าน Auth Lock)
+        try {
+          Object.keys(localStorage)
+            .filter(k => k.startsWith('sb-') && (k.endsWith('-auth-token') || k.endsWith('-auth-token-code-verifier')))
+            .forEach(k => localStorage.removeItem(k));
+        } catch (e) { /* localStorage อาจไม่เข้าถึงได้ */ }
+
+        resolveAuth(null);
+      }
+    }, 3000);
 
     // 🛡️ ใช้ onAuthStateChange + INITIAL_SESSION (Supabase Official Pattern)
-    // ไม่ต้องเรียก getSession() แยก → ลด Race Condition
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       // ยกเลิก timeout ทันทีที่ได้รับ event แรก
-      if (!isResolved) {
-        isResolved = true;
-        clearTimeout(authTimeout);
-      }
+      if (!isResolved) markResolved();
 
       if (event === 'INITIAL_SESSION') {
         if (session?.user) {
           await fetchUserProfile(session.user.id, session.user.email);
         } else {
-          setIsLoading(false);
+          resolveAuth(null);
         }
+        // 🚀 เริ่ม Sync Engine หลังจาก Auth resolve แล้วเท่านั้น
+        if (!stopSync) stopSync = syncService.init();
       } else if (event === 'SIGNED_IN' && session?.user) {
         await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        // 🔄 Token ถูก Auto-refresh สำเร็จ → re-sync user profile เผื่อข้อมูลเปลี่ยน
         await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
-        // 🏗️ ล้าง IndexedDB Cache เมื่อ Logout เพื่อป้องกันข้อมูลรั่ว
         await logCacheService.clearCache();
-        setUser(null);
-        setIsLoading(false);
+        resolveAuth(null);
       }
     });
 
     // 🔄 Visibility Change Listener:
-    // เมื่อ user เปิดแท็บค้างนานแล้วกลับมา → force check session validity
-    // ถ้า token หมดอายุ Supabase จะ auto-refresh ให้ → ยิง TOKEN_REFRESHED event
-    // ถ้า refresh ไม่ได้ (เช่น refresh_token หมดอายุ) → ยิง SIGNED_OUT event
+    // ⚠️ Guard: ไม่รันถ้า Auth ยังไม่ resolve → ป้องกัน Lock Contention
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && authResolvedRef.current) {
         try {
           const { data } = await supabase.auth.getSession();
           if (!data.session) {
@@ -80,14 +135,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             window.location.reload();
             return;
           }
-          if (data.session && data.session.expires_at) {
-            // ถ้า session จะหมดอายุในอีก 5 นาที (หรือหมดไปแล้ว) ให้บังคับ refresh ทันที
+          if (data.session?.expires_at) {
             const timeToExpiry = (data.session.expires_at * 1000) - Date.now();
             if (timeToExpiry < 5 * 60 * 1000) {
-              console.log('🔄 Session expiring soon or expired, proactive refresh...');
+              console.log('🔄 Session expiring soon, proactive refresh...');
               const { error } = await supabase.auth.refreshSession();
               if (error) {
-                console.error('❌ Failed to refresh session, signing out gracefully...');
+                console.error('❌ Failed to refresh session, signing out...');
                 await supabase.auth.signOut({ scope: 'local' });
                 window.location.reload();
               }
@@ -100,16 +154,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // 🚀 เริ่มทำงาน Background Sync Engine
-    const stopSync = syncService.init();
-
     return () => {
-      clearTimeout(authTimeout);
+      if (authTimeout) clearTimeout(authTimeout);
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (stopSync) stopSync(); // หยุดการซิงค์เมื่อปิดแอป
+      if (stopSync) stopSync();
     };
-  }, []);
+  }, [resolveAuth]);
 
   const fetchUserProfile = async (uid: string, email?: string) => {
     try {
