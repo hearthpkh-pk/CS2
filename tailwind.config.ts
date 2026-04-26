@@ -31,11 +31,21 @@ const config: Config = {
         },
         shimmer: {
           '100%': { transform: 'translateX(100%)' }
+        },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100vw)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        'slide-out-left': {
+          '0%': { transform: 'translateX(0)', opacity: '1' },
+          '100%': { transform: 'translateX(-100vw)', opacity: '0' },
         }
       },
       animation: {
         scan: 'scan 3s ease-in-out infinite',
-        shimmer: 'shimmer 3s infinite'
+        shimmer: 'shimmer 3s infinite',
+        'slide-in-right': 'slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'slide-out-left': 'slide-out-left 0.4s cubic-bezier(0.7, 0, 0.84, 0) both',
       }
     },
   },

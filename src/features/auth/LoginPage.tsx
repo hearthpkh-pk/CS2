@@ -131,23 +131,12 @@ export const LoginPage = () => {
         "w-full max-w-[420px] flex flex-col items-center relative z-10 transition-all transform ease-in-out duration-1000"
       )}>
         
-        <style>{`
-           @keyframes slide-in-right {
-             0% { transform: translateX(100vw); opacity: 0; }
-             100% { transform: translateX(0); opacity: 1; }
-           }
-           @keyframes slide-out-left {
-             0% { transform: translateX(0); opacity: 1; }
-             100% { transform: translateX(-100vw); opacity: 0; }
-           }
-        `}</style>
-
         {/* BRAND IDENTITY */}
         <div className={cn(
           "mb-14 flex flex-col items-center group",
           isExiting 
-            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both]" 
-            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both]"
+            ? "animate-slide-out-left" 
+            : "animate-slide-in-right"
         )}>
           <button
             onClick={() => setLogoClicks(prev => prev + 1)}
@@ -178,8 +167,8 @@ export const LoginPage = () => {
           <div className={cn(
             "relative group/field shadow-2xl shadow-black/10",
             isExiting 
-              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:75ms]" 
-              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:75ms]"
+              ? "animate-slide-out-left [animation-delay:75ms]" 
+              : "animate-slide-in-right [animation-delay:75ms]"
           )}>
             <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
               <Mail size={18} strokeWidth={2.5} />
@@ -197,8 +186,8 @@ export const LoginPage = () => {
           <div className={cn(
             "relative group/field shadow-2xl shadow-black/10",
             isExiting 
-              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:150ms]" 
-              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:150ms]"
+              ? "animate-slide-out-left [animation-delay:150ms]" 
+              : "animate-slide-in-right [animation-delay:150ms]"
           )}>
             <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-400/60 group-focus-within/field:text-[#054ab3] transition-all duration-300">
               <Lock size={18} strokeWidth={2.5} />
@@ -215,8 +204,8 @@ export const LoginPage = () => {
 
           <div className={cn(
             isExiting 
-              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:200ms]" 
-              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:200ms]"
+              ? "animate-slide-out-left [animation-delay:200ms]" 
+              : "animate-slide-in-right [animation-delay:200ms]"
           )}>
             <button
               type="submit"
@@ -236,8 +225,8 @@ export const LoginPage = () => {
         <div className={cn(
             "w-full mt-4 relative flex items-center justify-center",
             isExiting 
-              ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:225ms]" 
-              : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:225ms]"
+              ? "animate-slide-out-left [animation-delay:225ms]" 
+              : "animate-slide-in-right [animation-delay:225ms]"
           )}>
           <div className="absolute inset-x-0 h-px bg-white/20" />
           <span className="relative bg-[#054ab3] px-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">
@@ -248,8 +237,8 @@ export const LoginPage = () => {
         <div className={cn(
           "w-full mt-4",
           isExiting 
-            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:250ms]" 
-            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:250ms]"
+            ? "animate-slide-out-left [animation-delay:250ms]" 
+            : "animate-slide-in-right [animation-delay:250ms]"
         )}>
           <button
             type="button"
@@ -271,8 +260,8 @@ export const LoginPage = () => {
         <div className={cn(
           "mt-6 flex flex-col items-center gap-3",
           isExiting 
-            ? "animate-[slide-out-left_0.4s_cubic-bezier(0.7,0,0.84,0)_both] [animation-delay:275ms]" 
-            : "animate-[slide-in-right_0.8s_cubic-bezier(0.16,1,0.3,1)_both] [animation-delay:275ms]"
+            ? "animate-slide-out-left [animation-delay:275ms]" 
+            : "animate-slide-in-right [animation-delay:275ms]"
         )}>
           <button
             type="button"
