@@ -341,14 +341,14 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {sortedPages.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/20 transition-colors">
+            <tbody>
+              {/* ──── ACTIVE PAGES SECTION ──── */}
+              {sortedPages.filter(p => p.status === 'Active').map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50/50 border border-blue-100/50 flex flex-col items-center justify-center flex-shrink-0 shadow-sm">
-                        <span className="text-[8px] text-blue-400 font-bold uppercase tracking-wider leading-none mb-0.5">Box</span>
-                        <span className="text-xs font-black text-[var(--primary-blue)] font-inter leading-none">{p.boxId || '#'}</span>
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/80 border border-blue-200/60 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-sm font-black text-[var(--primary-blue)] font-inter leading-none">{p.boxId || '#'}</span>
                       </div>
                       <div>
                         <div className="font-bold text-primary-navy text-sm font-noto mb-0.5">{p.name}</div>
@@ -360,20 +360,16 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex justify-center items-center w-full h-full">
-                      <div
-                        className={cn(
-                          "w-2.5 h-2.5 rounded-full shadow-sm",
-                          p.status === 'Active' ? "bg-emerald-500 shadow-emerald-500/30" :
-                            p.status === 'Rest' ? "bg-slate-400 shadow-slate-400/30" : "bg-red-500 shadow-red-500/30"
-                        )}
-                        title={`Status: ${p.status}`}
-                      />
+                    <div className="flex justify-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Active
+                      </span>
                     </div>
                   </td>
 
                   {rollingDates.map((date, idx) => (
-                    <td key={date} className={cn("p-2 align-middle transition-colors", idx === 4 ? "bg-blue-50" : "")}>
+                    <td key={date} className={cn("p-2 align-middle transition-colors", idx === 4 ? "bg-blue-50/60" : "")}>
                       <div className="relative group mx-auto w-full max-w-[110px]">
                         {activeMode === 'views' ? (
                           <input
@@ -411,6 +407,101 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
                               idx === 4
                                 ? "bg-emerald-50/30 border-emerald-200 text-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 shadow-sm"
                                 : "bg-slate-50/50 border-slate-100 text-slate-700 hover:bg-slate-50/80 focus:border-emerald-500 focus:bg-white focus:shadow-sm"
+                            )}
+                          />
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+
+              {/* ──── INACTIVE SECTION DIVIDER ──── */}
+              {sortedPages.some(p => p.status !== 'Active') && (
+                <tr>
+                  <td colSpan={2 + rollingDates.length} className="px-6 py-3 bg-slate-50/80">
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-slate-200/60"></div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">ไม่ได้ติดตามยอด</span>
+                      <div className="h-px flex-1 bg-slate-200/60"></div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {/* ──── INACTIVE PAGES SECTION (dimmed & disabled) ──── */}
+              {sortedPages.filter(p => p.status !== 'Active').map((p) => (
+                <tr key={p.id} className="opacity-45 hover:opacity-60 transition-opacity border-b border-slate-50/50 bg-slate-50/30">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200/60 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-black text-slate-400 font-inter leading-none">{p.boxId || '#'}</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-500 text-sm font-noto mb-0.5 line-through decoration-slate-300">{p.name}</div>
+                        <div className="text-[10px] text-slate-400 font-noto flex items-center gap-2">
+                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                          {p.category}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex justify-center">
+                      <span className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border",
+                        p.status === 'Rest'
+                          ? "bg-amber-50 text-amber-500 border-amber-100"
+                          : "bg-red-50 text-red-400 border-red-100"
+                      )}>
+                        <span className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          p.status === 'Rest' ? "bg-amber-400" : "bg-red-400"
+                        )}></span>
+                        {p.status === 'Rest' ? 'Rest' : 'Closed'}
+                      </span>
+                    </div>
+                  </td>
+
+                  {rollingDates.map((date, idx) => (
+                    <td key={date} className={cn("p-2 align-middle", idx === 4 ? "bg-blue-50/30" : "")}>
+                      <div className="relative group mx-auto w-full max-w-[110px]">
+                        {activeMode === 'views' ? (
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={inputData[p.id]?.[date]?.views || ''}
+                            onChange={e => setInputData(prev => ({
+                              ...prev,
+                              [p.id]: {
+                                ...prev[p.id],
+                                [date]: { ...(prev[p.id]?.[date] || {}), views: e.target.value }
+                              }
+                            }))}
+                            className={cn(
+                              "w-full border rounded-xl px-2 py-2.5 text-xs font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
+                              idx === 4
+                                ? "bg-white/60 border-slate-200 text-slate-500 focus:border-[#054ab3] focus:ring-4 focus:ring-blue-100 focus:bg-white"
+                                : "bg-slate-50/30 border-slate-100 text-slate-500 hover:bg-slate-50/60 focus:border-[#054ab3] focus:bg-white focus:shadow-sm"
+                            )}
+                          />
+                        ) : (
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={inputData[p.id]?.[date]?.followers || ''}
+                            onChange={e => setInputData(prev => ({
+                              ...prev,
+                              [p.id]: {
+                                ...prev[p.id],
+                                [date]: { ...(prev[p.id]?.[date] || {}), followers: e.target.value }
+                              }
+                            }))}
+                            className={cn(
+                              "w-full border rounded-xl px-2 py-2.5 text-xs font-bold font-inter outline-none transition-all text-center placeholder:text-slate-200",
+                              idx === 4
+                                ? "bg-white/60 border-slate-200 text-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 focus:bg-white"
+                                : "bg-slate-50/30 border-slate-100 text-slate-500 hover:bg-slate-50/60 focus:border-emerald-500 focus:bg-white focus:shadow-sm"
                             )}
                           />
                         )}
