@@ -52,10 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     // ═══════════════════════════════════════════════════════════════
-    // 🚀 PRE-FLIGHT CHECK: เช็ค localStorage ก่อนแบบ Synchronous
-    // ถ้าไม่มี Token อยู่เลย → ไม่ต้องรอ Auth event → resolve ทันที (0ms)
-    // ⚠️ ยกเว้น: ถ้ามี ?code= ใน URL → กำลังอยู่ระหว่าง OAuth redirect
-    //    ต้องปล่อยให้ Supabase แลก code เป็น session ก่อน!
+    // 🚀 PRE-FLIGHT CHECK: หา Session จาก Cookie หรือ localStorage ทันที (0ms)
     // ═══════════════════════════════════════════════════════════════
     const hasAuthCode = (() => {
       try {
@@ -63,133 +60,99 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch { return false; }
     })();
 
-    const hasStoredSession = (() => {
+    const getStoredSessionUser = () => {
       try {
-        const hasLocal = Object.keys(localStorage).some(
-          k => k.startsWith('sb-') && k.endsWith('-auth-token')
-        );
-        const hasCookie = document.cookie.includes('sb-') && document.cookie.includes('-auth-token');
-        return hasLocal || hasCookie;
-      } catch {
-        return false;
-      }
-    })();
+        // 1. ลองหาจาก document.cookie ก่อน
+        const cookies = document.cookie.split('; ');
+        const authCookie = cookies.find(c => c.startsWith('sb-') && c.includes('-auth-token'));
+        if (authCookie) {
+          const cookieValue = decodeURIComponent(authCookie.split('=')[1]);
+          const parsed = JSON.parse(cookieValue);
+          if (parsed?.user?.id) return parsed.user;
+        }
 
-    if (!hasStoredSession && !hasAuthCode) {
-      // ✅ ไม่มี Token และไม่มี OAuth Code → User ยังไม่เคย Login → ข้ามไปเลย
-      console.log('🔓 No stored session found. Skipping auth wait.');
+        // 2. ถ้าไม่เจอใน Cookie ลองหาใน localStorage
+        const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (storageKey) {
+          const parsed = JSON.parse(localStorage.getItem(storageKey) || '');
+          if (parsed?.user?.id) return parsed.user;
+        }
+      } catch (e) { /* ignore parse error */ }
+      return null;
+    };
+
+    const sessionUser = getStoredSessionUser();
+
+    // ───────────────────────────────────────────────────────────────
+    // 🛑 PATH 1: ไม่มี Session ชัดเจน และ ไม่ได้กำลังแลก Code
+    // ───────────────────────────────────────────────────────────────
+    if (!sessionUser && !hasAuthCode) {
+      console.log('🔓 No stored session found. Fast-failing auth wait.');
       markResolved();
       resolveAuth(null);
 
-      // ยังต้อง subscribe เพื่อรับ SIGNED_IN event ตอน Login
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
           await fetchUserProfile(session.user.id, session.user.email);
           if (!stopSync) stopSync = syncService.init();
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email);
         } else if (event === 'SIGNED_OUT') {
           await logCacheService.clearCache();
           resolveAuth(null);
         }
       });
-
-      return () => {
-        subscription.unsubscribe();
-        if (stopSync) stopSync();
-      };
+      return () => { subscription.unsubscribe(); if (stopSync) stopSync(); };
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // 🔐 มี Token อยู่ใน Storage → ลองดึง Session ผ่าน onAuthStateChange
-    // ═══════════════════════════════════════════════════════════════
+    // ───────────────────────────────────────────────────────────────
+    // ⚡ PATH 2: พบ Session ในระบบ -> ดึง Profile ทันทีโดยไม่ต้องรอ Supabase Lock (0ms delay)
+    // ───────────────────────────────────────────────────────────────
+    if (sessionUser && !hasAuthCode) {
+      console.log('⚡ Fast Path: Found session manually, bypassing Supabase lock entirely.');
+      markResolved();
+      
+      // สั่งดึงข้อมูลทันที ไม่รอ event
+      fetchUserProfile(sessionUser.id, sessionUser.email).then(() => {
+        if (!stopSync) stopSync = syncService.init();
+      });
 
-    // 🛡️ Safety Net: ถ้า onAuthStateChange ไม่ยิง (Lock ค้าง)
-    // → ใช้ getSession() เพื่ออ่าน Session (รองรับ Cookie จาก @supabase/ssr)
-    // ให้เวลา 8 วิสำหรับ OAuth (เพราะต้องรอมันแลก code ผ่านเน็ต) และ 3 วิสำหรับกรณีทั่วไป
-    const timeoutDuration = hasAuthCode ? 8000 : 3000;
+      // Subscribe ไว้เผื่อมีการ Sign Out ทีหลัง
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          await logCacheService.clearCache();
+          resolveAuth(null);
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          await fetchUserProfile(session.user.id, session.user.email);
+        }
+      });
+      return () => { subscription.unsubscribe(); if (stopSync) stopSync(); };
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // ⏳ PATH 3: มี ?code= ใน URL -> ต้องรอ Supabase แลก Code ผ่านเน็ต
+    // ───────────────────────────────────────────────────────────────
+    console.log('⏳ Waiting for OAuth code exchange...');
     authTimeout = setTimeout(async () => {
       if (!isResolved) {
-        console.warn(`⚠️ Auth timeout (${timeoutDuration/1000}s): Bypassing lock, reading session...`);
+        console.warn(`⚠️ Auth timeout (8s): Bypassing lock...`);
         markResolved();
         cleanAuthUrl();
-
-        try {
-          // 🛡️ อ่าน Session จาก Cookie แบบ Manual (เพื่อหลีกเลี่ยง Web Lock Deadlock ของ getSession)
-          let sessionUser: { id: string, email?: string } | null = null;
-
-          // 1. ลองหาจาก document.cookie ก่อน
-          const cookies = document.cookie.split('; ');
-          const authCookie = cookies.find(c => c.startsWith('sb-') && c.includes('-auth-token'));
-          if (authCookie) {
-            try {
-              const cookieValue = decodeURIComponent(authCookie.split('=')[1]);
-              // Supabase chunked cookies (sb-xxx-auth-token.0, .1) needs careful parsing, 
-              // but normally it's a JSON string.
-              const parsed = JSON.parse(cookieValue);
-              if (parsed?.user?.id) sessionUser = parsed.user;
-            } catch (e) { /* ignore parse error */ }
-          }
-
-          // 2. ถ้าไม่เจอใน Cookie ลองหาใน localStorage
-          if (!sessionUser) {
-            const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-            if (storageKey) {
-              try {
-                const parsed = JSON.parse(localStorage.getItem(storageKey) || '');
-                if (parsed?.user?.id) sessionUser = parsed.user;
-              } catch (e) { /* ignore parse error */ }
-            }
-          }
-
-          if (sessionUser?.id) {
-            console.log('✅ Found valid session via manual parser, bypassing Supabase Lock...');
-            await fetchUserProfile(sessionUser.id, sessionUser.email);
-            if (!stopSync) stopSync = syncService.init();
-            return;
-          }
-        } catch (e) {
-          console.warn('⚠️ Failed to parse session manually:', e);
-        }
-
-        // ถ้าไม่มี session จริงๆ → ลบ Token เก่า + ไปหน้า Login
-        try {
-          Object.keys(localStorage)
-            .filter(k => k.startsWith('sb-') && (k.endsWith('-auth-token') || k.endsWith('-auth-token-code-verifier')))
-            .forEach(k => localStorage.removeItem(k));
-        } catch (e) { /* ignore */ }
-
         resolveAuth(null);
       }
-    }, timeoutDuration);
+    }, 8000);
 
-    // 🛡️ ใช้ onAuthStateChange + INITIAL_SESSION (Supabase Official Pattern)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(`📡 Auth Event Fired: ${event}`, { hasUser: !!session?.user });
-      
-      // ยกเลิก timeout ทันทีที่ได้รับ event แรก
+      console.log(`📡 Auth Event Fired: ${event}`);
       if (!isResolved) markResolved();
 
-      if (event === 'INITIAL_SESSION') {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
         if (session?.user) {
-          console.log('👤 Fetching user profile for:', session.user.email);
           await fetchUserProfile(session.user.id, session.user.email);
         } else {
-          console.log('👻 No user in INITIAL_SESSION, resolving null');
           resolveAuth(null);
         }
-        // ✅ ลบ ?code= หลังจาก Supabase แลก code เสร็จแล้ว
         cleanAuthUrl();
-        // 🚀 เริ่ม Sync Engine หลังจาก Auth resolve แล้วเท่านั้น
         if (!stopSync) stopSync = syncService.init();
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        console.log('👤 Fetching user profile for SIGNED_IN:', session.user.email);
-        await fetchUserProfile(session.user.id, session.user.email);
-        cleanAuthUrl();
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        await fetchUserProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User SIGNED_OUT');
         await logCacheService.clearCache();
         resolveAuth(null);
       }
