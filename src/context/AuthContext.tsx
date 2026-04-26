@@ -52,108 +52,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     // ═══════════════════════════════════════════════════════════════
-    // 🚀 PRE-FLIGHT CHECK: หา Session จาก Cookie หรือ localStorage ทันที (0ms)
+    // ⚡ SUPER FAST PATH: หา Session จาก Cookie ทันที (0ms) ป้องกัน Web Lock
     // ═══════════════════════════════════════════════════════════════
-    const hasAuthCode = (() => {
-      try {
-        return new URL(window.location.href).searchParams.has('code');
-      } catch { return false; }
-    })();
+    let fastPathUser: any = null;
+    try {
+      const cookies = document.cookie.split('; ');
+      const authCookie = cookies.find(c => c.startsWith('sb-') && c.includes('-auth-token'));
+      if (authCookie) {
+        const parsed = JSON.parse(decodeURIComponent(authCookie.split('=')[1]));
+        const expiresAt = parsed?.expires_at;
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        
+        // ถ้าระยะเวลาหมดอายุเหลือมากกว่า 2 นาที (120 วินาที) -> ถือว่า Valid สุดๆ ใช้ได้เลย!
+        if (parsed?.user?.id && expiresAt && (expiresAt - nowInSeconds) > 120) {
+          fastPathUser = parsed.user;
+          console.log('⚡ Fast Path: Valid Session found, bypassing Web Lock!');
+        } else {
+          console.log('⚠️ Fast Path: Session expired or expiring soon, falling back to secure refresh.');
+        }
+      }
+    } catch (e) { /* ignore parse error */ }
 
-    const getStoredSessionUser = () => {
+    // ═══════════════════════════════════════════════════════════════
+    // 🚀 ENTERPRISE AUTHENTICATION INIT (Robust & Race-Condition Free)
+    // ═══════════════════════════════════════════════════════════════
+    let isMounted = true;
+
+    const initializeAuth = async () => {
       try {
-        // 1. ลองหาจาก document.cookie ก่อน
-        const cookies = document.cookie.split('; ');
-        const authCookie = cookies.find(c => c.startsWith('sb-') && c.includes('-auth-token'));
-        if (authCookie) {
-          const cookieValue = decodeURIComponent(authCookie.split('=')[1]);
-          const parsed = JSON.parse(cookieValue);
-          if (parsed?.user?.id) return parsed.user;
+        if (fastPathUser) {
+          // ถ้ามี Fast Path เราเอา ID ไปดึง Profile ได้เลย ไม่ต้องรอ getSession
+          await fetchUserProfile(fastPathUser.id, fastPathUser.email);
+          if (!stopSync) stopSync = syncService.init();
+          return; // จบการทำงาน
         }
 
-        // 2. ถ้าไม่เจอใน Cookie ลองหาใน localStorage
-        const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (storageKey) {
-          const parsed = JSON.parse(localStorage.getItem(storageKey) || '');
-          if (parsed?.user?.id) return parsed.user;
-        }
-      } catch (e) { /* ignore parse error */ }
-      return null;
-    };
+        console.log('🔄 Checking initial session via Supabase (Web Lock active)...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
 
-    const sessionUser = getStoredSessionUser();
-
-    // ───────────────────────────────────────────────────────────────
-    // 🛑 PATH 1: ไม่มี Session ชัดเจน และ ไม่ได้กำลังแลก Code
-    // ───────────────────────────────────────────────────────────────
-    if (!sessionUser && !hasAuthCode) {
-      console.log('🔓 No stored session found. Fast-failing auth wait.');
-      markResolved();
-      resolveAuth(null);
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        if (session?.user && isMounted) {
+          console.log('✅ Initial session found via getSession, fetching profile...');
           await fetchUserProfile(session.user.id, session.user.email);
           if (!stopSync) stopSync = syncService.init();
-        } else if (event === 'SIGNED_OUT') {
-          await logCacheService.clearCache();
+        } else if (isMounted) {
+          console.log('🔓 No valid session found. Resolving to login.');
           resolveAuth(null);
         }
-      });
-      return () => { subscription.unsubscribe(); if (stopSync) stopSync(); };
-    }
-
-    // ───────────────────────────────────────────────────────────────
-    // ⚡ PATH 2: พบ Session ในระบบ -> ดึง Profile ทันทีโดยไม่ต้องรอ Supabase Lock (0ms delay)
-    // ───────────────────────────────────────────────────────────────
-    if (sessionUser && !hasAuthCode) {
-      console.log('⚡ Fast Path: Found session manually, bypassing Supabase lock entirely.');
-      markResolved();
-      
-      // สั่งดึงข้อมูลทันที ไม่รอ event
-      fetchUserProfile(sessionUser.id, sessionUser.email).then(() => {
-        if (!stopSync) stopSync = syncService.init();
-      });
-
-      // Subscribe ไว้เผื่อมีการ Sign Out ทีหลัง
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          await logCacheService.clearCache();
-          resolveAuth(null);
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email);
-        }
-      });
-      return () => { subscription.unsubscribe(); if (stopSync) stopSync(); };
-    }
-
-    // ───────────────────────────────────────────────────────────────
-    // ⏳ PATH 3: มี ?code= ใน URL -> ต้องรอ Supabase แลก Code ผ่านเน็ต
-    // ───────────────────────────────────────────────────────────────
-    console.log('⏳ Waiting for OAuth code exchange...');
-    authTimeout = setTimeout(async () => {
-      if (!isResolved) {
-        console.warn(`⚠️ Auth timeout (8s): Bypassing lock...`);
-        markResolved();
-        cleanAuthUrl();
-        resolveAuth(null);
+      } catch (e) {
+        console.error('❌ Auth initialization error:', e);
+        if (isMounted) resolveAuth(null);
+      } finally {
+        if (isMounted && !isResolved) markResolved();
       }
-    }, 8000);
+    };
 
+    // เริ่มต้นเช็ค Session
+    initializeAuth();
+
+    // ───────────────────────────────────────────────────────────────
+    // 📡 BACKGROUND LISTENER: จัดการการเปลี่ยนแปลงของ Session (Login, Logout, Token Refresh)
+    // ───────────────────────────────────────────────────────────────
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`📡 Auth Event Fired: ${event}`);
-      if (!isResolved) markResolved();
+      
+      if (!isMounted) return;
 
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
           await fetchUserProfile(session.user.id, session.user.email);
-        } else {
-          resolveAuth(null);
+          if (!stopSync) stopSync = syncService.init();
+          cleanAuthUrl();
         }
-        cleanAuthUrl();
-        if (!stopSync) stopSync = syncService.init();
       } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User SIGNED_OUT');
         await logCacheService.clearCache();
+        if (stopSync) stopSync();
         resolveAuth(null);
       }
     });
@@ -189,6 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      isMounted = false;
       if (authTimeout) clearTimeout(authTimeout);
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -196,8 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [resolveAuth]);
 
-  const fetchUserProfile = async (uid: string, email?: string) => {
-    console.log(`⏳ Starting profile fetch for UID: ${uid}`);
+  const fetchUserProfile = async (uid: string, email?: string, retryCount = 0): Promise<void> => {
+    console.log(`⏳ Starting profile fetch for UID: ${uid} (Attempt ${retryCount + 1})`);
     try {
       // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 8 วินาที
       let timeoutId: NodeJS.Timeout;
@@ -218,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: profile, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (error) {
-        console.error('❌ Supabase profile query error:', error);
+        console.error(`❌ Supabase profile query error (Attempt ${retryCount + 1}):`, error);
         throw error;
       }
 
@@ -240,7 +216,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(appUser);
       } else {
-        console.warn(`⚠️ No profile found for UID: ${uid}`);
+        // 💡 WORLD-CLASS SOLUTION: Database Trigger Race Condition
+        // เวลาสมัครใหม่ด้วย Google บางครั้ง Trigger ฝั่ง Database ที่ใช้สร้าง Profile 
+        // ทำงานช้ากว่า Frontend ที่ยิงไปขอข้อมูล ทำให้หา Profile ไม่เจอในรอบแรก
+        if (retryCount < 3) {
+          console.warn(`⚠️ No profile found for UID: ${uid}. Retrying in ${500 * (retryCount + 1)}ms...`);
+          await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+          return fetchUserProfile(uid, email, retryCount + 1);
+        }
+        
+        console.error(`❌ Exhausted retries. No profile found for UID: ${uid}`);
         setUser(null);
       }
     } catch (e: any) {
