@@ -65,9 +65,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const hasStoredSession = (() => {
       try {
-        return Object.keys(localStorage).some(
+        const hasLocal = Object.keys(localStorage).some(
           k => k.startsWith('sb-') && k.endsWith('-auth-token')
         );
+        const hasCookie = document.cookie.includes('sb-') && document.cookie.includes('-auth-token');
+        return hasLocal || hasCookie;
       } catch {
         return false;
       }
