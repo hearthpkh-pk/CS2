@@ -38,6 +38,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isResolved = true;
       authResolvedRef.current = true;
       if (authTimeout) clearTimeout(authTimeout);
+
+      // 🛡️ ลบ ?code= ออกจาก URL ทันทีหลัง Auth resolve
+      // PKCE code ใช้ได้ครั้งเดียว ถ้าค้างอยู่ใน URL จะทำให้ refresh แล้วค้างซ้ำ!
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('code')) {
+          url.searchParams.delete('code');
+          window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+        }
+      } catch (e) { /* SSR safety */ }
     };
 
     // ═══════════════════════════════════════════════════════════════
