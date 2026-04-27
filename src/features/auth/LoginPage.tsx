@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Lock, User, Activity, ChevronRight, Info, AlertCircle, Mail } from 'lucide-react';
+import { Lock, User, Activity, ChevronRight, Info, AlertCircle, Mail, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -193,13 +194,21 @@ export const LoginPage = () => {
               <Lock size={18} strokeWidth={2.5} />
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password ..."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isAuthenticating}
-              className="w-full bg-white border-0 rounded-full pl-16 pr-8 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter disabled:opacity-50"
+              className="w-full bg-white border-0 rounded-full pl-16 pr-14 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter disabled:opacity-50"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400/60 hover:text-[#054ab3] transition-colors focus:outline-none"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
+            </button>
           </div>
 
           <div className={cn(

@@ -154,6 +154,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // ───────────────────────────────────────────────────────────────
     // 📡 BACKGROUND LISTENER: จัดการการเปลี่ยนแปลงของ Session (Login, Logout, Token Refresh)
     // ───────────────────────────────────────────────────────────────
+    const handleTokenError = async (error: any, context: string) => {
+      // 1. ถ้าปัญหาเกิดจากเน็ตหลุด/Sleep Mode -> ปล่อยผ่าน ไม่ต้องลบ Session!
+      if (!navigator.onLine || error?.message?.includes('FetchError') || error?.message?.includes('Network')) {
+        console.warn(`⚠️ Network offline during ${context}, deferring token refresh. Do not logout.`);
+        return;
+      }
+      
+      // 2. ถ้า Token ตายสนิทจริงๆ -> บันทึกหน้าปัจจุบันไว้ แล้วค่อย Logout
+      console.error(`❌ Session dead during ${context}. Preparing for re-login...`, error);
+      try {
+        const currentPath = window.location.pathname + window.location.search;
+        if (!currentPath.includes('login')) {
+          sessionStorage.setItem('redirect_after_login', currentPath);
+        }
+      } catch (e) {}
+      
+      await supabase.auth.signOut({ scope: 'local' });
+      resolveAuth(null);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`📡 Auth Event Fired: ${event}`);
       
@@ -177,9 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           cleanAuthUrl();
         } else {
           // Token refresh returned no session - session is dead
-          console.error('❌ TOKEN_REFRESHED fired but no session, signing out...');
-          await supabase.auth.signOut({ scope: 'local' });
-          resolveAuth(null);
+          await handleTokenError(null, 'TOKEN_REFRESHED (No Session)');
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User SIGNED_OUT');
@@ -200,9 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.warn('⚠️ No session in storage, attempting refresh...');
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             if (refreshError || !refreshData.session) {
-              console.error('❌ Refresh failed, signing out gracefully...');
-              await supabase.auth.signOut({ scope: 'local' });
-              resolveAuth(null);
+              await handleTokenError(refreshError, 'Visibility Check (No Session)');
             } else {
               console.log('✅ Session refreshed on focus');
             }
@@ -214,9 +230,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.log('🔄 Session expiring soon, proactive refresh...');
               const { error } = await supabase.auth.refreshSession();
               if (error) {
-                console.error('❌ Failed to refresh session, signing out...');
-                await supabase.auth.signOut({ scope: 'local' });
-                resolveAuth(null);
+                await handleTokenError(error, 'Proactive Refresh');
               }
             }
           }
@@ -233,9 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data, error } = await supabase.auth.refreshSession();
         if (error || !data.session) {
-          console.error('❌ Periodic refresh failed, signing out...');
-          await supabase.auth.signOut({ scope: 'local' });
-          resolveAuth(null);
+          await handleTokenError(error, 'Periodic Refresh');
         } else {
           console.log('✅ Periodic token refresh successful');
         }
