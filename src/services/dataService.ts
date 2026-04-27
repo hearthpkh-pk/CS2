@@ -81,7 +81,7 @@ export const dataService = {
       const res = await supabase.from('facebook_pages').update(payload).eq('id', page.id);
       error = res.error;
       if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
+        await supabase.auth.getSession();
         const retry = await supabase.from('facebook_pages').update(payload).eq('id', page.id);
         error = retry.error;
       }
@@ -90,7 +90,7 @@ export const dataService = {
       const res = await supabase.from('facebook_pages').insert(payload);
       error = res.error;
       if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
+        await supabase.auth.getSession();
         const retry = await supabase.from('facebook_pages').insert(payload);
         error = retry.error;
       }
@@ -110,7 +110,7 @@ export const dataService = {
   deletePage: async (id: string): Promise<void> => {
     let { error } = await supabase.from('facebook_pages').delete().eq('id', id);
     if (error && error.message?.includes('auth')) {
-      await supabase.auth.refreshSession();
+      await supabase.auth.getSession();
       const retry = await supabase.from('facebook_pages').delete().eq('id', id);
       error = retry.error;
     }
@@ -126,9 +126,9 @@ export const dataService = {
     let { data: { user } } = await supabase.auth.getUser();
     // หากไม่มี user (session หมด) ให้ลอง refresh session ก่อน
     if (!user) {
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        console.warn('⚠️ Session refresh failed, user not authenticated');
+      const { error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.warn('⚠️ Session check failed, user not authenticated');
         return [];
       }
       // รีลองดึง user หลัง refresh
@@ -163,7 +163,7 @@ export const dataService = {
         // Retry delta sync if auth error
         if (error && error.message?.includes('auth')) {
           console.warn('⚠️ Delta Sync auth error, refreshing session...');
-          await supabase.auth.refreshSession();
+          await supabase.auth.getSession();
           const retry = await supabase
             .from('daily_logs')
             .select('*')
@@ -263,9 +263,9 @@ export const dataService = {
       .upsert(upsertPayload, { onConflict: 'page_id,date' });
 
     // 🛡️ Bullet-proof: ถ้าบันทึกไม่ผ่าน ให้ลอง refresh session 1 ครั้ง (เผื่อ token หมดอายุหรือ RLS ขัดข้อง)
-    if (error) {
-      console.warn('⚠️ Logs save failed, attempting session refresh and retry...');
-      await supabase.auth.refreshSession();
+    if (error && error.message?.includes('auth')) {
+      console.warn('⚠️ Logs save failed, attempting session check and retry...');
+      await supabase.auth.getSession();
       const retry = await supabase
         .from('daily_logs')
         .upsert(upsertPayload, { onConflict: 'page_id,date' });
@@ -365,7 +365,7 @@ export const dataService = {
       const res = await supabase.from('facebook_accounts').update(payload).eq('id', account.id);
       error = res.error;
       if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
+        await supabase.auth.getSession();
         const retry = await supabase.from('facebook_accounts').update(payload).eq('id', account.id);
         error = retry.error;
       }
@@ -373,7 +373,7 @@ export const dataService = {
       const res = await supabase.from('facebook_accounts').insert(payload);
       error = res.error;
       if (error && error.message?.includes('auth')) {
-        await supabase.auth.refreshSession();
+        await supabase.auth.getSession();
         const retry = await supabase.from('facebook_accounts').insert(payload);
         error = retry.error;
       }
@@ -393,7 +393,7 @@ export const dataService = {
   deleteAccount: async (id: string): Promise<void> => {
     let { error } = await supabase.from('facebook_accounts').delete().eq('id', id);
     if (error && error.message?.includes('auth')) {
-      await supabase.auth.refreshSession();
+      await supabase.auth.getSession();
       const retry = await supabase.from('facebook_accounts').delete().eq('id', id);
       error = retry.error;
     }

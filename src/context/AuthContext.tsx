@@ -208,32 +208,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // 🔄 Visibility Change Listener:
-    // ⚠️ Guard: ไม่รันถ้า Auth ยังไม่ resolve → ป้องกัน Lock Contention
+    // เมื่อผู้ใช้สลับแท็บกลับมา ให้เรียก getSession() ซึ่ง Supabase จะจัดการ Refresh ให้เองถ้าใกล้หมดอายุ (ไม่ต้องฝืนเรียก refreshSession)
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && authResolvedRef.current) {
         try {
-          const { data } = await supabase.auth.getSession();
-          if (!data.session) {
-            // 🛡️ ลอง refresh ก่อน ไม่ต้อง reload ทันที
-            console.warn('⚠️ No session in storage, attempting refresh...');
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError || !refreshData.session) {
-              await handleTokenError(refreshError, 'Visibility Check (No Session)');
-            } else {
-              console.log('✅ Session refreshed on focus');
-            }
-            return;
-          }
-          if (data.session?.expires_at) {
-            const timeToExpiry = (data.session.expires_at * 1000) - Date.now();
-            if (timeToExpiry < 5 * 60 * 1000) {
-              console.log('🔄 Session expiring soon, proactive refresh...');
-              const { error } = await supabase.auth.refreshSession();
-              if (error) {
-                await handleTokenError(error, 'Proactive Refresh');
-              }
-            }
-          }
+          await supabase.auth.getSession();
         } catch (e) {
           console.error('❌ Visibility check failed:', e);
         }
@@ -241,27 +220,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // 🔄 Periodic Token Refresh: ต่ออายุ token ทุก 10 นาที ป้องกัน session หมดอายุขณะใช้งาน
-    const refreshInterval = setInterval(async () => {
-      if (!authResolvedRef.current) return;
-      try {
-        const { data, error } = await supabase.auth.refreshSession();
-        if (error || !data.session) {
-          await handleTokenError(error, 'Periodic Refresh');
-        } else {
-          console.log('✅ Periodic token refresh successful');
-        }
-      } catch (e) {
-        console.error('❌ Periodic refresh error:', e);
-      }
-    }, 10 * 60 * 1000); // ทุก 10 นาที
-
     return () => {
       isMounted = false;
       if (authTimeout) clearTimeout(authTimeout);
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInterval(refreshInterval);
       if (stopSync) stopSync();
     };
   }, [resolveAuth]);
