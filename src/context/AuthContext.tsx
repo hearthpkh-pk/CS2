@@ -295,7 +295,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e: any) {
       console.error('❌ Failed to fetch user profile:', e);
-      setUser(null);
+      
+      // 🛡️ CRITICAL: Background refresh ล้มเหลวต้อง **ไม่** ลบ user ออก!
+      // ถ้ามี cached profile อยู่แล้ว ให้ใช้ต่อไป ไม่ต้องเด้ง login
+      if (isBackground) {
+        console.warn('⚠️ Background profile refresh failed — keeping existing session intact.');
+        // ไม่ทำอะไร ปล่อย user เดิมค้างไว้
+      } else {
+        // Foreground (first load) → เช็คว่ามี cache ไหม ถ้ามีก็ใช้ cache ก่อน
+        const fallback = getCachedProfile();
+        if (fallback) {
+          console.warn('⚠️ Profile fetch failed but found cached profile — using cache.');
+          setUser(fallback);
+        } else {
+          setUser(null);
+        }
+      }
     } finally {
       profileFetchingRef.current = false;
       if (!isBackground) {
