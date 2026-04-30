@@ -430,6 +430,9 @@ export default function CreatorApp() {
             <ReportsView
               currentUser={currentUser}
               policy={policyConfig}
+              users={users}
+              logs={logs}
+              pages={pages}
             />
           )}
 

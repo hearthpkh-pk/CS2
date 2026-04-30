@@ -242,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 4 วินาที
       let timeoutId: NodeJS.Timeout;
       const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 4000);
+        timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 12000);
       });
 
       const fetchPromise = supabase

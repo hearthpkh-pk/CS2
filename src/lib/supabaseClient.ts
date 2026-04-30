@@ -7,5 +7,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Missing Supabase environment variables! Check your .env.local file.');
 }
 
-// 🛡️ เปลี่ยนมาใช้ createBrowserClient เพื่อจัดการ Session ผ่าน Cookie อัตโนมัติ
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+// Enable auto‑refresh and persistent session (supabase client handles silent refresh)
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});

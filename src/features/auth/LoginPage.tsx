@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, User, Activity, ChevronRight, Info, AlertCircle, Mail, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 export const LoginPage = () => {
@@ -13,6 +14,7 @@ export const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isExiting, setIsExiting] = useState(false);
+  const router = useRouter();
 
   // Easter egg states (for UI fun, no longer bypasses security)
   const [logoClicks, setLogoClicks] = useState(0);
@@ -49,14 +51,19 @@ export const LoginPage = () => {
         password: password,
       });
 
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setErrorMessage('Invalid email or password, or your account has not been approved yet.');
-        } else {
-          setErrorMessage(error.message);
-        }
-        setIsExiting(false);
+      // ✅ Sign‑in succeeded – check if we have a stored redirect URL
+      const storedPath = typeof window !== 'undefined' ? sessionStorage.getItem('redirect_after_login') : null;
+      if (storedPath) {
+        // Clean up storage before navigation
+        sessionStorage.removeItem('redirect_after_login');
+        // Use Next.js router for client‑side navigation
+        router.replace(storedPath);
+        console.log('🔀 Redirecting after login to', storedPath);
+      } else {
+        // No stored path – stay on default dashboard (home)
+        router.replace('/');
       }
+      setIsExiting(false);
     } catch (err) {
       setErrorMessage('Failed to connect to authentication server.');
       setIsExiting(false);
