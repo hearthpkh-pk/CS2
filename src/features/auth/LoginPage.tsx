@@ -51,6 +51,22 @@ export const LoginPage = () => {
         password: password,
       });
 
+      // 🛡️ Supabase returns error ใน response object ไม่ได้ throw!
+      if (error) {
+        console.error('❌ Sign-in error:', error.message);
+        if (error.message.includes('Invalid login credentials')) {
+          setErrorMessage('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+        } else if (error.message.includes('Email not confirmed')) {
+          setErrorMessage('กรุณายืนยันอีเมลก่อนเข้าใช้งาน');
+        } else if (error.message.includes('Too many requests')) {
+          setErrorMessage('เข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่');
+        } else {
+          setErrorMessage(error.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+        }
+        setIsExiting(false);
+        return;
+      }
+
       // ✅ Sign‑in succeeded – check if we have a stored redirect URL
       const storedPath = typeof window !== 'undefined' ? sessionStorage.getItem('redirect_after_login') : null;
       if (storedPath) {
@@ -65,7 +81,8 @@ export const LoginPage = () => {
       }
       setIsExiting(false);
     } catch (err) {
-      setErrorMessage('Failed to connect to authentication server.');
+      console.error('❌ Auth connection error:', err);
+      setErrorMessage('ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ กรุณาลองใหม่');
       setIsExiting(false);
     } finally {
       setIsAuthenticating(false);
@@ -75,27 +92,49 @@ export const LoginPage = () => {
   const handleGoogleAuth = async () => {
     setIsAuthenticating(true);
     setErrorMessage('');
-    
-    setIsExiting(true);
-    await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('🔑 Google OAuth redirect URL:', redirectUrl);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // ✅ ชี้ไปที่ Server Route เพื่อให้ Server จัดการ Code แทน Browser
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: redirectUrl,
+          queryParams: {
+            prompt: 'select_account',
+          },
+          // 🛡️ ไม่ redirect อัตโนมัติ เพื่อให้เราเช็ค error ก่อน
+          skipBrowserRedirect: true,
         }
       });
 
       if (error) {
-        setErrorMessage(error.message);
-        setIsExiting(false);
+        console.error('❌ Google OAuth error:', error.message);
+        if (error.message.includes('Provider not found') || error.message.includes('provider')) {
+          setErrorMessage('Google Sign-In ยังไม่ได้เปิดใช้งาน — ติดต่อผู้ดูแลระบบ');
+        } else if (error.message.includes('redirect')) {
+          setErrorMessage('Redirect URL ไม่ได้รับอนุญาต — ตรวจสอบการตั้งค่า Supabase');
+        } else {
+          setErrorMessage(`Google Sign-In ล้มเหลว: ${error.message}`);
+        }
+        setIsAuthenticating(false);
+        return;
+      }
+
+      // ✅ OAuth URL พร้อมใช้งาน — ทำ exit animation แล้ว redirect
+      if (data?.url) {
+        console.log('✅ Google OAuth URL received, redirecting...');
+        setIsExiting(true);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        window.location.href = data.url;
+      } else {
+        setErrorMessage('ไม่สามารถสร้าง Google Sign-In URL ได้');
+        setIsAuthenticating(false);
       }
     } catch (err) {
-      setErrorMessage('Failed to connect to Google.');
-      setIsExiting(false);
-    } finally {
+      console.error('❌ Google OAuth connection error:', err);
+      setErrorMessage('ไม่สามารถเชื่อมต่อ Google ได้ กรุณาลองใหม่');
       setIsAuthenticating(false);
     }
   };

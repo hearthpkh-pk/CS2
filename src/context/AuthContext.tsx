@@ -265,6 +265,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log(`✅ Profile fetch complete. Profile found: ${!!profile}`);
 
       if (profile) {
+        // 🛡️ SMART MERGE: ถ้า profile ที่เจอ (จาก trigger) เป็น is_active=false
+        // ให้เช็คว่ามี profile ที่ admin สร้างไว้ด้วย email เดียวกันไหม
+        if (!profile.is_active && email) {
+          const { data: adminProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', email)
+            .neq('id', uid) // ไม่ใช่ตัวเดียวกับ trigger profile
+            .maybeSingle();
+
+          if (adminProfile) {
+            console.log(`🔗 Found admin-created profile for ${email}, merging...`);
+            try {
+              // Step 1: ลบ trigger profile (uid = Google auth ID) ออกก่อน
+              await supabase.from('profiles').delete().eq('id', uid);
+              
+              // Step 2: ย้ายข้อมูล admin profile ไปใช้ auth ID ใหม่
+              const { id: oldId, created_at, updated_at, ...profileData } = adminProfile;
+              await supabase.from('profiles').delete().eq('id', oldId);
+              await supabase.from('profiles').insert({ ...profileData, id: uid });
+              
+              console.log(`✅ Profile merged: ${oldId} → ${uid}`);
+              
+              const appUser: User = {
+                id: uid,
+                name: adminProfile.name,
+                username: adminProfile.username || '',
+                email: email,
+                role: (adminProfile.role as Role) || Role.Staff,
+                teamId: adminProfile.team_id,
+                department: adminProfile.department,
+                group: adminProfile.group,
+                salary: adminProfile.salary,
+                isActive: adminProfile.is_active,
+                avatarUrl: adminProfile.avatar_url,
+              };
+              setCachedProfile(appUser);
+              setUser(appUser);
+              return;
+            } catch (mergeErr) {
+              console.error('❌ Profile merge failed:', mergeErr);
+            }
+          }
+        }
+
         const appUser: User = {
           id: profile.id,
           name: profile.name,
@@ -278,19 +323,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isActive: profile.is_active,
           avatarUrl: profile.avatar_url,
         };
-        setCachedProfile(appUser); // 💾 cache for instant re-hydration
+        setCachedProfile(appUser);
         setUser(appUser);
       } else {
-        // 💡 WORLD-CLASS SOLUTION: Database Trigger Race Condition
-        // เวลาสมัครใหม่ด้วย Google บางครั้ง Trigger ฝั่ง Database ที่ใช้สร้าง Profile 
-        // ทำงานช้ากว่า Frontend ที่ยิงไปขอข้อมูล ทำให้หา Profile ไม่เจอในรอบแรก
+        // 🛡️ FALLBACK: ถ้าหา profile by ID ไม่เจอ → ลอง email lookup + relink
+        if (email) {
+          console.warn(`⚠️ No profile by ID. Trying email fallback: ${email}`);
+          const { data: emailProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+          
+          if (emailProfile) {
+            console.log(`✅ Found profile via email! Relinking to auth ID: ${uid}`);
+            try {
+              const { id: oldId, created_at, updated_at, ...profileData } = emailProfile;
+              await supabase.from('profiles').delete().eq('id', oldId);
+              await supabase.from('profiles').insert({ ...profileData, id: uid });
+              
+              const appUser: User = {
+                id: uid,
+                name: emailProfile.name,
+                username: emailProfile.username || '',
+                email: email,
+                role: (emailProfile.role as Role) || Role.Staff,
+                teamId: emailProfile.team_id,
+                department: emailProfile.department,
+                group: emailProfile.group,
+                salary: emailProfile.salary,
+                isActive: emailProfile.is_active,
+                avatarUrl: emailProfile.avatar_url,
+              };
+              setCachedProfile(appUser);
+              setUser(appUser);
+              return;
+            } catch (relinkErr) {
+              console.error('❌ Profile relink failed, using original:', relinkErr);
+              const appUser: User = {
+                id: emailProfile.id,
+                name: emailProfile.name,
+                username: emailProfile.username || '',
+                email: email,
+                role: (emailProfile.role as Role) || Role.Staff,
+                teamId: emailProfile.team_id,
+                department: emailProfile.department,
+                group: emailProfile.group,
+                salary: emailProfile.salary,
+                isActive: emailProfile.is_active,
+                avatarUrl: emailProfile.avatar_url,
+              };
+              setCachedProfile(appUser);
+              setUser(appUser);
+              return;
+            }
+          }
+        }
+
+        // 💡 Database Trigger Race Condition
         if (retryCount < 2) {
           console.warn(`⚠️ No profile found for UID: ${uid}. Retrying in ${400 * (retryCount + 1)}ms...`);
           await new Promise(resolve => setTimeout(resolve, 400 * (retryCount + 1)));
           return fetchUserProfile(uid, email, isBackground, retryCount + 1);
         }
         
-        console.error(`❌ Exhausted retries. No profile found for UID: ${uid}`);
+        console.error(`❌ Exhausted retries. No profile found for UID: ${uid} or email: ${email}`);
         setUser(null);
       }
     } catch (e: any) {
