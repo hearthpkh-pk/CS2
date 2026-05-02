@@ -37,28 +37,20 @@ BEGIN
 
     IF _existing_profile_id IS NOT NULL THEN
         -- 🔗 Relink: เปลี่ยน ID ให้ตรงกับ auth user ใหม่
-        -- ก่อน update ต้อง unlink FK references (monthly_submissions, daily_logs, etc.)
+        -- ⚠️ ต้องมี ON UPDATE CASCADE ในทุกตารางที่อ้างอิง profiles(id)
         
-        -- Step 1: อัปเดต FK references ทั้งหมดที่ชี้ไปหา old profile ID
-        UPDATE public.daily_logs SET staff_id = new.id WHERE staff_id = _existing_profile_id;
-        UPDATE public.monthly_submissions SET staff_id = new.id WHERE staff_id = _existing_profile_id;
-        UPDATE public.monthly_submissions SET reviewed_by = new.id WHERE reviewed_by = _existing_profile_id;
-        UPDATE public.facebook_pages SET owner_id = new.id WHERE owner_id = _existing_profile_id;
-        UPDATE public.facebook_accounts SET owner_id = new.id WHERE owner_id = _existing_profile_id;
-        
-        -- Step 2: อัปเดต profile ID + avatar
         UPDATE public.profiles 
         SET 
             id = new.id,
             avatar_url = COALESCE(
                 new.raw_user_meta_data->>'avatar_url', 
                 new.raw_user_meta_data->>'picture',
-                avatar_url  -- เก็บรูปเดิมถ้า Google ไม่มี
+                avatar_url
             ),
             updated_at = NOW()
         WHERE id = _existing_profile_id;
         
-        RAISE LOG '[handle_new_user] ✅ Relinked profile % → % for email %', 
+        RAISE LOG '[handle_new_user] ✅ Relinked profile % → % for email % (Cascading updates applied)', 
             _existing_profile_id, new.id, new.email;
         RETURN new;
     END IF;
