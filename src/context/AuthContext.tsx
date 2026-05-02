@@ -270,49 +270,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log(`✅ Profile fetch complete. Profile found: ${!!profile}`);
 
         if (profile) {
-          // 🛡️ SMART MERGE
-          if (!profile.is_active && email) {
-            const { data: adminProfile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('email', email)
-              .neq('id', uid)
-              .maybeSingle();
-
-            if (adminProfile) {
-              console.log(`🔗 Found admin-created profile for ${email}, merging...`);
-              try {
-                await supabase.from('profiles').delete().eq('id', uid);
-                
-                const { id: oldId, created_at, updated_at, ...profileData } = adminProfile;
-                await supabase.from('profiles').delete().eq('id', oldId);
-                await supabase.from('profiles').insert({ ...profileData, id: uid });
-                
-                console.log(`✅ Profile merged: ${oldId} → ${uid}`);
-                
-                const appUser: User = {
-                  id: uid,
-                  name: adminProfile.name,
-                  username: adminProfile.username || '',
-                  email: email,
-                  role: (adminProfile.role as Role) || Role.Staff,
-                  teamId: adminProfile.team_id,
-                  department: adminProfile.department,
-                  group: adminProfile.group,
-                  salary: adminProfile.salary,
-                  isActive: adminProfile.is_active,
-                  avatarUrl: adminProfile.avatar_url,
-                };
-                setCachedProfile(appUser);
-                setUser(appUser);
-                success = true;
-                break; // ออกจาก loop เมื่อสำเร็จ
-              } catch (mergeErr) {
-                console.error('❌ Profile merge failed:', mergeErr);
-              }
-            }
-          }
-
+          // ✅ Profile พบแล้ว — map ข้อมูลและ set user ได้เลย
+          // 🛡️ ไม่ทำ DELETE หรือ INSERT ที่ Frontend เด็ดขาด
+          // การ Relink UUID เป็นหน้าที่ของ DB Trigger (handle_new_user) เพียงอย่างเดียว
           const appUser: User = {
             id: profile.id,
             name: profile.name,
@@ -330,64 +290,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(appUser);
           success = true;
         } else {
-          // 🛡️ FALLBACK: ไม่มี profile by ID
-          if (email) {
-            console.warn(`⚠️ No profile by ID. Trying email fallback: ${email}`);
-            const { data: emailProfile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('email', email)
-              .maybeSingle();
-            
-            if (emailProfile) {
-              console.log(`✅ Found profile via email! Relinking to auth ID: ${uid}`);
-              try {
-                const { id: oldId, created_at, updated_at, ...profileData } = emailProfile;
-                await supabase.from('profiles').delete().eq('id', oldId);
-                await supabase.from('profiles').insert({ ...profileData, id: uid });
-                
-                const appUser: User = {
-                  id: uid,
-                  name: emailProfile.name,
-                  username: emailProfile.username || '',
-                  email: email,
-                  role: (emailProfile.role as Role) || Role.Staff,
-                  teamId: emailProfile.team_id,
-                  department: emailProfile.department,
-                  group: emailProfile.group,
-                  salary: emailProfile.salary,
-                  isActive: emailProfile.is_active,
-                  avatarUrl: emailProfile.avatar_url,
-                };
-                setCachedProfile(appUser);
-                setUser(appUser);
-                success = true;
-                break; // ออกจาก loop เมื่อสำเร็จ
-              } catch (relinkErr) {
-                console.error('❌ Profile relink failed, using original:', relinkErr);
-                const appUser: User = {
-                  id: emailProfile.id,
-                  name: emailProfile.name,
-                  username: emailProfile.username || '',
-                  email: email,
-                  role: (emailProfile.role as Role) || Role.Staff,
-                  teamId: emailProfile.team_id,
-                  department: emailProfile.department,
-                  group: emailProfile.group,
-                  salary: emailProfile.salary,
-                  isActive: emailProfile.is_active,
-                  avatarUrl: emailProfile.avatar_url,
-                };
-                setCachedProfile(appUser);
-                setUser(appUser);
-                success = true;
-                break; // ออกจาก loop เมื่อสำเร็จ
-              }
-            }
-          }
-
-          // ถ้าไม่มีอะไรเลย โยน error ไป catch block เพื่อ retry
-          throw new Error('Profile not found in database');
+          // 🔄 Profile ไม่เจอด้วย ID — อาจเป็นเพราะ DB Trigger กำลัง UPDATE อยู่
+          // Strategy: รอแล้ว Retry โดยไม่พยายาม Relink เอง
+          console.warn(`⚠️ Profile not found for UID: ${uid} (Attempt ${attempt + 1}). DB Trigger may still be running...`);
+          
+          // โยน error เพื่อให้ while loop retry ด้วย backoff delay
+          throw new Error('Profile not ready yet — trigger may be running');
         }
       } catch (e: any) {
         console.error(`❌ Supabase profile query error (Attempt ${attempt + 1}):`, e.message || e);
