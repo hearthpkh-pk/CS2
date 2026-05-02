@@ -229,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [resolveAuth]);
 
-  const fetchUserProfile = async (uid: string, email?: string, isBackground = false, retryCount = 0): Promise<void> => {
+  const fetchUserProfile = async (uid: string, email?: string, isBackground = false): Promise<void> => {
     // 🛡️ Guard: skip if another fetch is in progress
     if (profileFetchingRef.current) {
       console.log('🛡️ Profile fetch already in progress, skipping duplicate');
@@ -237,183 +237,187 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     profileFetchingRef.current = true;
 
-    console.log(`⏳ Starting profile fetch for UID: ${uid} (Attempt ${retryCount + 1})`);
-    try {
-      // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 4 วินาที
-      let timeoutId: NodeJS.Timeout;
-      const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 12000);
-      });
+    const maxRetries = 2;
+    let attempt = 0;
+    let success = false;
 
-      const fetchPromise = supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', uid)
-        .maybeSingle()
-        .then(res => {
-          clearTimeout(timeoutId);
-          return res;
+    while (attempt <= maxRetries && !success) {
+      console.log(`⏳ Starting profile fetch for UID: ${uid} (Attempt ${attempt + 1})`);
+      try {
+        // 🛡️ ป้องกัน Query ค้างตลอดกาล โดยตั้งเวลา 8 วินาที (ลดลงจาก 12 เพื่อให้ retry ได้เร็วขึ้น)
+        let timeoutId: NodeJS.Timeout;
+        const timeoutPromise = new Promise<{data: any, error: any}>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Profile query timeout')), 8000);
         });
 
-      const { data: profile, error } = await Promise.race([fetchPromise, timeoutPromise]);
+        const fetchPromise = supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', uid)
+          .maybeSingle()
+          .then(res => {
+            clearTimeout(timeoutId);
+            return res;
+          });
 
-      if (error) {
-        console.error(`❌ Supabase profile query error (Attempt ${retryCount + 1}):`, error);
-        throw error;
-      }
+        const { data: profile, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
-      console.log(`✅ Profile fetch complete. Profile found: ${!!profile}`);
+        if (error) {
+          throw error;
+        }
 
-      if (profile) {
-        // 🛡️ SMART MERGE: ถ้า profile ที่เจอ (จาก trigger) เป็น is_active=false
-        // ให้เช็คว่ามี profile ที่ admin สร้างไว้ด้วย email เดียวกันไหม
-        if (!profile.is_active && email) {
-          const { data: adminProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', email)
-            .neq('id', uid) // ไม่ใช่ตัวเดียวกับ trigger profile
-            .maybeSingle();
+        console.log(`✅ Profile fetch complete. Profile found: ${!!profile}`);
 
-          if (adminProfile) {
-            console.log(`🔗 Found admin-created profile for ${email}, merging...`);
-            try {
-              // Step 1: ลบ trigger profile (uid = Google auth ID) ออกก่อน
-              await supabase.from('profiles').delete().eq('id', uid);
-              
-              // Step 2: ย้ายข้อมูล admin profile ไปใช้ auth ID ใหม่
-              const { id: oldId, created_at, updated_at, ...profileData } = adminProfile;
-              await supabase.from('profiles').delete().eq('id', oldId);
-              await supabase.from('profiles').insert({ ...profileData, id: uid });
-              
-              console.log(`✅ Profile merged: ${oldId} → ${uid}`);
-              
-              const appUser: User = {
-                id: uid,
-                name: adminProfile.name,
-                username: adminProfile.username || '',
-                email: email,
-                role: (adminProfile.role as Role) || Role.Staff,
-                teamId: adminProfile.team_id,
-                department: adminProfile.department,
-                group: adminProfile.group,
-                salary: adminProfile.salary,
-                isActive: adminProfile.is_active,
-                avatarUrl: adminProfile.avatar_url,
-              };
-              setCachedProfile(appUser);
-              setUser(appUser);
-              return;
-            } catch (mergeErr) {
-              console.error('❌ Profile merge failed:', mergeErr);
+        if (profile) {
+          // 🛡️ SMART MERGE
+          if (!profile.is_active && email) {
+            const { data: adminProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('email', email)
+              .neq('id', uid)
+              .maybeSingle();
+
+            if (adminProfile) {
+              console.log(`🔗 Found admin-created profile for ${email}, merging...`);
+              try {
+                await supabase.from('profiles').delete().eq('id', uid);
+                
+                const { id: oldId, created_at, updated_at, ...profileData } = adminProfile;
+                await supabase.from('profiles').delete().eq('id', oldId);
+                await supabase.from('profiles').insert({ ...profileData, id: uid });
+                
+                console.log(`✅ Profile merged: ${oldId} → ${uid}`);
+                
+                const appUser: User = {
+                  id: uid,
+                  name: adminProfile.name,
+                  username: adminProfile.username || '',
+                  email: email,
+                  role: (adminProfile.role as Role) || Role.Staff,
+                  teamId: adminProfile.team_id,
+                  department: adminProfile.department,
+                  group: adminProfile.group,
+                  salary: adminProfile.salary,
+                  isActive: adminProfile.is_active,
+                  avatarUrl: adminProfile.avatar_url,
+                };
+                setCachedProfile(appUser);
+                setUser(appUser);
+                success = true;
+                break; // ออกจาก loop เมื่อสำเร็จ
+              } catch (mergeErr) {
+                console.error('❌ Profile merge failed:', mergeErr);
+              }
             }
           }
-        }
 
-        const appUser: User = {
-          id: profile.id,
-          name: profile.name,
-          username: profile.username || '',
-          email: email,
-          role: (profile.role as Role) || Role.Staff,
-          teamId: profile.team_id,
-          department: profile.department,
-          group: profile.group,
-          salary: profile.salary,
-          isActive: profile.is_active,
-          avatarUrl: profile.avatar_url,
-        };
-        setCachedProfile(appUser);
-        setUser(appUser);
-      } else {
-        // 🛡️ FALLBACK: ถ้าหา profile by ID ไม่เจอ → ลอง email lookup + relink
-        if (email) {
-          console.warn(`⚠️ No profile by ID. Trying email fallback: ${email}`);
-          const { data: emailProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', email)
-            .maybeSingle();
-          
-          if (emailProfile) {
-            console.log(`✅ Found profile via email! Relinking to auth ID: ${uid}`);
-            try {
-              const { id: oldId, created_at, updated_at, ...profileData } = emailProfile;
-              await supabase.from('profiles').delete().eq('id', oldId);
-              await supabase.from('profiles').insert({ ...profileData, id: uid });
-              
-              const appUser: User = {
-                id: uid,
-                name: emailProfile.name,
-                username: emailProfile.username || '',
-                email: email,
-                role: (emailProfile.role as Role) || Role.Staff,
-                teamId: emailProfile.team_id,
-                department: emailProfile.department,
-                group: emailProfile.group,
-                salary: emailProfile.salary,
-                isActive: emailProfile.is_active,
-                avatarUrl: emailProfile.avatar_url,
-              };
-              setCachedProfile(appUser);
-              setUser(appUser);
-              return;
-            } catch (relinkErr) {
-              console.error('❌ Profile relink failed, using original:', relinkErr);
-              const appUser: User = {
-                id: emailProfile.id,
-                name: emailProfile.name,
-                username: emailProfile.username || '',
-                email: email,
-                role: (emailProfile.role as Role) || Role.Staff,
-                teamId: emailProfile.team_id,
-                department: emailProfile.department,
-                group: emailProfile.group,
-                salary: emailProfile.salary,
-                isActive: emailProfile.is_active,
-                avatarUrl: emailProfile.avatar_url,
-              };
-              setCachedProfile(appUser);
-              setUser(appUser);
-              return;
-            }
-          }
-        }
-
-        // 💡 Database Trigger Race Condition
-        if (retryCount < 2) {
-          console.warn(`⚠️ No profile found for UID: ${uid}. Retrying in ${400 * (retryCount + 1)}ms...`);
-          await new Promise(resolve => setTimeout(resolve, 400 * (retryCount + 1)));
-          return fetchUserProfile(uid, email, isBackground, retryCount + 1);
-        }
-        
-        console.error(`❌ Exhausted retries. No profile found for UID: ${uid} or email: ${email}`);
-        setUser(null);
-      }
-    } catch (e: any) {
-      console.error('❌ Failed to fetch user profile:', e);
-      
-      // 🛡️ CRITICAL: Background refresh ล้มเหลวต้อง **ไม่** ลบ user ออก!
-      // ถ้ามี cached profile อยู่แล้ว ให้ใช้ต่อไป ไม่ต้องเด้ง login
-      if (isBackground) {
-        console.warn('⚠️ Background profile refresh failed — keeping existing session intact.');
-        // ไม่ทำอะไร ปล่อย user เดิมค้างไว้
-      } else {
-        // Foreground (first load) → เช็คว่ามี cache ไหม ถ้ามีก็ใช้ cache ก่อน
-        const fallback = getCachedProfile();
-        if (fallback) {
-          console.warn('⚠️ Profile fetch failed but found cached profile — using cache.');
-          setUser(fallback);
+          const appUser: User = {
+            id: profile.id,
+            name: profile.name,
+            username: profile.username || '',
+            email: email,
+            role: (profile.role as Role) || Role.Staff,
+            teamId: profile.team_id,
+            department: profile.department,
+            group: profile.group,
+            salary: profile.salary,
+            isActive: profile.is_active,
+            avatarUrl: profile.avatar_url,
+          };
+          setCachedProfile(appUser);
+          setUser(appUser);
+          success = true;
         } else {
-          setUser(null);
+          // 🛡️ FALLBACK: ไม่มี profile by ID
+          if (email) {
+            console.warn(`⚠️ No profile by ID. Trying email fallback: ${email}`);
+            const { data: emailProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('email', email)
+              .maybeSingle();
+            
+            if (emailProfile) {
+              console.log(`✅ Found profile via email! Relinking to auth ID: ${uid}`);
+              try {
+                const { id: oldId, created_at, updated_at, ...profileData } = emailProfile;
+                await supabase.from('profiles').delete().eq('id', oldId);
+                await supabase.from('profiles').insert({ ...profileData, id: uid });
+                
+                const appUser: User = {
+                  id: uid,
+                  name: emailProfile.name,
+                  username: emailProfile.username || '',
+                  email: email,
+                  role: (emailProfile.role as Role) || Role.Staff,
+                  teamId: emailProfile.team_id,
+                  department: emailProfile.department,
+                  group: emailProfile.group,
+                  salary: emailProfile.salary,
+                  isActive: emailProfile.is_active,
+                  avatarUrl: emailProfile.avatar_url,
+                };
+                setCachedProfile(appUser);
+                setUser(appUser);
+                success = true;
+                break; // ออกจาก loop เมื่อสำเร็จ
+              } catch (relinkErr) {
+                console.error('❌ Profile relink failed, using original:', relinkErr);
+                const appUser: User = {
+                  id: emailProfile.id,
+                  name: emailProfile.name,
+                  username: emailProfile.username || '',
+                  email: email,
+                  role: (emailProfile.role as Role) || Role.Staff,
+                  teamId: emailProfile.team_id,
+                  department: emailProfile.department,
+                  group: emailProfile.group,
+                  salary: emailProfile.salary,
+                  isActive: emailProfile.is_active,
+                  avatarUrl: emailProfile.avatar_url,
+                };
+                setCachedProfile(appUser);
+                setUser(appUser);
+                success = true;
+                break; // ออกจาก loop เมื่อสำเร็จ
+              }
+            }
+          }
+
+          // ถ้าไม่มีอะไรเลย โยน error ไป catch block เพื่อ retry
+          throw new Error('Profile not found in database');
+        }
+      } catch (e: any) {
+        console.error(`❌ Supabase profile query error (Attempt ${attempt + 1}):`, e.message || e);
+        
+        if (attempt < maxRetries) {
+          console.warn(`⚠️ Retrying in ${1000 * (attempt + 1)}ms...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          attempt++;
+        } else {
+          // หมดโควต้า Retry
+          console.error(`❌ Exhausted retries. No profile found for UID: ${uid}`);
+          if (isBackground) {
+            console.warn('⚠️ Background profile refresh failed — keeping existing session intact.');
+          } else {
+            const fallback = getCachedProfile();
+            if (fallback) {
+              console.warn('⚠️ Profile fetch failed but found cached profile — using cache.');
+              setUser(fallback);
+            } else {
+              setUser(null);
+            }
+          }
+          break; // จบลูป
         }
       }
-    } finally {
-      profileFetchingRef.current = false;
-      if (!isBackground) {
-        console.log('🏁 Setting isLoading to false');
-        setIsLoading(false);
-      }
+    } // End of while loop
+
+    profileFetchingRef.current = false;
+    if (!isBackground) {
+      console.log('🏁 Setting isLoading to false');
+      setIsLoading(false);
     }
   };
 

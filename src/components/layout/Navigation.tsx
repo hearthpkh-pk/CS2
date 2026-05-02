@@ -192,7 +192,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
               <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
             ) : currentUser.email ? (
               <img 
-                src={`https://www.gravatar.com/avatar/${btoa(currentUser.email).substring(0, 32)}?d=404`} 
+                src={`https://www.gravatar.com/avatar/${btoa(currentUser.email).substring(0, 32)}?d=mp`} 
                 alt={currentUser.name} 
                 className="w-full h-full object-cover"
                 onError={(e) => {

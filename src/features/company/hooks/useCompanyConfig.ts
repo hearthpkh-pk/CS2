@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { configService } from '@/services/configService';
 import { Announcement, CompanyConfig, GroupDefinition, Role, User, PolicyConfiguration, Brand, CompanyRule } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 // Create a fallback config so we always have valid data shape during initial render
 const FALLBACK_CONFIG: CompanyConfig = {
@@ -28,6 +29,7 @@ const FALLBACK_CONFIG: CompanyConfig = {
 
 export const useCompanyConfig = () => {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
   const { data: config = FALLBACK_CONFIG, isLoading, refetch: refreshConfig } = useQuery({
     queryKey: ['companyConfig'],
@@ -36,6 +38,7 @@ export const useCompanyConfig = () => {
       return data || FALLBACK_CONFIG;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache
+    enabled: isAuthenticated,
   });
 
   const setConfig = useCallback((newData: CompanyConfig) => {

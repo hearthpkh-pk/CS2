@@ -245,6 +245,7 @@ export const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isAuthenticating}
+              autoComplete="current-password"
               className="w-full bg-white border-0 rounded-full pl-16 pr-14 py-5 text-[14px] font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-4 focus:ring-white/20 transition-all placeholder:text-slate-300 font-inter disabled:opacity-50"
             />
             <button
