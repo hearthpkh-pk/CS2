@@ -40,7 +40,8 @@ export const PerformanceChart = ({
 
   // Catmull-Rom to SVG path helper
   const getCurvePath = (points: { x: number, y: number }[]) => {
-    if (points.length < 2) return '';
+    if (points.length === 0) return '';
+    if (points.length === 1) return `M ${points[0].x},${points[0].y} L ${points[0].x},${points[0].y}`;
     let path = `M ${points[0].x},${points[0].y}`;
     
     for (let i = 0; i < points.length - 1; i++) {
