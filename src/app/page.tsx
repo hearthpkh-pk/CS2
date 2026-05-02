@@ -34,6 +34,7 @@ import { PendingApprovalPage } from '@/features/auth/PendingApprovalPage';
 import { personnelService } from '@/services/personnelService';
 import { ProfileManager } from '@/features/company/components/settings/ProfileManager';
 import { MobileHQDashboard } from '@/features/mobile-dashboard/components/MobileHQDashboard';
+import { MobileStaffDashboard } from '@/features/mobile-dashboard/components/MobileStaffDashboard';
 
 export default function CreatorApp() {
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -156,27 +157,12 @@ export default function CreatorApp() {
       );
     } else {
       return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center font-prompt relative overflow-hidden">
-          {/* Decorative blur */}
-          <div className="absolute top-[-10%] right-[-10%] w-60 h-60 bg-[var(--primary-blue)]/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-[-10%] left-[-10%] w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl"></div>
-
-          <div className="bg-white p-8 rounded-[2rem] shadow-2xl max-w-sm w-full relative z-10 animate-in zoom-in-95 duration-500">
-            <div className="w-16 h-16 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm transform -rotate-3">
-              <span className="text-2xl">🚧</span>
-            </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2 leading-tight">ขออภัย!<br />ไม่อนุญาตให้ใช้งานผ่านมือถือ</h2>
-            <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
-              เพื่อให้การประมวลผลข้อมูลและตารางงานมีความแม่นยำสูงสุด รบกวนพนักงานเข้าสู่ระบบผ่านคอมพิวเตอร์เท่านั้น
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-[13px] rounded-xl transition-colors border border-slate-200"
-            >
-              ลองใหม่อีกครั้ง
-            </button>
-          </div>
-        </div>
+        <MobileStaffDashboard
+          currentUser={currentUser}
+          pages={myPages}
+          logs={myLogs}
+          policy={policyConfig}
+        />
       );
     }
   }
