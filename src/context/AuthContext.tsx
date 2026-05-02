@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resolveAuth(null);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(`📡 Auth Event Fired: ${event}`);
       
       if (!isMounted) return;
@@ -186,7 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('🛡️ SIGNED_IN: Profile fetch already in progress, skipping');
             return;
           }
-          await fetchUserProfile(session.user.id, session.user.email);
+          // 🔥 Fire and forget to avoid holding the Supabase Web Lock
+          fetchUserProfile(session.user.id, session.user.email).catch(console.error);
           if (!stopSync) stopSync = syncService.init();
           cleanAuthUrl();
         }
@@ -197,13 +198,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           cleanAuthUrl();
         } else {
           // Token refresh returned no session - session is dead
-          await handleTokenError(null, 'TOKEN_REFRESHED (No Session)');
+          handleTokenError(null, 'TOKEN_REFRESHED (No Session)').catch(console.error);
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User SIGNED_OUT');
-        await logCacheService.clearCache();
         if (stopSync) stopSync();
-        resolveAuth(null);
+        resolveAuth(null); // UI กลับไปหน้า Login ทันที
+        logCacheService.clearCache().catch(console.error); // เคลียร์ Cache เบื้องหลัง
       }
     });
 
