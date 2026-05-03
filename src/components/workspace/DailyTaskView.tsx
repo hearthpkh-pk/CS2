@@ -63,13 +63,32 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   useEffect(() => {
     if (isConfigLoading || isLogsLoading) return;
 
+    const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
+    const draftJson = localStorage.getItem(draftKey);
+    let draftData: Record<string, string[]> | null = null;
+    if (draftJson) {
+      try { draftData = JSON.parse(draftJson); } catch (e) {}
+    }
+
     const initial: Record<string, string[]> = {};
     displayPages.forEach(p => {
       const existingLog = myTodayLogs.find(l => l.pageId === p.id);
-      initial[p.id] = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
+      const dbLinks = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
+      const draftLinks = draftData ? draftData[p.id] || [] : [];
+      
+      // 🛡️ ผสานข้อมูล: ถ้าใน Draft (ที่พิมพ์ค้างไว้) มีลิงก์เยอะกว่า DB ให้เอา Draft มาใช้
+      initial[p.id] = draftLinks.length > dbLinks.length ? draftLinks : dbLinks;
     });
     setSubmissionData(initial);
-  }, [displayPages, isConfigLoading, isLogsLoading, myTodayLogs]);
+  }, [displayPages, isConfigLoading, isLogsLoading, myTodayLogs, currentUser.id]);
+
+  // 💾 Auto-Save Draft: บันทึกลง LocalStorage ทุกครั้งที่พิมพ์หรือแก้ลิงก์
+  useEffect(() => {
+    if (Object.keys(submissionData).length > 0) {
+      const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
+      localStorage.setItem(draftKey, JSON.stringify(submissionData));
+    }
+  }, [submissionData, currentUser.id]);
 
   const handleAddLink = useCallback((pageId: string) => {
     const val = (currentInputsRef.current[pageId] || '').trim();
@@ -129,6 +148,10 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
       await dataService.saveLogs(logs);
       await submitLogsMutation.mutateAsync({ userId: currentUser.id, date: format(new Date(), 'yyyy-MM-dd'), logs });
       
+      // 🧹 เคลียร์ Draft ทิ้งเมื่อส่งงานสำเร็จ เพื่อไม่ให้รกเครื่อง
+      const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
+      localStorage.removeItem(draftKey);
+
       setIsSuccess(true);
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
