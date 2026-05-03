@@ -48,14 +48,10 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   // Refs for synchronous checks without triggering re-renders
   const submissionDataRef = useRef(submissionData);
   const currentInputsRef = useRef(currentInputs);
+  const hasInitializedRef = useRef(false);
 
-  useEffect(() => {
-    submissionDataRef.current = submissionData;
-  }, [submissionData]);
-
-  useEffect(() => {
-    currentInputsRef.current = currentInputs;
-  }, [currentInputs]);
+  // We don't need useEffect for these anymore, we update them synchronously during setState
+  // This prevents race conditions when users click buttons very fast
 
   const { logs: myTodayLogs, isLoading: isLogsLoading, submitLogsMutation } = useTodayLogs(currentUser.id);
 
@@ -63,28 +59,34 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   useEffect(() => {
     if (isConfigLoading || isLogsLoading) return;
 
+    // 🛡️ ป้องกันบั๊ก "ข้อมูลตีกัน" (Race Condition): 
+    // โหลดข้อมูลเข้าหน้าจอแค่ "ครั้งแรกครั้งเดียว" เพื่อไม่ให้เขียนทับสิ่งที่เรากำลังพิมพ์
+    if (hasInitializedRef.current) return;
+
     const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
     const draftJson = localStorage.getItem(draftKey);
     let draftData: Record<string, string[]> | null = null;
     if (draftJson) {
-      try { draftData = JSON.parse(draftJson); } catch (e) {}
+      try { draftData = JSON.parse(draftJson); } catch (e) { }
     }
 
     const initial: Record<string, string[]> = {};
     displayPages.forEach(p => {
       const existingLog = myTodayLogs.find(l => l.pageId === p.id);
       const dbLinks = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
-      const draftLinks = draftData ? draftData[p.id] || [] : [];
-      
-      // 🛡️ ผสานข้อมูล: ถ้าใน Draft (ที่พิมพ์ค้างไว้) มีลิงก์เยอะกว่า DB ให้เอา Draft มาใช้
-      initial[p.id] = draftLinks.length > dbLinks.length ? draftLinks : dbLinks;
+
+      // 🛡️ ผสานข้อมูล: ถ้ามี Draft ให้ยึด Draft เป็นหลักเสมอ (แก้บั๊กลบลิงก์ไม่ออก)
+      initial[p.id] = (draftData && draftData[p.id] !== undefined) ? draftData[p.id] : dbLinks;
     });
+
     setSubmissionData(initial);
+    submissionDataRef.current = initial;
+    hasInitializedRef.current = true;
   }, [displayPages, isConfigLoading, isLogsLoading, myTodayLogs, currentUser.id]);
 
   // 💾 Auto-Save Draft: บันทึกลง LocalStorage ทุกครั้งที่พิมพ์หรือแก้ลิงก์
   useEffect(() => {
-    if (Object.keys(submissionData).length > 0) {
+    if (hasInitializedRef.current) {
       const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
       localStorage.setItem(draftKey, JSON.stringify(submissionData));
     }
@@ -94,7 +96,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
     const val = (currentInputsRef.current[pageId] || '').trim();
     if (!val) return;
 
-    const isDuplicate = Object.values(submissionDataRef.current).some(pageLinks => 
+    const isDuplicate = Object.values(submissionDataRef.current).some(pageLinks =>
       pageLinks.some(link => link.trim().toLowerCase() === val.toLowerCase())
     );
 
@@ -105,26 +107,48 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
 
     setSubmissionData(prevData => {
       const existing = (prevData[pageId] || []).filter(l => l.trim() !== '');
-      return { ...prevData, [pageId]: [...existing, val] };
+      const newData = { ...prevData, [pageId]: [...existing, val] };
+      submissionDataRef.current = newData; // 🛡️ Sync Ref Update กันกระสุน
+      return newData;
     });
 
-    setCurrentInputs(prevInputs => ({ ...prevInputs, [pageId]: '' }));
+    setCurrentInputs(prevInputs => {
+      const next = { ...prevInputs, [pageId]: '' };
+      currentInputsRef.current = next; // 🛡️ Sync Ref Update
+      return next;
+    });
   }, []);
 
+  // 🛡️ แก้บั๊กต้องวาง 2 ครั้ง: อัปเดต Ref ทันทีแบบ Real-time
   const handleInputChange = useCallback((pageId: string, value: string) => {
-    setCurrentInputs(prev => ({ ...prev, [pageId]: value }));
+    setCurrentInputs(prev => {
+      const next = { ...prev, [pageId]: value };
+      currentInputsRef.current = next;
+      return next;
+    });
   }, []);
 
   const handleRemoveLink = useCallback((pageId: string, index: number) => {
     setSubmissionData(prev => {
       const existing = (prev[pageId] || []).filter(l => l.trim() !== '');
-      return { ...prev, [pageId]: existing.filter((_, i) => i !== index) };
+      const newData = { ...prev, [pageId]: existing.filter((_, i) => i !== index) };
+      submissionDataRef.current = newData; // 🛡️ Sync Ref Update
+      return newData;
     });
   }, []);
 
-  const totalLinksFilled = Object.values(submissionData).flat().filter(l => l.trim() !== '').length;
+  const draftLinksFilled = Object.values(submissionData).flat().filter(l => l.trim() !== '').length;
+
+  const dbLinksFilled = displayPages.reduce((acc, page) => {
+    const existingLog = myTodayLogs.find(l => l.pageId === page.id);
+    const dbLinks = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
+    return acc + dbLinks.length;
+  }, 0);
+
   const totalRequired = displayPages.length * policy.clipsPerPageInLog;
-  const progress = totalRequired > 0 ? (totalLinksFilled / totalRequired) * 100 : 0;
+
+  const draftProgress = totalRequired > 0 ? (draftLinksFilled / totalRequired) * 100 : 0;
+  const dbProgress = totalRequired > 0 ? (dbLinksFilled / totalRequired) * 100 : 0;
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -147,7 +171,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
 
       await dataService.saveLogs(logs);
       await submitLogsMutation.mutateAsync({ userId: currentUser.id, date: format(new Date(), 'yyyy-MM-dd'), logs });
-      
+
       // 🧹 เคลียร์ Draft ทิ้งเมื่อส่งงานสำเร็จ เพื่อไม่ให้รกเครื่อง
       const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
       localStorage.removeItem(draftKey);
@@ -185,18 +209,34 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
                 </p>
               </div>
               <div className="text-right w-full sm:w-auto">
-                <span className="text-4xl font-black text-[var(--primary-theme)] font-outfit">{Math.round(progress)}%</span>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{totalLinksFilled} / {totalRequired} clips</p>
+                <span className="text-4xl font-black text-[var(--primary-theme)] font-outfit">{Math.round(dbProgress)}%</span>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{dbLinksFilled} / {totalRequired} clips</p>
               </div>
             </div>
 
             <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
+              {/* 🔵 Light Blue Bar (Draft / Pending) */}
               <div
-                className="h-full bg-[var(--primary-theme)] rounded-full transition-all duration-700 relative shadow-[0_0_12px_rgba(37,99,235,0.3)]"
-                style={{ width: `${Math.min(progress, 100)}%` }}
+                className="absolute top-0 left-0 h-full bg-blue-200 rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(draftProgress, 100)}%` }}
+              />
+
+              {/* 🔵 Solid Blue Bar (Submitted / DB) */}
+              <div
+                className="absolute top-0 left-0 h-full bg-[var(--primary-theme)] rounded-full transition-all duration-700 relative shadow-[0_0_12px_rgba(37,99,235,0.3)]"
+                style={{ width: `${Math.min(dbProgress, 100)}%` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-marquee" />
               </div>
+            </div>
+
+            <div className="mt-5 flex items-start gap-2 opacity-90 hover:opacity-100 transition-opacity">
+              <span className="text-red-500 shrink-0 mt-0.5">
+                <AlertTriangle size={14} />
+              </span>
+              <p className="text-[10px] text-red-500 leading-relaxed font-noto font-medium">
+                <strong className="text-red-600">ข้อควรระวัง:</strong> กรุณากดปุ่ม "ส่งงาน" ทุกครั้งเมื่อวางลิงก์เสร็จ เพื่อส่งข้อมูลให้ Admin ตรวจสอบ
+              </p>
             </div>
           </div>
         </div>
@@ -207,7 +247,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
               <ShieldCheck size={16} className="text-slate-400" /> Group Target
             </h3>
             <p className="text-[11px] text-slate-400 font-noto leading-relaxed mt-4">
-              เป้าหมายกลุ่ม <strong className="text-white uppercase">{currentUser.department || 'General'}</strong><br/>
+              เป้าหมายกลุ่ม <strong className="text-white uppercase">{currentUser.department || 'General'}</strong><br />
               บังคับส่ง <strong className="text-white">{policy.clipsPerPageInLog} ลิงก์/เพจ</strong>
             </p>
           </div>
@@ -216,7 +256,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
               <p className="text-[8px] font-black uppercase text-slate-500 tracking-widest mb-0.5">Status</p>
               <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Audit Queue</p>
             </div>
-            
+
             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
           </div>
         </div>
@@ -300,7 +340,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
               </div>
               <h3 className="text-xl font-black text-slate-900 font-noto mb-3 uppercase tracking-wider">พบลิงก์ซ้ำ!</h3>
               <p className="text-sm text-slate-600 font-noto leading-relaxed">
-                การส่งลิงก์ซ้ำถือเป็นการ <strong className="text-red-500">ผิดกฎระเบียบบริษัท</strong><br/>
+                การส่งลิงก์ซ้ำถือเป็นการ <strong className="text-red-500">ผิดกฎระเบียบบริษัท</strong><br />
                 หากพบพฤติกรรมผิดปกติหรือจงใจฝ่าฝืน จะถูกตรวจสอบและลงโทษตามขั้นตอน
               </p>
             </div>
