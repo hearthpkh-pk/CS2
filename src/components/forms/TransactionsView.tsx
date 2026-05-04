@@ -17,6 +17,10 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
   const [activeMode, setActiveMode] = useState<'views' | 'followers'>('views');
   const [inputData, setInputData] = useState<Record<string, Record<string, { followers: string; views: string }>>>({});
+  
+  // 🛡️ Refs สำหรับกันกระสุน (Bulletproof State)
+  const originalDataRef = React.useRef<Record<string, Record<string, { followers: string; views: string }>>>({});
+  const initializedDatesRef = React.useRef<string>('');
 
   // CSV Import States
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -64,6 +68,12 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   }, [logDate]);
 
   useEffect(() => {
+    const currentDatesStr = rollingDates.join(',');
+    
+    // 🛡️ Anti-Typing Wipeout: ถ้าเคยดึงข้อมูลของวันช่วงนี้มาแล้ว ห้ามโหลดทับ! 
+    // ป้องกันกรณี React Query หรือ Background Sync เด้งอัปเดต แล้วลบข้อมูลที่พนักงานกำลังพิมพ์อยู่
+    if (initializedDatesRef.current === currentDatesStr) return;
+
     const dataForDates: Record<string, Record<string, { followers: string; views: string }>> = {};
     sortedPages.forEach(p => {
       dataForDates[p.id] = {};
@@ -75,7 +85,11 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
         };
       });
     });
+    
     setInputData(dataForDates);
+    // เก็บ Snapshot ดั้งเดิมไว้เปรียบเทียบตอนกด Save (Deep Copy)
+    originalDataRef.current = JSON.parse(JSON.stringify(dataForDates));
+    initializedDatesRef.current = currentDatesStr;
   }, [rollingDates, sortedPages, logs]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,14 +232,19 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newLogs: DailyLog[] = [];
+    
     sortedPages.forEach(p => {
       rollingDates.forEach(date => {
-        const fStr = inputData[p.id]?.[date]?.followers || '';
-        const vStr = inputData[p.id]?.[date]?.views || '';
+        const currentFStr = inputData[p.id]?.[date]?.followers || '';
+        const currentVStr = inputData[p.id]?.[date]?.views || '';
+        
+        const originalFStr = originalDataRef.current[p.id]?.[date]?.followers || '';
+        const originalVStr = originalDataRef.current[p.id]?.[date]?.views || '';
 
-        if (fStr !== '' || vStr !== '') {
-          const followers = parseInt(fStr) || 0;
-          const views = parseInt(vStr) || 0;
+        // 🛡️ Bulletproof Dirty Tracking: เช็คว่ามีการพิมพ์แก้ไขตัวเลขจริงๆ ใช่ไหม?
+        if (currentFStr !== originalFStr || currentVStr !== originalVStr) {
+          const followers = parseInt(currentFStr) || 0;
+          const views = parseInt(currentVStr) || 0;
 
           newLogs.push({
             id: `log-${p.id}-${date}`,
@@ -242,6 +261,17 @@ export const TransactionsView = ({ pages, logs, currentUser, onSave }: Props) =>
 
     if (newLogs.length > 0) {
       onSave(newLogs);
+      
+      // 🛡️ อัปเดต Snapshot หลังส่งเสร็จ เพื่อให้พนักงานพิมพ์แก้ต่อได้เลยโดยไม่ต้องรีเฟรช
+      newLogs.forEach(log => {
+        if (!originalDataRef.current[log.pageId]) {
+          originalDataRef.current[log.pageId] = {};
+        }
+        originalDataRef.current[log.pageId][log.date] = {
+          followers: log.followers.toString(),
+          views: log.views.toString()
+        };
+      });
     }
   };
 

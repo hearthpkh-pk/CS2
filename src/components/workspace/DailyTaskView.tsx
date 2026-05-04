@@ -21,6 +21,7 @@ import { dataService } from '@/services/dataService';
 import { useTodayLogs } from './DailyTaskView/hooks/useTodayLogs';
 import { VirtualTable } from './DailyTaskView/VirtualTable';
 import { format } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DailyTaskViewProps {
   currentUser: User;
@@ -30,6 +31,7 @@ interface DailyTaskViewProps {
 
 export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages, policy: propPolicy }) => {
   const { getPolicyForUser, isLoading: isConfigLoading } = useCompanyConfig();
+  const queryClient = useQueryClient();
 
   // 🎯 Resolve dynamic policy for this user
   const policy = useMemo(() => getPolicyForUser(currentUser), [getPolicyForUser, currentUser]);
@@ -49,6 +51,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   const submissionDataRef = useRef(submissionData);
   const currentInputsRef = useRef(currentInputs);
   const hasInitializedRef = useRef(false);
+  const originalDbLinksRef = useRef<Record<string, string[]>>({});
 
   // We don't need useEffect for these anymore, we update them synchronously during setState
   // This prevents race conditions when users click buttons very fast
@@ -75,8 +78,11 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
       const existingLog = myTodayLogs.find(l => l.pageId === p.id);
       const dbLinks = (existingLog?.links && Array.isArray(existingLog.links)) ? existingLog.links : [];
 
+      // 🛡️ Snapshot: เก็บรูปถ่ายข้อมูลจาก DB แยกรักษาไว้เปรียบเทียบ (Deep Copy)
+      originalDbLinksRef.current[p.id] = [...dbLinks];
+
       // 🛡️ ผสานข้อมูล: ถ้ามี Draft ให้ยึด Draft เป็นหลักเสมอ (แก้บั๊กลบลิงก์ไม่ออก)
-      initial[p.id] = (draftData && draftData[p.id] !== undefined) ? draftData[p.id] : dbLinks;
+      initial[p.id] = (draftData && draftData[p.id] !== undefined) ? draftData[p.id] : [...dbLinks];
     });
 
     setSubmissionData(initial);
@@ -153,24 +159,59 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({ currentUser, pages
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const logs: DailyLog[] = displayPages.map(page => {
-        const links = (submissionData[page.id] || []).filter(l => l.trim() !== '');
-        return {
-          id: '',
-          pageId: page.id,
-          staffId: page.ownerId || currentUser.id,
-          date: format(new Date(), 'yyyy-MM-dd'),
-          followers: 0,
-          views: 0,
-          clipsCount: links.length,
-          links: links,
-          source: 'Manual',
-          createdAt: new Date().toISOString()
-        };
+      const logsToSubmit: DailyLog[] = [];
+
+      displayPages.forEach(page => {
+        const currentLinks = (submissionData[page.id] || []).filter(l => l.trim() !== '');
+        const originalLinks = originalDbLinksRef.current[page.id] || [];
+        
+        // 🛡️ Bulletproof Dirty Tracking: ส่งเฉพาะเพจที่มีการเปลี่ยนแปลงจริงๆ
+        if (JSON.stringify(currentLinks) !== JSON.stringify(originalLinks)) {
+          logsToSubmit.push({
+            id: '',
+            pageId: page.id,
+            staffId: page.ownerId || currentUser.id,
+            date: format(new Date(), 'yyyy-MM-dd'),
+            followers: 0,
+            views: 0,
+            clipsCount: currentLinks.length,
+            links: currentLinks,
+            source: 'Manual',
+            createdAt: new Date().toISOString()
+          });
+        }
       });
 
-      await dataService.saveLogs(logs);
-      await submitLogsMutation.mutateAsync({ userId: currentUser.id, date: format(new Date(), 'yyyy-MM-dd'), logs });
+      // ถ้าไม่มีอะไรเปลี่ยนแปลงเลย ให้แสดงว่าสำเร็จไปเลย (ประหยัดโควต้า DB)
+      if (logsToSubmit.length === 0) {
+        setIsSuccess(true);
+        setTimeout(() => setIsSuccess(false), 5000);
+        return;
+      }
+
+      await dataService.saveLogs(logsToSubmit);
+
+      // 🛡️ Ghosting Bug Fix: อัปเดต Cache ของ React Query ทันทีด้วยข้อมูลใหม่ (Optimistic Update)
+      queryClient.setQueryData(['todayLogs', currentUser.id, format(new Date(), 'yyyy-MM-dd')], (oldData: DailyLog[] = []) => {
+        const newData = [...oldData];
+        logsToSubmit.forEach(newLog => {
+          const idx = newData.findIndex(l => l.pageId === newLog.pageId);
+          if (idx !== -1) {
+            newData[idx] = newLog;
+          } else {
+            newData.push(newLog);
+          }
+        });
+        return newData;
+      });
+
+      // แจ้งให้ React Query ดึงข้อมูลใหม่เงียบๆ เป็นการรีเช็ค (ถึง component ดับไปก็ไม่เกิด ghosting แล้ว)
+      await submitLogsMutation.mutateAsync({ userId: currentUser.id, date: format(new Date(), 'yyyy-MM-dd'), logs: logsToSubmit });
+
+      // 🛡️ อัปเดต Snapshot ให้ตรงกับความจริงล่าสุด (ทำใน try เพื่อการันตีว่า save สำเร็จแล้ว)
+      logsToSubmit.forEach(log => {
+        originalDbLinksRef.current[log.pageId] = [...log.links];
+      });
 
       // 🧹 เคลียร์ Draft ทิ้งเมื่อส่งงานสำเร็จ เพื่อไม่ให้รกเครื่อง
       const draftKey = `cs2_draft_${currentUser.id}_${format(new Date(), 'yyyy-MM-dd')}`;
